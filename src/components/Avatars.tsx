@@ -33,10 +33,13 @@ export function AvatarStack({
   users,
   size = 22,
   max = 5,
+  fadedIds,
 }: {
   users: User[];
   size?: number;
   max?: number;
+  /** Abgedimmt darstellen (nur "interessiert", nicht fest dabei) */
+  fadedIds?: Set<string>;
 }) {
   if (users.length === 0) return null;
   const shown = users.slice(0, max);
@@ -45,7 +48,14 @@ export function AvatarStack({
     <span className="inline-flex items-center" style={{ paddingLeft: size * 0.28 }}>
       {shown.map((u) => (
         // flex statt inline: sonst macht die Zeilenhöhe den Stack höher als die Kreise
-        <span key={u.id} className="flex" style={{ marginLeft: -size * 0.28 }}>
+        <span
+          key={u.id}
+          className="flex"
+          style={{
+            marginLeft: -size * 0.28,
+            opacity: fadedIds?.has(u.id) ? 0.45 : 1,
+          }}
+        >
           <Avatar user={u} size={size} />
         </span>
       ))}

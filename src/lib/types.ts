@@ -41,9 +41,33 @@ export interface User {
   createdAt: string;
 }
 
+/** 'going' = feste Zusage ("Ich bin dabei!"), 'interested' = unverbindlich */
+export type SelectionStatus = 'going' | 'interested';
+
 export interface Selection {
   userId: string;
   slotId: string;
+  status: SelectionStatus;
+}
+
+/** Ab so vielen festen Zusagen bekommt der Slot den Feuerrahmen 🔥 */
+export const HOT_SLOT_THRESHOLD = 5;
+
+/** Teilnehmer eines Slots, getrennt nach fester Zusage und Interesse */
+export function splitAttendees(
+  users: User[],
+  selections: Selection[],
+  slotId: string
+): { going: User[]; interested: User[] } {
+  const going: User[] = [];
+  const interested: User[] = [];
+  for (const sel of selections) {
+    if (sel.slotId !== slotId) continue;
+    const u = users.find((x) => x.id === sel.userId);
+    if (!u) continue;
+    (sel.status === 'interested' ? interested : going).push(u);
+  }
+  return { going, interested };
 }
 
 export interface Position {

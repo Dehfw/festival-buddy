@@ -8,7 +8,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import type { DataPayload, User } from '../types';
+import type { DataPayload, SelectionStatus, User } from '../types';
 import {
   applyMutation,
   fetchData,
@@ -34,7 +34,8 @@ interface AppState {
   /** Nach erfolgreichem Passkey-Login/-Registrierung übernehmen */
   loginAs: (user: User) => void;
   logout: () => void;
-  toggleSelection: (slotId: string, attending: boolean) => void;
+  /** null = austragen, sonst neuen Status setzen */
+  setSelection: (slotId: string, status: SelectionStatus | null) => void;
   setPosition: (slotId: string, x: number | null, y: number | null) => void;
   refresh: () => Promise<void>;
 }
@@ -146,10 +147,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     void fetch('/api/logout', { method: 'POST' }).catch(() => {});
   }, []);
 
-  const toggleSelection = useCallback(
-    (slotId: string, attending: boolean) => {
+  const setSelection = useCallback(
+    (slotId: string, status: SelectionStatus | null) => {
       if (!user) return;
-      const m: Mutation = { op: 'selection', userId: user.id, slotId, attending };
+      const m: Mutation = { op: 'selection', userId: user.id, slotId, status };
       applyLocal(m);
       void sendOrEnqueue(m).then((sent) => {
         if (!sent) setOnline(navigator.onLine ?? false);
@@ -182,7 +183,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         pending,
         loginAs,
         logout,
-        toggleSelection,
+        setSelection,
         setPosition,
         refresh,
       }}

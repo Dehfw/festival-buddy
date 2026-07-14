@@ -2,7 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import { useApp } from '@/lib/client/store';
-import { formatAgo, formatTime, isStalePosition, type Slot } from '@/lib/types';
+import {
+  formatAgo,
+  formatTime,
+  HOT_SLOT_THRESHOLD,
+  isStalePosition,
+  splitAttendees,
+  type Slot,
+} from '@/lib/types';
 import { Avatar } from './Avatars';
 import { StageMap, type MapMarker } from './StageMap';
 
@@ -19,22 +26,24 @@ function SpotifyIcon() {
  * Spotify-Link und Position im Publikum auf dem Bühnen-Blueprint markieren.
  */
 export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }) {
-  const { data, user, toggleSelection, setPosition } = useApp();
+  const { data, user, setSelection, setPosition } = useApp();
   const [mapMode, setMapMode] = useState(false);
 
   const stage = data?.timetable.stages.find((s) => s.id === slot.stageId);
   const day = data?.timetable.days.find((d) => d.id === slot.dayId);
   const blueprint = data?.blueprints[slot.stageId];
 
-  const attendees = useMemo(() => {
-    if (!data) return [];
-    const ids = new Set(
-      data.selections.filter((s) => s.slotId === slot.id).map((s) => s.userId)
-    );
-    return data.users.filter((u) => ids.has(u.id));
-  }, [data, slot.id]);
+  const { going, interested } = useMemo(
+    () =>
+      data
+        ? splitAttendees(data.users, data.selections, slot.id)
+        : { going: [], interested: [] },
+    [data, slot.id]
+  );
 
-  const iAttend = !!user && attendees.some((a) => a.id === user.id);
+  const iGo = !!user && going.some((a) => a.id === user.id);
+  const iAmInterested = !!user && interested.some((a) => a.id === user.id);
+  const hot = going.length >= HOT_SLOT_THRESHOLD;
   const myPosition = data?.positions.find(
     (p) => p.slotId === slot.id && p.userId === user?.id
   );
@@ -102,16 +111,21 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
         {!mapMode && (
           <>
             <div className="mt-5">
-              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-ash">
-                Dabei ({attendees.length})
+              <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-ash">
+                <span>Dabei ({going.length})</span>
+                {hot && (
+                  <span className="rounded-full bg-blood/20 px-2 py-0.5 text-[10px] font-black normal-case tracking-normal text-blood">
+                    🔥 Hot Slot
+                  </span>
+                )}
               </div>
-              {attendees.length === 0 ? (
+              {going.length === 0 ? (
                 <p className="text-sm text-ash/70">
-                  Noch niemand eingetragen – sei die/der Erste! 🤘
+                  Noch niemand fest eingetragen – sei die/der Erste! 🤘
                 </p>
               ) : (
                 <ul className="space-y-2">
-                  {attendees.map((a) => {
+                  {going.map((a) => {
                     const pos = data.positions.find(
                       (p) => p.slotId === slot.id && p.userId === a.id
                     );
@@ -136,20 +150,51 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
                   })}
                 </ul>
               )}
+
+              {interested.length > 0 && (
+                <>
+                  <div className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wider text-ash">
+                    Interessiert ({interested.length})
+                  </div>
+                  <ul className="space-y-2">
+                    {interested.map((a) => (
+                      <li
+                        key={a.id}
+                        className="flex items-center gap-2.5 text-sm opacity-70"
+                      >
+                        <Avatar user={a} size={26} />
+                        <span className="font-medium">{a.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
 
             <div className="mt-6 space-y-2.5">
               <button
-                onClick={() => toggleSelection(slot.id, !iAttend)}
+                onClick={() => setSelection(slot.id, iGo ? null : 'going')}
                 className={`w-full rounded-xl px-4 py-3.5 font-metal text-base uppercase tracking-wide transition active:scale-[0.98] ${
-                  iAttend
+                  iGo
                     ? 'border border-rivet bg-steel-2 text-ash'
                     : 'bg-blood text-black'
                 }`}
               >
-                {iAttend ? 'Doch nicht – austragen' : 'Ich bin dabei!'}
+                {iGo ? 'Doch nicht – austragen' : 'Ich bin dabei!'}
               </button>
-              {iAttend && blueprint && (
+              <button
+                onClick={() => setSelection(slot.id, iAmInterested ? null : 'interested')}
+                className={`w-full rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[0.98] ${
+                  iAmInterested
+                    ? 'border border-rivet bg-steel-2 text-ash'
+                    : 'border border-dashed border-ember/70 bg-ember/10 text-ember'
+                }`}
+              >
+                {iAmInterested
+                  ? 'Interesse zurückziehen'
+                  : '🤔 Ich bin interessiert (unverbindlich)'}
+              </button>
+              {iGo && blueprint && (
                 <button
                   onClick={() => setMapMode(true)}
                   className="w-full rounded-xl border border-rivet bg-steel-2 px-4 py-3.5 text-sm font-semibold text-bone transition active:scale-[0.98]"
