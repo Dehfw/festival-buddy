@@ -58,16 +58,27 @@ ausgeliefert werden.
 > aktualisieren:
 
 ```bash
-npm run scrape                               # Live von wacken.com
-npm run scrape -- --from-file seite.html     # Fallback: gespeicherte Seite parsen
+npm run scrape                            # wacken.com; Fallback: Clashfinder
+npm run scrape -- --source clashfinder    # direkt den Clashfinder-Export holen
+npm run scrape -- --from-file seite.html  # gespeicherte Seite parsen
+npm run scrape -- --debug                 # Diagnose + HTML-Dump bei Problemen
+npm run scrape -- --dry-run               # Vorschau, ohne zu schreiben
 ```
 
-wacken.com hat einen Bot-Schutz. Wenn der Live-Abruf mit 403 abgewiesen wird:
-Running-Order-Seite im Browser öffnen, mit Strg+S komplett speichern und über
-`--from-file` parsen. Die Slot-IDs bleiben dabei stabil
-(`tag-buehne-bandname`), sodass bestehende Eintragungen erhalten bleiben.
-Alternativ kann die Datei einfach von Hand gepflegt werden – Zeiten nach
-Mitternacht schreibt man als `24:30` (= 00:30 am Folgetag).
+Der Scraper probiert mehrere Strategien: JSON-LD und eingebettete
+JSON-Blobs im HTML, dann alle in der Seite/den JS-Bundles referenzierten
+JSON-/API-URLs (die Running Order wird auf wacken.com client-seitig
+nachgeladen), und als Fallback den maschinenlesbaren
+[Clashfinder](https://clashfinder.com/m/woa2026/)-Export – einen
+community-gepflegten Spiegel der offiziellen Running Order.
+
+Wenn alles fehlschlägt: Running-Order-Seite im Browser öffnen, warten bis
+sie fertig geladen ist, per DevTools → Network die JSON-Antwort speichern
+oder die gerenderte Seite mit Strg+S sichern, dann `--from-file`. Die
+Slot-IDs bleiben stabil (`tag-buehne-bandname`), sodass bestehende
+Eintragungen der Crew erhalten bleiben. Alternativ die Datei von Hand
+pflegen – Zeiten nach Mitternacht schreibt man als `24:30` (= 00:30 am
+Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 
 ## Technik
 
