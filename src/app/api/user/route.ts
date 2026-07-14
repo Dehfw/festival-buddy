@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { mutateDb, readDb } from '@/lib/db';
+import { upsertUser } from '@/lib/db';
 import { colorForName, userIdFromName } from '@/lib/ids';
-import type { User } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,21 +19,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const id = userIdFromName(name);
-  const existing = readDb().users.find((u) => u.id === id);
-  if (existing) return NextResponse.json({ user: existing });
-
-  const user = await mutateDb<User>((db) => {
-    const again = db.users.find((u) => u.id === id);
-    if (again) return again;
-    const created: User = {
-      id,
-      name,
-      color: colorForName(name),
-      createdAt: new Date().toISOString(),
-    };
-    db.users.push(created);
-    return created;
+  const user = await upsertUser({
+    id: userIdFromName(name),
+    name,
+    color: colorForName(name),
   });
 
   return NextResponse.json({ user });

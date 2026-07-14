@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isAdminRequest } from '@/lib/admin';
-import { getTimetable, mutateDb } from '@/lib/db';
+import { getTimetable, saveBlueprint } from '@/lib/db';
 import type { Blueprint, BlueprintElement, Poi, PoiType } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -57,10 +57,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Ungültiger Blueprint' }, { status: 400 });
   }
 
-  const rev = await mutateDb((db) => {
-    db.blueprints[stageId] = blueprint;
-    return db.rev + 1;
-  });
-
+  const rev = await saveBlueprint(stageId, blueprint);
   return NextResponse.json({ ok: true, rev });
 }
