@@ -1,0 +1,17 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+
+# runtime database (created on first start, seeded automatically)
+data/db.json
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+.env*.local
+*.tsbuildinfo
+next-env.d.ts

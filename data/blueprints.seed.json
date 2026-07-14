@@ -1,0 +1,105 @@
+{
+  "faster": {
+    "stageLabel": "FASTER",
+    "elements": [
+      { "type": "stage", "x": 20, "y": 2, "w": 60, "h": 14 },
+      { "type": "foh", "x": 44, "y": 52, "w": 12, "h": 8, "label": "FOH-Turm" },
+      { "type": "barrier", "x": 15, "y": 20, "w": 70, "h": 1.5 }
+    ],
+    "pois": [
+      { "id": "faster-poi-1", "type": "water", "x": 8, "y": 35, "label": "Wasserstation" },
+      { "id": "faster-poi-2", "type": "toilet", "x": 92, "y": 40, "label": "Dixis Ost" },
+      { "id": "faster-poi-3", "type": "medic", "x": 8, "y": 70, "label": "Sani-Punkt" },
+      { "id": "faster-poi-4", "type": "entrance", "x": 50, "y": 94, "label": "Eingang Infield" }
+    ]
+  },
+  "harder": {
+    "stageLabel": "HARDER",
+    "elements": [
+      { "type": "stage", "x": 20, "y": 2, "w": 60, "h": 14 },
+      { "type": "foh", "x": 44, "y": 52, "w": 12, "h": 8, "label": "FOH-Turm" },
+      { "type": "barrier", "x": 15, "y": 20, "w": 70, "h": 1.5 }
+    ],
+    "pois": [
+      { "id": "harder-poi-1", "type": "water", "x": 92, "y": 35, "label": "Wasserstation" },
+      { "id": "harder-poi-2", "type": "toilet", "x": 8, "y": 40, "label": "Dixis West" },
+      { "id": "harder-poi-3", "type": "merch", "x": 85, "y": 75, "label": "Metal Markt" },
+      { "id": "harder-poi-4", "type": "entrance", "x": 50, "y": 94, "label": "Eingang Infield" }
+    ]
+  },
+  "louder": {
+    "stageLabel": "LOUDER",
+    "elements": [
+      { "type": "stage", "x": 25, "y": 2, "w": 50, "h": 13 },
+      { "type": "foh", "x": 45, "y": 48, "w": 10, "h": 7, "label": "FOH" },
+      { "type": "barrier", "x": 20, "y": 18, "w": 60, "h": 1.5 }
+    ],
+    "pois": [
+      { "id": "louder-poi-1", "type": "water", "x": 10, "y": 30, "label": "Wasser" },
+      { "id": "louder-poi-2", "type": "toilet", "x": 90, "y": 55, "label": "Dixis" },
+      { "id": "louder-poi-3", "type": "entrance", "x": 15, "y": 92, "label": "Zugang Süd" }
+    ]
+  },
+  "wet": {
+    "stageLabel": "W.E.T.",
+    "elements": [
+      { "type": "tent", "x": 10, "y": 2, "w": 80, "h": 75 },
+      { "type": "stage", "x": 30, "y": 5, "w": 40, "h": 12 },
+      { "type": "foh", "x": 44, "y": 55, "w": 12, "h": 7, "label": "FOH" }
+    ],
+    "pois": [
+      { "id": "wet-poi-1", "type": "entrance", "x": 20, "y": 80, "label": "Zelteingang West" },
+      { "id": "wet-poi-2", "type": "entrance", "x": 80, "y": 80, "label": "Zelteingang Ost" },
+      { "id": "wet-poi-3", "type": "water", "x": 8, "y": 92, "label": "Wasser" }
+    ]
+  },
+  "headbanger": {
+    "stageLabel": "HEADBANGER",
+    "elements": [
+      { "type": "tent", "x": 12, "y": 2, "w": 76, "h": 72 },
+      { "type": "stage", "x": 32, "y": 5, "w": 36, "h": 11 },
+      { "type": "foh", "x": 45, "y": 50, "w": 10, "h": 7, "label": "FOH" }
+    ],
+    "pois": [
+      { "id": "headbanger-poi-1", "type": "entrance", "x": 50, "y": 80, "label": "Zelteingang" },
+      { "id": "headbanger-poi-2", "type": "toilet", "x": 90, "y": 88, "label": "Dixis" }
+    ]
+  },
+  "wackinger": {
+    "stageLabel": "WACKINGER",
+    "elements": [
+      { "type": "stage", "x": 28, "y": 2, "w": 44, "h": 12 },
+      { "type": "barrier", "x": 22, "y": 16, "w": 56, "h": 1.5 }
+    ],
+    "pois": [
+      { "id": "wackinger-poi-1", "type": "merch", "x": 12, "y": 40, "label": "Mittelalter-Markt" },
+      { "id": "wackinger-poi-2", "type": "water", "x": 88, "y": 45, "label": "Wasser" },
+      { "id": "wackinger-poi-3", "type": "merch", "x": 15, "y": 70, "label": "Met-Stand" },
+      { "id": "wackinger-poi-4", "type": "entrance", "x": 50, "y": 93, "label": "Zugang Wackinger Village" }
+    ]
+  },
+  "wasteland": {
+    "stageLabel": "WASTELAND",
+    "elements": [
+      { "type": "stage", "x": 30, "y": 2, "w": 40, "h": 12 },
+      { "type": "barrier", "x": 25, "y": 16, "w": 50, "h": 1.5 }
+    ],
+    "pois": [
+      { "id": "wasteland-poi-1", "type": "merch", "x": 85, "y": 35, "label": "Endzeit-Basar" },
+      { "id": "wasteland-poi-2", "type": "toilet", "x": 10, "y": 60, "label": "Dixis" },
+      { "id": "wasteland-poi-3", "type": "entrance", "x": 50, "y": 93, "label": "Zugang Wasteland" }
+    ]
+  },
+  "beergarden": {
+    "stageLabel": "BEERGARDEN",
+    "elements": [
+      { "type": "stage", "x": 35, "y": 2, "w": 30, "h": 10 }
+    ],
+    "pois": [
+      { "id": "beergarden-poi-1", "type": "merch", "x": 15, "y": 30, "label": "Bierstand Nord" },
+      { "id": "beergarden-poi-2", "type": "merch", "x": 85, "y": 30, "label": "Bierstand Süd" },
+      { "id": "beergarden-poi-3", "type": "toilet", "x": 90, "y": 80, "label": "Dixis" },
+      { "id": "beergarden-poi-4", "type": "water", "x": 10, "y": 80, "label": "Wasser" }
+    ]
+  }
+}
