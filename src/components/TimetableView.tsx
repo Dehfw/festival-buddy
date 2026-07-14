@@ -13,10 +13,18 @@ type Zoom = 'compact' | 'detail';
 /** Kompakte Übersicht (mehr Bühnen auf einen Blick) vs. Detail-Ansicht */
 const ZOOMS: Record<
   Zoom,
-  { pxPerMin: number; colW: number; avatar: number; maxAvatars: number; showTimes: boolean }
+  {
+    pxPerMin: number;
+    colW: number;
+    avatar: number;
+    maxAvatars: number;
+    showTimes: boolean;
+    /** Ab dieser Slot-Höhe passen Avatare unter den Bandnamen, darunter daneben */
+    stackedMinH: number;
+  }
 > = {
-  compact: { pxPerMin: 0.72, colW: 88, avatar: 14, maxAvatars: 3, showTimes: false },
-  detail: { pxPerMin: 1.05, colW: 128, avatar: 18, maxAvatars: 4, showTimes: true },
+  compact: { pxPerMin: 0.72, colW: 88, avatar: 16, maxAvatars: 3, showTimes: false, stackedMinH: 40 },
+  detail: { pxPerMin: 1.05, colW: 128, avatar: 18, maxAvatars: 4, showTimes: true, stackedMinH: 54 },
 };
 
 /**
@@ -173,6 +181,14 @@ export function TimetableView({
                     );
                     const attendees = attendeesOf(slot.id);
                     const mine = !!user && attendees.some((a) => a.id === user.id);
+                    // Kurze Slots: Avatare neben dem Namen, sonst würden sie abgeschnitten
+                    const stacked = height >= z.stackedMinH;
+                    // Zweite Namenszeile nur, wenn sie über den Avataren komplett Platz hat
+                    const lineH = zoom === 'compact' ? 11 : 13;
+                    const nameClamp =
+                      attendees.length === 0 || height >= z.stackedMinH + lineH
+                        ? 'line-clamp-2'
+                        : 'line-clamp-1';
                     return (
                       <button
                         key={slot.id}
@@ -189,31 +205,62 @@ export function TimetableView({
                           borderLeftColor: stage.color,
                         }}
                       >
-                        <div className="flex h-full flex-col justify-between px-1.5 py-1">
-                          <div>
-                            <div
-                              className={`line-clamp-2 font-bold leading-tight text-bone ${
-                                zoom === 'compact' ? 'text-[9px]' : 'text-[11px]'
-                              }`}
-                            >
-                              {slot.band}
+                        {stacked ? (
+                          <div className="flex h-full flex-col px-1.5 py-1">
+                            {/* Textbereich darf schrumpfen – die Avatare bleiben immer voll sichtbar */}
+                            <div className="min-h-0 flex-1 overflow-hidden">
+                              <div
+                                className={`${nameClamp} font-bold leading-tight text-bone ${
+                                  zoom === 'compact' ? 'text-[9px]' : 'text-[11px]'
+                                }`}
+                              >
+                                {slot.band}
+                              </div>
+                              {z.showTimes && (
+                                <div className="text-[9px] text-ash">
+                                  {formatTime(slot.start)}–{formatTime(slot.end)}
+                                </div>
+                              )}
                             </div>
-                            {z.showTimes && (
-                              <div className="text-[9px] text-ash">
-                                {formatTime(slot.start)}–{formatTime(slot.end)}
+                            {attendees.length > 0 && (
+                              <div className="flex shrink-0 items-center pb-0.5">
+                                <AvatarStack
+                                  users={attendees}
+                                  size={z.avatar}
+                                  max={z.maxAvatars}
+                                />
                               </div>
                             )}
                           </div>
-                          {attendees.length > 0 && (
-                            <div className="pb-0.5">
-                              <AvatarStack
-                                users={attendees}
-                                size={z.avatar}
-                                max={z.maxAvatars}
-                              />
+                        ) : (
+                          <div className="flex h-full items-center gap-1 px-1.5">
+                            <div className="min-w-0 flex-1">
+                              <div
+                                className={`font-bold leading-tight text-bone ${
+                                  zoom === 'compact'
+                                    ? 'line-clamp-2 text-[9px]'
+                                    : 'line-clamp-1 text-[11px]'
+                                }`}
+                              >
+                                {slot.band}
+                              </div>
+                              {z.showTimes && (
+                                <div className="truncate text-[9px] text-ash">
+                                  {formatTime(slot.start)}–{formatTime(slot.end)}
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
+                            {attendees.length > 0 && (
+                              <div className="flex shrink-0 items-center">
+                                <AvatarStack
+                                  users={attendees}
+                                  size={z.avatar}
+                                  max={zoom === 'compact' ? 2 : z.maxAvatars}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </button>
                     );
                   })}
