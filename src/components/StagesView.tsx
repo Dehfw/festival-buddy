@@ -18,6 +18,7 @@ export function StagesView() {
 
   return (
     <div className="h-full overflow-y-auto px-4 pb-6 scrollbar-thin">
+      <div className="mx-auto w-full max-w-md">
       <div className="-mx-4 mt-2 flex gap-1.5 overflow-x-auto px-4 pb-2 scrollbar-thin">
         {stages.map((s) => (
           <button
@@ -62,6 +63,7 @@ export function StagesView() {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }

@@ -51,6 +51,7 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
 
   return (
     <div className="h-full overflow-y-auto px-4 pb-6 scrollbar-thin">
+      <div className="mx-auto w-full max-w-2xl">
       {grouped.map(({ day, slots }) => (
         <section key={day.id} className="mt-5">
           <h2 className="font-metal mb-2 text-sm font-black uppercase tracking-wider text-ash">
@@ -108,6 +109,7 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
           </ul>
         </section>
       ))}
+      </div>
     </div>
   );
 }

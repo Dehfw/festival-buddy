@@ -1,17 +1,27 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import { formatTime, toMinutes, type Slot } from '@/lib/types';
 import { AvatarStack } from './Avatars';
 
-const PX_PER_MIN = 1.05;
-const COL_W = 128;
 const GUTTER_W = 44;
+const ZOOM_KEY = 'fb.zoom.v1';
+
+type Zoom = 'compact' | 'detail';
+
+/** Kompakte Übersicht (mehr Bühnen auf einen Blick) vs. Detail-Ansicht */
+const ZOOMS: Record<
+  Zoom,
+  { pxPerMin: number; colW: number; avatar: number; maxAvatars: number; showTimes: boolean }
+> = {
+  compact: { pxPerMin: 0.72, colW: 88, avatar: 14, maxAvatars: 3, showTimes: false },
+  detail: { pxPerMin: 1.05, colW: 128, avatar: 18, maxAvatars: 4, showTimes: true },
+};
 
 /**
  * Hauptansicht 1: Timetable-Grid.
- * Y-Achse = Zeit, X-Achse = Bühnen, Tabs für die vier Festivaltage.
+ * Y-Achse = Zeit, X-Achse = Bühnen, Tabs für die Festivaltage.
  */
 export function TimetableView({
   dayId,
@@ -22,7 +32,14 @@ export function TimetableView({
 }) {
   const { data, user } = useApp();
   const [nowMin, setNowMin] = useState<number | null>(null);
+  const [zoom, setZoom] = useState<Zoom>(() => {
+    if (typeof window === 'undefined') return 'compact';
+    return localStorage.getItem(ZOOM_KEY) === 'detail' ? 'detail' : 'compact';
+  });
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const autoScrolledFor = useRef<string | null>(null);
 
+  const z = ZOOMS[zoom];
   const day = data?.timetable.days.find((d) => d.id === dayId);
 
   const daySlots = useMemo(
@@ -48,16 +65,26 @@ export function TimetableView({
       setNowMin(min >= startMin && min <= endMin ? min : null);
     };
     update();
-    const t = setInterval(update, 60_000);
+    const t = setInterval(update, 30_000);
     return () => clearInterval(t);
   }, [day, startMin, endMin]);
+
+  // Beim Öffnen des aktuellen Tags automatisch zur Jetzt-Linie scrollen
+  useEffect(() => {
+    if (nowMin === null || !scrollRef.current) return;
+    const key = `${dayId}|${zoom}`;
+    if (autoScrolledFor.current === key) return;
+    autoScrolledFor.current = key;
+    const target = (nowMin - startMin) * z.pxPerMin - scrollRef.current.clientHeight / 3;
+    scrollRef.current.scrollTop = Math.max(0, target);
+  }, [nowMin, dayId, zoom, startMin, z.pxPerMin]);
 
   if (!data || !day) return null;
 
   const stages = data.timetable.stages;
   const hours: number[] = [];
   for (let m = startMin; m <= endMin; m += 60) hours.push(m);
-  const bodyH = (endMin - startMin) * PX_PER_MIN;
+  const bodyH = (endMin - startMin) * z.pxPerMin;
 
   const attendeesOf = (slotId: string) => {
     const ids = new Set(
@@ -66,129 +93,160 @@ export function TimetableView({
     return data.users.filter((u) => ids.has(u.id));
   };
 
-  return (
-    <div className="h-full overflow-auto scrollbar-thin">
-      <div style={{ width: GUTTER_W + stages.length * COL_W }}>
-        {/* Kopfzeile: Bühnennamen */}
-        <div className="sticky top-0 z-30 flex steel-sheen">
-          <div
-            className="sticky left-0 z-40 shrink-0 steel-sheen"
-            style={{ width: GUTTER_W }}
-          />
-          {stages.map((stage) => (
-            <div
-              key={stage.id}
-              className="shrink-0 border-l border-rivet px-2 py-2.5 text-center"
-              style={{ width: COL_W }}
-            >
-              <div
-                className="truncate font-metal text-[11px] font-black uppercase tracking-wider"
-                style={{ color: stage.color }}
-              >
-                {stage.name}
-              </div>
-            </div>
-          ))}
-        </div>
+  const toggleZoom = () => {
+    const next: Zoom = zoom === 'compact' ? 'detail' : 'compact';
+    setZoom(next);
+    localStorage.setItem(ZOOM_KEY, next);
+  };
 
-        {/* Grid-Körper */}
-        <div className="relative flex" style={{ height: bodyH }}>
-          {/* Zeit-Spalte */}
-          <div
-            className="sticky left-0 z-20 shrink-0 bg-pit"
-            style={{ width: GUTTER_W }}
-          >
-            {hours.map((m) => (
+  return (
+    <div className="relative h-full">
+      <div ref={scrollRef} className="h-full overflow-auto scrollbar-thin">
+        <div style={{ width: GUTTER_W + stages.length * z.colW }}>
+          {/* Kopfzeile: Bühnennamen */}
+          <div className="sticky top-0 z-30 flex steel-sheen">
+            <div
+              className="sticky left-0 z-40 shrink-0 steel-sheen"
+              style={{ width: GUTTER_W }}
+            />
+            {stages.map((stage) => (
               <div
-                key={m}
-                className="absolute right-1.5 -translate-y-1/2 text-[10px] font-semibold text-ash"
-                style={{ top: (m - startMin) * PX_PER_MIN }}
+                key={stage.id}
+                className="shrink-0 border-l border-rivet px-1 py-2.5 text-center"
+                style={{ width: z.colW }}
               >
-                {String(Math.floor(m / 60) % 24).padStart(2, '0')}:00
+                <div
+                  className="truncate font-metal text-[10px] font-black uppercase tracking-wider"
+                  style={{ color: stage.color }}
+                  title={stage.name}
+                >
+                  {zoom === 'compact' ? stage.short : stage.name}
+                </div>
               </div>
             ))}
           </div>
 
-          {/* Stunden-Linien über alle Spalten */}
-          {hours.map((m) => (
+          {/* Grid-Körper */}
+          <div className="relative flex" style={{ height: bodyH }}>
+            {/* Zeit-Spalte */}
             <div
-              key={`line-${m}`}
-              className="pointer-events-none absolute right-0 border-t border-rivet/50"
-              style={{
-                top: (m - startMin) * PX_PER_MIN,
-                left: GUTTER_W,
-              }}
-            />
-          ))}
-
-          {/* Bühnen-Spalten mit Band-Slots */}
-          {stages.map((stage) => (
-            <div
-              key={stage.id}
-              className="relative shrink-0 border-l border-rivet/60"
-              style={{ width: COL_W }}
+              className="sticky left-0 z-20 shrink-0 bg-pit"
+              style={{ width: GUTTER_W }}
             >
-              {daySlots
-                .filter((s) => s.stageId === stage.id)
-                .map((slot) => {
-                  const top = (toMinutes(slot.start) - startMin) * PX_PER_MIN;
-                  const height = Math.max(
-                    34,
-                    (toMinutes(slot.end) - toMinutes(slot.start)) * PX_PER_MIN - 3
-                  );
-                  const attendees = attendeesOf(slot.id);
-                  const mine = !!user && attendees.some((a) => a.id === user.id);
-                  return (
-                    <button
-                      key={slot.id}
-                      onClick={() => onSlotTap(slot)}
-                      className={`absolute inset-x-0.5 overflow-hidden rounded-md border text-left transition active:scale-[0.98] ${
-                        mine
-                          ? 'border-blood bg-blood/15'
-                          : 'border-rivet bg-steel-2'
-                      }`}
-                      style={{
-                        top,
-                        height,
-                        borderLeftWidth: 3,
-                        borderLeftColor: stage.color,
-                      }}
-                    >
-                      <div className="flex h-full flex-col justify-between px-1.5 py-1">
-                        <div>
-                          <div className="line-clamp-2 text-[11px] font-bold leading-tight text-bone">
-                            {slot.band}
+              {hours.map((m) => (
+                <div
+                  key={m}
+                  className="absolute right-1.5 -translate-y-1/2 text-[10px] font-semibold text-ash"
+                  style={{ top: (m - startMin) * z.pxPerMin }}
+                >
+                  {String(Math.floor(m / 60) % 24).padStart(2, '0')}:00
+                </div>
+              ))}
+            </div>
+
+            {/* Stunden-Linien über alle Spalten */}
+            {hours.map((m) => (
+              <div
+                key={`line-${m}`}
+                className="pointer-events-none absolute right-0 border-t border-rivet/50"
+                style={{
+                  top: (m - startMin) * z.pxPerMin,
+                  left: GUTTER_W,
+                }}
+              />
+            ))}
+
+            {/* Bühnen-Spalten mit Band-Slots */}
+            {stages.map((stage) => (
+              <div
+                key={stage.id}
+                className="relative shrink-0 border-l border-rivet/60"
+                style={{ width: z.colW }}
+              >
+                {daySlots
+                  .filter((s) => s.stageId === stage.id)
+                  .map((slot) => {
+                    const top = (toMinutes(slot.start) - startMin) * z.pxPerMin;
+                    const height = Math.max(
+                      zoom === 'compact' ? 24 : 34,
+                      (toMinutes(slot.end) - toMinutes(slot.start)) * z.pxPerMin - 3
+                    );
+                    const attendees = attendeesOf(slot.id);
+                    const mine = !!user && attendees.some((a) => a.id === user.id);
+                    return (
+                      <button
+                        key={slot.id}
+                        onClick={() => onSlotTap(slot)}
+                        className={`absolute inset-x-0.5 overflow-hidden rounded-md border text-left transition active:scale-[0.98] ${
+                          mine
+                            ? 'border-blood bg-blood/15'
+                            : 'border-rivet bg-steel-2'
+                        }`}
+                        style={{
+                          top,
+                          height,
+                          borderLeftWidth: 3,
+                          borderLeftColor: stage.color,
+                        }}
+                      >
+                        <div className="flex h-full flex-col justify-between px-1.5 py-1">
+                          <div>
+                            <div
+                              className={`line-clamp-2 font-bold leading-tight text-bone ${
+                                zoom === 'compact' ? 'text-[9px]' : 'text-[11px]'
+                              }`}
+                            >
+                              {slot.band}
+                            </div>
+                            {z.showTimes && (
+                              <div className="text-[9px] text-ash">
+                                {formatTime(slot.start)}–{formatTime(slot.end)}
+                              </div>
+                            )}
                           </div>
-                          <div className="text-[9px] text-ash">
-                            {formatTime(slot.start)}–{formatTime(slot.end)}
-                          </div>
+                          {attendees.length > 0 && (
+                            <div className="pb-0.5">
+                              <AvatarStack
+                                users={attendees}
+                                size={z.avatar}
+                                max={z.maxAvatars}
+                              />
+                            </div>
+                          )}
                         </div>
-                        {attendees.length > 0 && (
-                          <div className="pb-0.5">
-                            <AvatarStack users={attendees} size={18} max={4} />
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-            </div>
-          ))}
+                      </button>
+                    );
+                  })}
+              </div>
+            ))}
 
-          {/* Jetzt-Linie */}
-          {nowMin !== null && (
-            <div
-              className="now-line pointer-events-none absolute right-0 z-10 border-t-2 border-blood"
-              style={{
-                top: (nowMin - startMin) * PX_PER_MIN,
-                left: GUTTER_W,
-              }}
-            >
-              <span className="absolute -top-2 left-1 h-3 w-3 rounded-full bg-blood" />
-            </div>
-          )}
+            {/* Jetzt-Linie mit Uhrzeit-Badge */}
+            {nowMin !== null && (
+              <div
+                className="now-line pointer-events-none absolute right-0 z-10 border-t-2 border-blood"
+                style={{
+                  top: (nowMin - startMin) * z.pxPerMin,
+                  left: GUTTER_W,
+                }}
+              >
+                <span className="absolute -top-2 left-1 rounded bg-blood px-1 py-px text-[9px] font-black leading-3 text-white">
+                  {String(Math.floor(nowMin / 60) % 24).padStart(2, '0')}:
+                  {String(Math.floor(nowMin % 60)).padStart(2, '0')}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Zoom-Umschalter: Übersicht <-> Detail */}
+      <button
+        onClick={toggleZoom}
+        title={zoom === 'compact' ? 'Detail-Ansicht' : 'Kompakte Übersicht'}
+        className="absolute bottom-3 right-3 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-rivet bg-steel/90 text-base shadow-lg backdrop-blur active:scale-95"
+      >
+        {zoom === 'compact' ? '🔍' : '🗓️'}
+      </button>
     </div>
   );
 }

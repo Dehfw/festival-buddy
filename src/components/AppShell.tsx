@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import type { Slot } from '@/lib/types';
 import { Avatar } from './Avatars';
@@ -12,21 +12,49 @@ import { TimetableView } from './TimetableView';
 
 type Tab = 'timetable' | 'list' | 'stages';
 
+/**
+ * Datum des aktuellen FESTIVALtags: ein Festivaltag läuft bis 08:00 früh –
+ * um 01:30 in der Nacht ist also noch der Vortag "heute" (Nacht-Sets!).
+ */
+function todayFestivalDate(): string {
+  const d = new Date(Date.now() - 8 * 3600 * 1000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export function AppShell() {
   const { data, user, online, pending, logout } = useApp();
   const [tab, setTab] = useState<Tab>('timetable');
   const [dayId, setDayId] = useState('');
   const [activeSlot, setActiveSlot] = useState<Slot | null>(null);
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
-  // Standard-Tag: während des Festivals "heute", sonst der erste Tag
+  // Beim Öffnen: aktueller Festivaltag ausgewählt (vor dem Festival: Tag 1)
   useEffect(() => {
     if (!data) return;
     const days = data.timetable.days;
     if (days.some((d) => d.id === dayId)) return;
-    const now = new Date();
-    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    setDayId(days.find((d) => d.date === iso)?.id ?? days[0]?.id ?? '');
+    const today = todayFestivalDate();
+    setDayId(days.find((d) => d.date === today)?.id ?? days[0]?.id ?? '');
   }, [data, dayId]);
+
+  // Kommt die App nach >= 1 h Pause wieder in den Vordergrund (PWA bleibt
+  // oft tagelang offen), springt sie zurück auf den aktuellen Festivaltag.
+  useEffect(() => {
+    let hiddenAt = 0;
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAt = Date.now();
+        return;
+      }
+      if (Date.now() - hiddenAt < 60 * 60 * 1000) return;
+      const days = dataRef.current?.timetable.days ?? [];
+      const today = days.find((d) => d.date === todayFestivalDate());
+      if (today) setDayId(today.id);
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
 
   if (!data || !user) return null;
 
