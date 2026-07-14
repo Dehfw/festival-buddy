@@ -139,7 +139,7 @@ function AdminInner() {
           {loginError && <p className="text-sm text-blood">{loginError}</p>}
           <button
             type="submit"
-            className="w-full rounded-xl bg-blood px-4 py-3 font-bold uppercase text-white"
+            className="w-full rounded-xl bg-blood px-4 py-3 font-bold uppercase text-black"
           >
             Entsperren
           </button>
@@ -373,7 +373,7 @@ function AdminInner() {
         <div className="mx-auto flex max-w-lg items-center gap-3">
           <button
             onClick={save}
-            className="flex-1 rounded-xl bg-blood px-4 py-3 font-metal font-black uppercase text-white active:scale-[0.98]"
+            className="flex-1 rounded-xl bg-blood px-4 py-3 font-metal uppercase text-black active:scale-[0.98]"
           >
             Speichern
           </button>

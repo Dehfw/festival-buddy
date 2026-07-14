@@ -141,10 +141,10 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
             <div className="mt-6 space-y-2.5">
               <button
                 onClick={() => toggleSelection(slot.id, !iAttend)}
-                className={`w-full rounded-xl px-4 py-3.5 font-metal text-base font-black uppercase tracking-wide transition active:scale-[0.98] ${
+                className={`w-full rounded-xl px-4 py-3.5 font-metal text-base uppercase tracking-wide transition active:scale-[0.98] ${
                   iAttend
                     ? 'border border-rivet bg-steel-2 text-ash'
-                    : 'bg-blood text-white'
+                    : 'bg-blood text-black'
                 }`}
               >
                 {iAttend ? 'Doch nicht – austragen' : 'Ich bin dabei!'}
@@ -176,7 +176,7 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
             <div className="mt-3 flex gap-2">
               <button
                 onClick={() => setMapMode(false)}
-                className="flex-1 rounded-xl bg-blood px-4 py-3 text-sm font-bold text-white active:scale-[0.98]"
+                className="flex-1 rounded-xl bg-blood px-4 py-3 text-sm font-bold text-black active:scale-[0.98]"
               >
                 Fertig
               </button>

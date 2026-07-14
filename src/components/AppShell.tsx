@@ -6,6 +6,7 @@ import { useApp } from '@/lib/client/store';
 import type { Slot } from '@/lib/types';
 import { Avatar } from './Avatars';
 import { BandSheet } from './BandSheet';
+import { DefektLogo } from './DefektLogo';
 import { ListView } from './ListView';
 import { StagesView } from './StagesView';
 import { TimetableView } from './TimetableView';
@@ -62,10 +63,11 @@ export function AppShell() {
     <div className="flex h-dvh flex-col">
       {/* Header */}
       <header className="steel-sheen flex items-center justify-between px-4 pb-2 pt-[max(0.6rem,env(safe-area-inset-top))]">
-        <div className="flex items-baseline gap-2">
-          <span className="font-metal text-lg font-black text-blood">W:O:A</span>
-          <span className="font-metal text-sm font-black uppercase text-bone">
-            Festival Buddy
+        <div className="flex items-center gap-2.5">
+          <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-blood shadow-[0_0_10px_#ff5a17]" />
+          <DefektLogo />
+          <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-ash">
+            <span className="text-blood/60">//</span> Festival Buddy
           </span>
         </div>
         <div className="flex items-center gap-2.5">

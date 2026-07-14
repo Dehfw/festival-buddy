@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useApp } from '@/lib/client/store';
+import { DefektLogo } from './DefektLogo';
 
 export function NameGate() {
   const { login, data } = useApp();
@@ -18,17 +19,22 @@ export function NameGate() {
   };
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center px-6 py-12">
+    <main className="defekt-grid flex min-h-dvh flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
-          <div className="font-metal text-5xl font-black tracking-tight text-blood">
-            W:O:A
+          <div className="mb-8 inline-flex items-center gap-2 border border-blood/20 bg-blood/5 px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-blood">
+            <span className="opacity-50">//</span> Tja… Wacken 2026
           </div>
-          <div className="font-metal mt-1 text-xl font-black uppercase text-bone">
-            Festival Buddy
+          <div>
+            <DefektLogo variant="hero" />
           </div>
-          <p className="mt-3 text-sm text-ash">
-            Wacken Open Air · 26.07.–01.08.2026
+          <div className="mt-5 flex items-center justify-center gap-3 text-[13px] font-black uppercase tracking-[0.3em] text-bone">
+            Stramm
+            <span className="inline-block h-1.5 w-8 -skew-x-12 bg-blood" />
+            Geplant
+          </div>
+          <p className="mt-4 text-sm text-ash">
+            Festival Buddy · W:O:A · 26.07.–01.08.2026
             <br />
             Wer geht zu welcher Band? 🤘
           </p>
@@ -52,7 +58,7 @@ export function NameGate() {
           <button
             type="submit"
             disabled={!valid || busy}
-            className="w-full rounded-xl bg-blood px-4 py-3.5 font-metal text-lg font-black uppercase tracking-wide text-white transition active:scale-[0.98] disabled:opacity-40"
+            className="w-full rounded-xl bg-blood px-4 py-3.5 font-metal text-lg uppercase tracking-wide text-black transition active:scale-[0.98] disabled:opacity-40"
           >
             {busy ? 'Moment …' : 'Rein ins Infield'}
           </button>
@@ -62,6 +68,10 @@ export function NameGate() {
           Kein Passwort, kein Account – einfach Name eintippen.
           Gleicher Name = gleiche Auswahl auf jedem Gerät.
           {data ? ` · ${data.users.length} von 17 sind schon drin.` : ''}
+        </p>
+
+        <p className="mt-10 text-center font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">
+          © 2026 DEFƎKT — Alle Rechte defekt.
         </p>
       </div>
     </main>

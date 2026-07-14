@@ -229,7 +229,7 @@ export function TimetableView({
                   left: GUTTER_W,
                 }}
               >
-                <span className="absolute -top-2 left-1 rounded bg-blood px-1 py-px text-[9px] font-black leading-3 text-white">
+                <span className="absolute -top-2 left-1 rounded bg-blood px-1 py-px text-[9px] font-black leading-3 text-black">
                   {String(Math.floor(nowMin / 60) % 24).padStart(2, '0')}:
                   {String(Math.floor(nowMin % 60)).padStart(2, '0')}
                 </span>
