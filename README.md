@@ -82,8 +82,15 @@ eine andere Domain um, sind bestehende Passkeys dort nicht mehr nutzbar.
 ## Admin
 
 - URL: `/admin` (auch über das ⚙️ in der unteren Navigation)
-- Passwort: `wacken2026` – ändern über die Umgebungsvariable
-  `ADMIN_PASSWORD`.
+- Passwort: über die Umgebungsvariable `ADMIN_PASSWORD` setzen – am besten
+  ein langes, zufälliges. **In der Produktion gibt es keinen Default:** ist
+  `ADMIN_PASSWORD` nicht gesetzt, ist der Admin-Bereich deaktiviert (fail
+  closed), Login und Speichern werden abgelehnt. Nur in der lokalen
+  Entwicklung greift der Fallback `wacken2026`.
+- Nach dem Login setzt der Server eine signierte, `httpOnly`-Session
+  (Cookie `fb_admin`, 12 h gültig). Das Passwort landet nie im Browser-Storage
+  und wird nicht bei jedem Request mitgeschickt. „Abmelden" beendet die
+  Session serverseitig.
 
 ## Timetable-Daten
 
@@ -162,7 +169,9 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | `POST /api/logout`                   | Session-Cookie löschen                       |
 | `POST /api/selection`                | Band-Teilnahme setzen/entfernen (Session)    |
 | `POST /api/position`                 | ✕-Position setzen/löschen (Session)          |
-| `POST /api/admin/login`              | Admin-Passwort prüfen                        |
+| `POST /api/admin/login`              | Admin-Passwort prüfen, Session-Cookie setzen |
+| `GET  /api/admin/me`                 | Admin-Session gültig? (401 = Login nötig)    |
+| `POST /api/admin/logout`             | Admin-Session-Cookie löschen                 |
 | `POST /api/admin/blueprint`          | Blueprint einer Bühne speichern (Admin)      |
 
 ### Icons neu erzeugen
