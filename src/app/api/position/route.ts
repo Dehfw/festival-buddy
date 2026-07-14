@@ -1,16 +1,25 @@
 import { NextResponse } from 'next/server';
+import { readSessionUserId } from '@/lib/auth';
 import { setPosition } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Position im Publikum markieren: { userId, slotId, x, y } (Prozent 0..100).
- * x/y = null entfernt die Markierung.
+ * Position im Publikum markieren: { slotId, x, y } (Prozent 0..100).
+ * x/y = null entfernt die Markierung. Der Nutzer kommt aus der
+ * Passkey-Session, nicht aus dem Request-Body.
  */
 export async function POST(req: Request) {
+  const userId = readSessionUserId(req);
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'Nicht eingeloggt – bitte mit Passkey anmelden' },
+      { status: 401 }
+    );
+  }
   const body = await req.json().catch(() => null);
-  const { userId, slotId, x, y } = body ?? {};
-  if (typeof userId !== 'string' || typeof slotId !== 'string') {
+  const { slotId, x, y } = body ?? {};
+  if (typeof slotId !== 'string') {
     return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 });
   }
   const remove = x === null || y === null;

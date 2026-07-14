@@ -3,11 +3,20 @@
 Timetable-Planer für eine geschlossene Crew (17 Leute) beim **W:O:A 2026**
 (29.07.–01.08.2026): Wer geht zu welcher Band – und wo steht ihr im Publikum?
 
-Kein Login-System: Name eintippen, fertig. Gleicher Name = gleicher Nutzer auf
-jedem Gerät.
+Login per **Passkey** (Face ID / Fingerabdruck): Beim ersten Mal Namen
+eintippen und Passkey anlegen, danach bietet das Gerät den Passkey beim
+Öffnen von selbst an (WebAuthn Conditional UI). Der Name ist nur der
+Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
 
 ## Features
 
+- **Passkey-Login mit Autodiscovery** – kein Passwort: einmal registrieren,
+  danach schlägt iPhone/Android den Passkey am Namensfeld automatisch vor
+  (`@simplewebauthn`, discoverable Credentials). Alt-Accounts aus der
+  Nur-Name-Ära werden bei der ersten Passkey-Registrierung mit gleichem
+  Namen übernommen (Auswahlen bleiben erhalten). Passkeys syncen über
+  iCloud-Schlüsselbund bzw. Google Passwortmanager; für ein fremdes Gerät
+  gibt es beim Login den QR-Code-Flow.
 - **Timetable-Grid** – alle 8 Bühnen nebeneinander (X-Achse), Zeit auf der
   Y-Achse, Tabs für die vier Festivaltage. In den Band-Slots zeigen bunte
   Kreise mit Initialen, wer hingeht. Band antippen → eintragen.
@@ -42,8 +51,21 @@ Backup: `pg_dump`. Wer noch Daten aus der früheren Datei-Datenbank hat:
 `DATABASE_URL=... node scripts/migrate-db-json.mjs` überträgt `data/db.json`.
 
 Fürs Handy: Seite im Browser öffnen → „Zum Startbildschirm hinzufügen“.
-Damit der Service Worker läuft, muss die App über **HTTPS** (oder localhost)
-ausgeliefert werden.
+Damit Service Worker **und Passkeys** laufen, muss die App über **HTTPS**
+(oder localhost) ausgeliefert werden.
+
+### Auth-Umgebungsvariablen (alle optional)
+
+| Variable          | Zweck                                                     |
+| ----------------- | --------------------------------------------------------- |
+| `AUTH_SECRET`     | HMAC-Schlüssel für Session-/Challenge-Cookies. Ohne die   |
+|                   | Variable wird er aus der `DATABASE_URL` abgeleitet (alle  |
+|                   | Serverless-Instanzen rechnen gleich). Setzen = empfohlen. |
+| `WEBAUTHN_RP_ID`  | Relying-Party-ID (Domain). Default: Hostname des Requests.|
+| `WEBAUTHN_ORIGIN` | Erwartete Origin (`https://…`). Default: Request-Origin.  |
+
+Achtung: Passkeys sind an die Domain (RP ID) gebunden. Zieht die App auf
+eine andere Domain um, sind bestehende Passkeys dort nicht mehr nutzbar.
 
 ### Deployment auf Vercel mit Neon
 
@@ -129,14 +151,19 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 
 ### API
 
-| Route                  | Zweck                                        |
-| ---------------------- | -------------------------------------------- |
-| `GET  /api/data`       | Kompletter Datenstand (Timetable, Nutzer, …) |
-| `POST /api/user`       | Nutzer anlegen/finden (nur Name)             |
-| `POST /api/selection`  | Band-Teilnahme setzen/entfernen              |
-| `POST /api/position`   | ✕-Position setzen/löschen                    |
-| `POST /api/admin/login`| Admin-Passwort prüfen                        |
-| `POST /api/admin/blueprint` | Blueprint einer Bühne speichern (Admin) |
+| Route                                | Zweck                                        |
+| ------------------------------------ | -------------------------------------------- |
+| `GET  /api/data`                     | Kompletter Datenstand (Timetable, Nutzer, …) |
+| `POST /api/webauthn/register/options`| Passkey-Registrierung starten (`{ name }`)   |
+| `POST /api/webauthn/register/verify` | Registrierung prüfen, Nutzer + Session       |
+| `POST /api/webauthn/login/options`   | Passkey-Login starten (discoverable)         |
+| `POST /api/webauthn/login/verify`    | Login prüfen, Session setzen                 |
+| `GET  /api/me`                       | Nutzer zur aktuellen Session (401 = raus)    |
+| `POST /api/logout`                   | Session-Cookie löschen                       |
+| `POST /api/selection`                | Band-Teilnahme setzen/entfernen (Session)    |
+| `POST /api/position`                 | ✕-Position setzen/löschen (Session)          |
+| `POST /api/admin/login`              | Admin-Passwort prüfen                        |
+| `POST /api/admin/blueprint`          | Blueprint einer Bühne speichern (Admin)      |
 
 ### Icons neu erzeugen
 

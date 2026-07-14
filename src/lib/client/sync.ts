@@ -1,7 +1,6 @@
 'use client';
 
 import type { DataPayload, User } from '../types';
-import { colorForName, userIdFromName } from '../ids';
 
 /**
  * Offline-first Sync:
@@ -17,13 +16,13 @@ const DATA_KEY = 'fb.data.v1';
 const QUEUE_KEY = 'fb.queue.v1';
 const USER_KEY = 'fb.user.v1';
 
+// userId steckt nur fürs optimistische Update drin – serverseitig zählt
+// ausschließlich die Passkey-Session (Cookie).
 export type Mutation =
-  | { op: 'user'; name: string }
   | { op: 'selection'; userId: string; slotId: string; attending: boolean }
   | { op: 'position'; userId: string; slotId: string; x: number | null; y: number | null };
 
 const ENDPOINTS: Record<Mutation['op'], string> = {
-  user: '/api/user',
   selection: '/api/selection',
   position: '/api/position',
 };
@@ -55,7 +54,9 @@ export function saveUser(user: User | null) {
 }
 
 export function loadQueue(): Mutation[] {
-  return safeParse<Mutation[]>(localStorage.getItem(QUEUE_KEY)) ?? [];
+  const queue = safeParse<Mutation[]>(localStorage.getItem(QUEUE_KEY)) ?? [];
+  // Einträge aus der Nur-Name-Ära (op: 'user') aussortieren
+  return queue.filter((m) => m.op === 'selection' || m.op === 'position');
 }
 
 export function saveQueue(queue: Mutation[]) {
@@ -71,18 +72,6 @@ export function applyMutation(data: DataPayload, m: Mutation): DataPayload {
     positions: [...data.positions],
   };
   switch (m.op) {
-    case 'user': {
-      const id = userIdFromName(m.name);
-      if (!next.users.some((u) => u.id === id)) {
-        next.users.push({
-          id,
-          name: m.name,
-          color: colorForName(m.name),
-          createdAt: new Date().toISOString(),
-        });
-      }
-      break;
-    }
     case 'selection': {
       next.selections = next.selections.filter(
         (s) => !(s.userId === m.userId && s.slotId === m.slotId)
@@ -114,12 +103,10 @@ export function applyMutation(data: DataPayload, m: Mutation): DataPayload {
 
 function payloadFor(m: Mutation): unknown {
   switch (m.op) {
-    case 'user':
-      return { name: m.name };
     case 'selection':
-      return { userId: m.userId, slotId: m.slotId, attending: m.attending };
+      return { slotId: m.slotId, attending: m.attending };
     case 'position':
-      return { userId: m.userId, slotId: m.slotId, x: m.x, y: m.y };
+      return { slotId: m.slotId, x: m.x, y: m.y };
   }
 }
 
@@ -168,13 +155,6 @@ export function flushQueue(): Promise<number> {
 async function doFlush(): Promise<number> {
   let queue = loadQueue();
   if (queue.length === 0) return 0;
-
-  // Sicherstellen, dass der Nutzer serverseitig existiert, bevor
-  // Selections/Positions gesynct werden (idempotent).
-  const user = loadUser();
-  if (user && queue.some((m) => m.op !== 'user')) {
-    await post({ op: 'user', name: user.name });
-  }
 
   let flushed = 0;
   while (true) {

@@ -9,7 +9,6 @@ import React, {
   useState,
 } from 'react';
 import type { DataPayload, User } from '../types';
-import { colorForName, userIdFromName } from '../ids';
 import {
   applyMutation,
   fetchData,
@@ -32,7 +31,8 @@ interface AppState {
   data: DataPayload | null;
   online: boolean;
   pending: number;
-  login: (name: string) => Promise<void>;
+  /** Nach erfolgreichem Passkey-Login/-Registrierung übernehmen */
+  loginAs: (user: User) => void;
   logout: () => void;
   toggleSelection: (slotId: string, attending: boolean) => void;
   setPosition: (slotId: string, x: number | null, y: number | null) => void;
@@ -80,6 +80,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setReady(true);
     void refresh();
 
+    // Session prüfen: Identität hängt am Passkey-Cookie. Sagt der Server
+    // 401 (abgelaufen oder Alt-Client aus der Nur-Name-Ära), fliegt der
+    // lokale Nutzer raus und die NameGate übernimmt. Offline bleibt der
+    // lokale Stand gültig.
+    void (async () => {
+      try {
+        const res = await fetch('/api/me', { cache: 'no-store' });
+        if (res.status === 401 || res.status === 403) {
+          saveUser(null);
+          setUser(null);
+        } else if (res.ok) {
+          const { user: serverUser } = (await res.json()) as { user: User };
+          saveUser(serverUser);
+          setUser(serverUser);
+        }
+      } catch {
+        // kein Netz – lokaler Nutzer bleibt
+      }
+    })();
+
     const interval = setInterval(() => void refresh(), POLL_MS);
     const onOnline = () => void refresh();
     const onVisible = () => {
@@ -110,30 +130,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = useCallback(
-    async (name: string) => {
-      const trimmed = name.trim();
-      // Offline-fähig: Nutzer deterministisch lokal anlegen und Sync einreihen
-      const localUser: User = {
-        id: userIdFromName(trimmed),
-        name: trimmed,
-        color: colorForName(trimmed),
-        createdAt: new Date().toISOString(),
-      };
-      saveUser(localUser);
-      setUser(localUser);
-      const m: Mutation = { op: 'user', name: trimmed };
-      applyLocal(m);
-      const sent = await sendOrEnqueue(m);
-      if (sent) void refresh();
-      syncPending();
+  const loginAs = useCallback(
+    (nextUser: User) => {
+      saveUser(nextUser);
+      setUser(nextUser);
+      void refresh();
     },
-    [applyLocal, refresh, syncPending]
+    [refresh]
   );
 
   const logout = useCallback(() => {
     saveUser(null);
     setUser(null);
+    // Session-Cookie serverseitig löschen; der Passkey bleibt auf dem Gerät
+    void fetch('/api/logout', { method: 'POST' }).catch(() => {});
   }, []);
 
   const toggleSelection = useCallback(
@@ -170,7 +180,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         data,
         online,
         pending,
-        login,
+        loginAs,
         logout,
         toggleSelection,
         setPosition,
