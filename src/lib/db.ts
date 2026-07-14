@@ -99,12 +99,15 @@ async function createSchema(): Promise<void> {
         PRIMARY KEY (user_id, slot_id)
       );
       CREATE TABLE IF NOT EXISTS positions (
-        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        slot_id TEXT NOT NULL,
-        x       REAL NOT NULL,
-        y       REAL NOT NULL,
+        user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        slot_id    TEXT NOT NULL,
+        x          REAL NOT NULL,
+        y          REAL NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         PRIMARY KEY (user_id, slot_id)
       );
+      -- Migration für Bestandsdatenbanken (idempotent)
+      ALTER TABLE positions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
       CREATE TABLE IF NOT EXISTS blueprints (
         stage_id TEXT PRIMARY KEY,
         data     JSONB NOT NULL
@@ -168,7 +171,7 @@ export async function getState(): Promise<DbState> {
   const [users, selections, positions, blueprints, rev] = await Promise.all([
     pool.query('SELECT id, name, color, created_at FROM users ORDER BY created_at'),
     pool.query('SELECT user_id, slot_id FROM selections'),
-    pool.query('SELECT user_id, slot_id, x, y FROM positions'),
+    pool.query('SELECT user_id, slot_id, x, y, updated_at FROM positions'),
     pool.query('SELECT stage_id, data FROM blueprints'),
     pool.query("SELECT last_value FROM db_rev"),
   ]);
@@ -189,6 +192,7 @@ export async function getState(): Promise<DbState> {
       slotId: r.slot_id,
       x: Number(r.x),
       y: Number(r.y),
+      updatedAt: new Date(r.updated_at).toISOString(),
     })),
     blueprints: Object.fromEntries(
       blueprints.rows.map((r) => [r.stage_id, r.data as Blueprint])
@@ -289,7 +293,8 @@ export async function setPosition(
     `INSERT INTO positions (user_id, slot_id, x, y)
      SELECT $1, $2, $3, $4
      WHERE EXISTS (SELECT 1 FROM selections WHERE user_id = $1 AND slot_id = $2)
-     ON CONFLICT (user_id, slot_id) DO UPDATE SET x = EXCLUDED.x, y = EXCLUDED.y`,
+     ON CONFLICT (user_id, slot_id)
+     DO UPDATE SET x = EXCLUDED.x, y = EXCLUDED.y, updated_at = now()`,
     [userId, slotId, x, y]
   );
   if (res.rowCount === 0) return 'not-attending';

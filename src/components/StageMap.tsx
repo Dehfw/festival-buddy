@@ -13,6 +13,10 @@ export interface MapMarker {
   x: number;
   y: number;
   mine?: boolean;
+  /** z. B. "vor 12 Min." – wann die Markierung gesetzt wurde */
+  agoLabel?: string;
+  /** Markierung ist über 1 Std. alt -> gedimmt darstellen */
+  stale?: boolean;
 }
 
 /**
@@ -150,7 +154,7 @@ export function StageMap({
       {markers.map((m) => {
         const s = m.mine ? 3.2 : 2.4;
         return (
-          <g key={m.user.id} pointerEvents="none">
+          <g key={m.user.id} pointerEvents="none" opacity={m.stale ? 0.5 : 1}>
             <line
               x1={m.x - s} y1={m.y - s} x2={m.x + s} y2={m.y + s}
               stroke="#0b0b0f" strokeWidth={m.mine ? 2.2 : 1.8} strokeLinecap="round"
@@ -174,6 +178,15 @@ export function StageMap({
             >
               {initials(m.user.name)}
             </text>
+            {m.agoLabel && (
+              <text
+                x={m.x} y={m.y + s + 2.6} textAnchor="middle"
+                fontSize="2" fill="#9a9aa8"
+                stroke="#0b0b0f" strokeWidth="0.3" paintOrder="stroke"
+              >
+                {m.agoLabel}
+              </text>
+            )}
           </g>
         );
       })}

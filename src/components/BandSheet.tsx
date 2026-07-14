@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useApp } from '@/lib/client/store';
-import { formatTime, type Slot } from '@/lib/types';
+import { formatAgo, formatTime, isStalePosition, type Slot } from '@/lib/types';
 import { Avatar } from './Avatars';
 import { StageMap, type MapMarker } from './StageMap';
 
@@ -45,7 +45,15 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
     for (const p of data.positions) {
       if (p.slotId !== slot.id) continue;
       const u = data.users.find((x) => x.id === p.userId);
-      if (u) out.push({ user: u, x: p.x, y: p.y, mine: u.id === user?.id });
+      if (u)
+        out.push({
+          user: u,
+          x: p.x,
+          y: p.y,
+          mine: u.id === user?.id,
+          agoLabel: p.updatedAt ? formatAgo(p.updatedAt) : undefined,
+          stale: isStalePosition(p.updatedAt),
+        });
     }
     return out;
   }, [data, slot.id, user?.id]);
@@ -112,7 +120,16 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
                         <Avatar user={a} size={26} />
                         <span className="font-medium">{a.name}</span>
                         {pos && (
-                          <span className="text-xs text-ash">📍 Position markiert</span>
+                          <span
+                            className={`text-xs ${
+                              isStalePosition(pos.updatedAt)
+                                ? 'text-ash/50'
+                                : 'text-ash'
+                            }`}
+                          >
+                            📍 {pos.updatedAt ? formatAgo(pos.updatedAt) : 'Position markiert'}
+                            {isStalePosition(pos.updatedAt) && ' – evtl. weitergezogen'}
+                          </span>
                         )}
                       </li>
                     );

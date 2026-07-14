@@ -52,6 +52,25 @@ export interface Position {
   /** Prozent-Koordinaten 0..100 auf dem Blueprint */
   x: number;
   y: number;
+  /** Wann die Markierung gesetzt/verschoben wurde (ISO) */
+  updatedAt?: string;
+}
+
+/** Relative Zeitangabe: "gerade eben", "vor 5 Min.", "vor 2 Std." */
+export function formatAgo(iso: string): string {
+  const min = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
+  if (min < 1) return 'gerade eben';
+  if (min < 60) return `vor ${min} Min.`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `vor ${h} Std.`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? 'vor 1 Tag' : `vor ${d} Tagen`;
+}
+
+/** Marker älter als 1 Std. gelten als "vielleicht längst weitergezogen" */
+export function isStalePosition(iso?: string): boolean {
+  if (!iso) return false;
+  return Date.now() - new Date(iso).getTime() > 60 * 60 * 1000;
 }
 
 export type PoiType = 'toilet' | 'water' | 'merch' | 'medic' | 'entrance';
