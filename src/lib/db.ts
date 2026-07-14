@@ -32,25 +32,50 @@ const globalForDb = globalThis as unknown as {
   __fbSchemaReady?: Promise<void>;
 };
 
+/**
+ * `sslmode` aus der URL nehmen und explizit in eine pg-SSL-Config übersetzen.
+ * pg v8 warnt sonst bei sslmode=require (Neon-Standard), weil sich die
+ * Semantik in pg v9 ändern wird – wir legen das Verhalten hier selbst fest:
+ * require/verify-* => TLS mit Zertifikatsprüfung, no-verify => TLS ohne
+ * Prüfung, disable => kein TLS.
+ */
+function normalizeConnection(raw: string): {
+  connectionString: string;
+  ssl: false | { rejectUnauthorized: boolean } | undefined;
+} {
+  let ssl: false | { rejectUnauthorized: boolean } | undefined;
+  let connectionString = raw;
+  try {
+    const url = new URL(raw);
+    const mode = url.searchParams.get('sslmode');
+    if (mode) {
+      url.searchParams.delete('sslmode');
+      connectionString = url.toString();
+      if (mode === 'disable') ssl = false;
+      else if (mode === 'no-verify') ssl = { rejectUnauthorized: false };
+      else ssl = { rejectUnauthorized: true };
+    }
+  } catch {
+    // URL nicht parsebar (z. B. Socket-Pfad) – unverändert durchreichen
+  }
+  // Für gehostete DBs ohne verifizierbares Zertifikat: DATABASE_SSL=no-verify
+  if (process.env.DATABASE_SSL === 'no-verify') {
+    ssl = { rejectUnauthorized: false };
+  }
+  return { connectionString, ssl };
+}
+
 function getPool(): Pool {
   if (!globalForDb.__fbPool) {
     // Vercel-Integrationen nennen die Variable je nach Version anders
-    const connectionString =
-      process.env.DATABASE_URL || process.env.POSTGRES_URL;
-    if (!connectionString) {
+    const raw = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    if (!raw) {
       throw new Error(
         'DATABASE_URL ist nicht gesetzt. Beispiel: postgres://festival:festival@localhost:5432/festival (bei Neon/Vercel: ?sslmode=require anhängen)'
       );
     }
-    globalForDb.__fbPool = new Pool({
-      connectionString,
-      max: 5,
-      // Für gehostete DBs ohne verifizierbares Zertifikat: DATABASE_SSL=no-verify
-      ssl:
-        process.env.DATABASE_SSL === 'no-verify'
-          ? { rejectUnauthorized: false }
-          : undefined,
-    });
+    const { connectionString, ssl } = normalizeConnection(raw);
+    globalForDb.__fbPool = new Pool({ connectionString, max: 5, ssl });
   }
   return globalForDb.__fbPool;
 }
