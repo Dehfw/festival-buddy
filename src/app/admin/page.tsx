@@ -11,7 +11,6 @@ import {
   type PoiType,
 } from '@/lib/types';
 
-const ADMIN_KEY_STORAGE = 'fb.adminKey.v1';
 const ELEMENT_TYPES: BlueprintElementType[] = ['stage', 'foh', 'barrier', 'tent'];
 const ELEMENT_LABELS: Record<BlueprintElementType, string> = {
   stage: 'Bühne',
@@ -22,7 +21,8 @@ const ELEMENT_LABELS: Record<BlueprintElementType, string> = {
 
 function AdminInner() {
   const { data, refresh } = useApp();
-  const [adminKey, setAdminKey] = useState<string | null>(null);
+  // null = Session wird noch geprüft, false = Login nötig, true = eingeloggt.
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [stageId, setStageId] = useState('faster');
@@ -31,8 +31,15 @@ function AdminInner() {
   const [selectedPoi, setSelectedPoi] = useState<string | null>(null);
   const [status, setStatus] = useState('');
 
+  // Auth-Status kommt vom Server (httpOnly-Cookie kann der Client nicht lesen).
   useEffect(() => {
-    setAdminKey(sessionStorage.getItem(ADMIN_KEY_STORAGE));
+    let alive = true;
+    fetch('/api/admin/me')
+      .then((res) => alive && setAuthed(res.ok))
+      .catch(() => alive && setAuthed(false));
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // Draft laden, wenn Bühne wechselt oder Daten ankommen
@@ -58,32 +65,43 @@ function AdminInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
       });
+      if (res.status === 429) {
+        setLoginError('Zu viele Versuche – bitte später erneut');
+        return;
+      }
       if (!res.ok) {
         setLoginError('Falsches Passwort');
         return;
       }
-      sessionStorage.setItem(ADMIN_KEY_STORAGE, password);
-      setAdminKey(password);
+      // Server hat das httpOnly-Session-Cookie gesetzt – kein Passwort im Browser.
+      setPassword('');
+      setAuthed(true);
     } catch {
       setLoginError('Keine Verbindung – Admin braucht Netz');
     }
   };
 
+  const logout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+    } catch {
+      // Cookie ist httpOnly; ohne Netz bleibt die Session bis zum Ablauf.
+    }
+    setAuthed(false);
+  };
+
   const save = async () => {
-    if (!draft || !adminKey) return;
+    if (!draft) return;
     setStatus('Speichere …');
     try {
       const res = await fetch('/api/admin/blueprint', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-key': adminKey,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stageId, blueprint: draft }),
       });
       if (res.status === 401) {
-        sessionStorage.removeItem(ADMIN_KEY_STORAGE);
-        setAdminKey(null);
+        setStatus('');
+        setAuthed(false);
         return;
       }
       setStatus(res.ok ? '✓ Gespeichert – für alle sichtbar' : 'Fehler beim Speichern');
@@ -121,7 +139,15 @@ function AdminInner() {
     }
   };
 
-  if (adminKey === null) {
+  if (authed === null) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center text-ash">
+        Lade …
+      </main>
+    );
+  }
+
+  if (!authed) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6">
         <h1 className="font-metal text-2xl font-black uppercase">Admin</h1>
@@ -167,9 +193,14 @@ function AdminInner() {
         <h1 className="font-metal text-xl font-black uppercase">
           Admin · Blueprints
         </h1>
-        <Link href="/" className="text-sm text-ash underline">
-          ← App
-        </Link>
+        <div className="flex items-center gap-3">
+          <button onClick={logout} className="text-sm text-ash underline">
+            Abmelden
+          </button>
+          <Link href="/" className="text-sm text-ash underline">
+            ← App
+          </Link>
+        </div>
       </div>
       <p className="mt-0.5 text-xs text-ash/70">{data.timetable.dataVersion}</p>
 
