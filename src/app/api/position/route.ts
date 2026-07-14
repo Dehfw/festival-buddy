@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { mutateDb, readDb } from '@/lib/db';
+import { setPosition } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,23 +17,13 @@ export async function POST(req: Request) {
   if (!remove && (typeof x !== 'number' || typeof y !== 'number' || x < 0 || x > 100 || y < 0 || y > 100)) {
     return NextResponse.json({ error: 'Koordinaten müssen 0–100 sein' }, { status: 400 });
   }
-  const attending = readDb().selections.some(
-    (s) => s.userId === userId && s.slotId === slotId
-  );
-  if (!remove && !attending) {
+
+  const result = await setPosition(userId, slotId, remove ? null : x, remove ? null : y);
+  if (result === 'not-attending') {
     return NextResponse.json(
       { error: 'Erst bei der Band eintragen, dann Position markieren' },
       { status: 409 }
     );
   }
-
-  const rev = await mutateDb((db) => {
-    db.positions = db.positions.filter(
-      (p) => !(p.userId === userId && p.slotId === slotId)
-    );
-    if (!remove) db.positions.push({ userId, slotId, x, y });
-    return db.rev + 1;
-  });
-
-  return NextResponse.json({ ok: true, rev });
+  return NextResponse.json({ ok: true });
 }

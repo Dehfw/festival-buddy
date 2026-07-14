@@ -28,17 +28,34 @@ jedem Gerät.
 ## Los geht's
 
 ```bash
+docker compose up -d          # lokale PostgreSQL (oder eigene DB nutzen)
+cp .env.example .env.local    # DATABASE_URL & ADMIN_PASSWORD
 npm install
 npm run dev        # Entwicklung: http://localhost:3000
 npm run build && npm start   # Produktion
 ```
 
-Beim ersten Start wird `data/db.json` automatisch angelegt (Nutzer,
-Band-Auswahlen, Positionen, Blueprints). Backup = diese eine Datei kopieren.
+Nutzer, Band-Auswahlen, Positionen und Blueprints liegen in **PostgreSQL**
+(`DATABASE_URL`). Das Schema wird beim ersten Zugriff automatisch angelegt
+und die Default-Blueprints werden geseedet – keine Migrationen nötig.
+Backup: `pg_dump`. Wer noch Daten aus der früheren Datei-Datenbank hat:
+`DATABASE_URL=... node scripts/migrate-db-json.mjs` überträgt `data/db.json`.
 
 Fürs Handy: Seite im Browser öffnen → „Zum Startbildschirm hinzufügen“.
 Damit der Service Worker läuft, muss die App über **HTTPS** (oder localhost)
 ausgeliefert werden.
+
+### Deployment auf Vercel mit Neon
+
+1. Neon-Datenbank über den Vercel-Marketplace anlegen – die Integration
+   setzt `DATABASE_URL` (bzw. `POSTGRES_URL`, beides wird erkannt)
+   automatisch als Env-Variable. Den **pooled** Connection-String verwenden
+   (Host mit `-pooler`), mit `?sslmode=require` am Ende.
+2. `ADMIN_PASSWORD` als Env-Variable setzen.
+3. Deploy – fertig. Der Timetable wird beim Build aus
+   `data/timetable.json` ins Bundle kompiliert (kein Laufzeit-Dateizugriff,
+   Serverless-tauglich); nach einem `npm run import` also einmal neu
+   deployen.
 
 ## Admin
 
@@ -100,9 +117,9 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | ---------- | ----------------------------------------------------------- |
 | Framework  | Next.js 15 (App Router) + React 19 + TypeScript             |
 | Styling    | Tailwind CSS 4, Mobile-First, dunkles Metal-Theme           |
-| Datenbank  | JSON-Datei (`data/db.json`) mit atomaren Writes und         |
-|            | serieller Write-Queue – für 17 Nutzer genau richtig,        |
-|            | null native Abhängigkeiten                                  |
+| Datenbank  | PostgreSQL via `pg` (Neon/Vercel-tauglich); Schema wird     |
+|            | automatisch angelegt, Timetable statisch ins Bundle         |
+|            | kompiliert                                                  |
 | Sync       | Client pollt `GET /api/data` alle 7 s; Mutationen werden    |
 |            | optimistisch angewendet und offline in `localStorage`       |
 |            | eingereiht (Replay bei Reconnect, last-write-wins)          |

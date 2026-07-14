@@ -1,0 +1,16 @@
+# Lokale PostgreSQL für die Festival-Buddy-App:  docker compose up -d
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: festival
+      POSTGRES_PASSWORD: festival
+      POSTGRES_DB: festival
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
