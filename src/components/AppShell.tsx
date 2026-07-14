@@ -7,6 +7,9 @@ import type { Slot } from '@/lib/types';
 import { Avatar } from './Avatars';
 import { BandSheet } from './BandSheet';
 import { DefektLogo } from './DefektLogo';
+import { GroupAvatar } from './GroupAvatar';
+import { GroupGate } from './GroupGate';
+import { GroupSheet } from './GroupSheet';
 import { InstallPrompt } from './InstallPrompt';
 import { ListView } from './ListView';
 import { StagesView } from './StagesView';
@@ -28,6 +31,8 @@ export function AppShell() {
   const [tab, setTab] = useState<Tab>('timetable');
   const [dayId, setDayId] = useState('');
   const [activeSlot, setActiveSlot] = useState<Slot | null>(null);
+  const [showGroupSheet, setShowGroupSheet] = useState(false);
+  const [showGroupGate, setShowGroupGate] = useState(false);
   const dataRef = useRef(data);
   dataRef.current = data;
 
@@ -64,12 +69,25 @@ export function AppShell() {
     <div className="flex h-dvh flex-col">
       {/* Header */}
       <header className="steel-sheen flex items-center justify-between px-4 pb-2 pt-[max(0.6rem,env(safe-area-inset-top))]">
-        <div className="flex items-center gap-2.5">
+        <div className="flex min-w-0 items-center gap-2.5">
           <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-blood shadow-[0_0_10px_#ff5a17]" />
           <DefektLogo />
-          <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-ash">
-            <span className="text-blood/60">//</span> Festival Buddy
-          </span>
+          {/* Aktive Gruppe: Tap öffnet das Gruppen-Sheet */}
+          <button
+            onClick={() => setShowGroupSheet(true)}
+            className="flex min-w-0 items-center gap-1.5 rounded-full border border-rivet bg-steel-2 py-0.5 pl-0.5 pr-2.5"
+            title={`${data.group.name} · ${data.group.festivalName}`}
+          >
+            <GroupAvatar
+              groupId={data.group.id}
+              name={data.group.name}
+              imageVersion={data.group.imageVersion}
+              size={22}
+            />
+            <span className="max-w-[8.5rem] truncate text-xs font-bold text-bone">
+              {data.group.name}
+            </span>
+          </button>
         </div>
         <div className="flex items-center gap-2.5">
           {!online && (
@@ -153,6 +171,14 @@ export function AppShell() {
       {activeSlot && (
         <BandSheet slot={activeSlot} onClose={() => setActiveSlot(null)} />
       )}
+
+      {showGroupSheet && (
+        <GroupSheet
+          onClose={() => setShowGroupSheet(false)}
+          onOpenGroupGate={() => setShowGroupGate(true)}
+        />
+      )}
+      {showGroupGate && <GroupGate onClose={() => setShowGroupGate(false)} />}
 
       <InstallPrompt />
     </div>

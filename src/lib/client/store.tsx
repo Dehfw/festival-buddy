@@ -8,15 +8,21 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import type { DataPayload, SelectionStatus, User } from '../types';
+import type { DataPayload, GroupSummary, SelectionStatus, User } from '../types';
 import {
   applyMutation,
+  cleanupLegacyCache,
+  clearCachedData,
   fetchData,
   flushQueue,
+  loadActiveGroup,
   loadCachedData,
+  loadGroups,
   loadQueue,
   loadUser,
+  saveActiveGroup,
   saveCachedData,
+  saveGroups,
   saveUser,
   sendOrEnqueue,
   type Mutation,
@@ -28,12 +34,20 @@ const POLL_MS = 7000;
 interface AppState {
   ready: boolean;
   user: User | null;
+  /** Meine Gruppen; null = noch nie geladen (Offline-Erststart) */
+  groups: GroupSummary[] | null;
+  activeGroupId: string | null;
   data: DataPayload | null;
   online: boolean;
   pending: number;
   /** Nach erfolgreichem Passkey-Login/-Registrierung übernehmen */
   loginAs: (user: User) => void;
   logout: () => void;
+  /** Nutzer + Gruppenliste vom Server neu laden (/api/me) */
+  refreshMe: () => Promise<void>;
+  /** Nach Erstellen/Beitreten: Gruppe übernehmen und aktiv schalten */
+  adoptGroup: (group: GroupSummary) => void;
+  setActiveGroup: (groupId: string) => void;
   /** null = austragen, sonst neuen Status setzen */
   setSelection: (slotId: string, status: SelectionStatus | null) => void;
   setPosition: (slotId: string, x: number | null, y: number | null) => void;
@@ -51,55 +65,107 @@ export function useApp(): AppState {
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [groups, setGroups] = useState<GroupSummary[] | null>(null);
+  const [activeGroupId, setActiveGroupIdState] = useState<string | null>(null);
   const [data, setData] = useState<DataPayload | null>(null);
   const [online, setOnline] = useState(true);
   const [pending, setPending] = useState(0);
   const dataRef = useRef<DataPayload | null>(null);
   dataRef.current = data;
+  const activeRef = useRef<string | null>(null);
+  activeRef.current = activeGroupId;
 
   const syncPending = useCallback(() => {
     setPending(loadQueue().length);
   }, []);
 
+  /**
+   * Session + Gruppenliste prüfen. Sagt der Server 401, fliegt der lokale
+   * Nutzer raus und die NameGate übernimmt. Offline bleibt der lokale
+   * Stand gültig. Validiert auch die aktive Gruppe (rausgeflogen/gelöscht
+   * -> auf die erste verbliebene Gruppe wechseln).
+   */
+  const refreshMe = useCallback(async () => {
+    try {
+      const res = await fetch('/api/me', { cache: 'no-store' });
+      if (res.status === 401 || res.status === 403) {
+        saveUser(null);
+        setUser(null);
+        saveGroups(null);
+        setGroups(null);
+        return;
+      }
+      if (res.ok) {
+        const { user: serverUser, groups: serverGroups } = (await res.json()) as {
+          user: User;
+          groups: GroupSummary[];
+        };
+        saveUser(serverUser);
+        setUser(serverUser);
+        saveGroups(serverGroups);
+        setGroups(serverGroups);
+        const active = activeRef.current;
+        if (!active || !serverGroups.some((g) => g.id === active)) {
+          const next = serverGroups[0]?.id ?? null;
+          saveActiveGroup(next);
+          activeRef.current = next;
+          setActiveGroupIdState(next);
+          if (!next) setData(null);
+        }
+      }
+    } catch {
+      // kein Netz – lokaler Nutzer/Gruppenstand bleibt
+    }
+  }, []);
+
   const refresh = useCallback(async () => {
     await flushQueue();
-    const fresh = await fetchData();
-    if (fresh) {
-      setData(fresh);
-      setOnline(true);
-    } else {
+    const groupId = activeRef.current;
+    if (!groupId) {
+      syncPending();
+      return;
+    }
+    const result = await fetchData(groupId);
+    if (result.kind === 'ok') {
+      // Zwischenzeitlicher Gruppenwechsel? Dann Ergebnis verwerfen.
+      if (activeRef.current === groupId) {
+        setData(result.data);
+        setOnline(true);
+      }
+    } else if (result.kind === 'offline') {
       setOnline(navigator.onLine ?? false);
+    } else if (result.kind === 'unauthorized') {
+      saveUser(null);
+      setUser(null);
+    } else if (result.kind === 'forbidden') {
+      // Aus der Gruppe entfernt oder Gruppe gelöscht
+      clearCachedData(groupId);
+      if (activeRef.current === groupId) setData(null);
+      await refreshMe();
     }
     syncPending();
-  }, [syncPending]);
+  }, [refreshMe, syncPending]);
 
-  // Initial: Cache sofort anzeigen, dann Netz versuchen; Poll-Loop starten.
+  // Initial: lokalen Stand sofort anzeigen, dann Netz versuchen; Poll-Loop.
   useEffect(() => {
+    cleanupLegacyCache();
     setUser(loadUser());
-    const cached = loadCachedData();
-    if (cached) setData(cached);
+    const cachedGroups = loadGroups();
+    setGroups(cachedGroups);
+    const storedActive = loadActiveGroup();
+    const active =
+      storedActive && cachedGroups?.some((g) => g.id === storedActive)
+        ? storedActive
+        : (cachedGroups?.[0]?.id ?? null);
+    activeRef.current = active;
+    setActiveGroupIdState(active);
+    if (active) {
+      const cached = loadCachedData(active);
+      if (cached) setData(cached);
+    }
     setReady(true);
     void refresh();
-
-    // Session prüfen: Identität hängt am Passkey-Cookie. Sagt der Server
-    // 401 (abgelaufen oder Alt-Client aus der Nur-Name-Ära), fliegt der
-    // lokale Nutzer raus und die NameGate übernimmt. Offline bleibt der
-    // lokale Stand gültig.
-    void (async () => {
-      try {
-        const res = await fetch('/api/me', { cache: 'no-store' });
-        if (res.status === 401 || res.status === 403) {
-          saveUser(null);
-          setUser(null);
-        } else if (res.ok) {
-          const { user: serverUser } = (await res.json()) as { user: User };
-          saveUser(serverUser);
-          setUser(serverUser);
-        }
-      } catch {
-        // kein Netz – lokaler Nutzer bleibt
-      }
-    })();
+    void refreshMe();
 
     const interval = setInterval(() => void refresh(), POLL_MS);
     const onOnline = () => void refresh();
@@ -113,7 +179,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener('online', onOnline);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [refresh]);
+  }, [refresh, refreshMe]);
 
   // Service Worker registrieren (PWA / Offline-Shell)
   useEffect(() => {
@@ -127,7 +193,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (current) {
       const next = applyMutation(current, m);
       setData(next);
-      saveCachedData(next);
+      if (activeRef.current) saveCachedData(activeRef.current, next);
     }
   }, []);
 
@@ -135,22 +201,58 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     (nextUser: User) => {
       saveUser(nextUser);
       setUser(nextUser);
-      void refresh();
+      // Gruppenliste nachladen (frisch registriert = leer -> GroupGate)
+      void refreshMe().then(() => refresh());
     },
-    [refresh]
+    [refreshMe, refresh]
   );
 
   const logout = useCallback(() => {
     saveUser(null);
     setUser(null);
+    saveGroups(null);
+    setGroups(null);
+    saveActiveGroup(null);
+    activeRef.current = null;
+    setActiveGroupIdState(null);
+    setData(null);
     // Session-Cookie serverseitig löschen; der Passkey bleibt auf dem Gerät
     void fetch('/api/logout', { method: 'POST' }).catch(() => {});
   }, []);
 
+  const setActiveGroup = useCallback(
+    (groupId: string) => {
+      saveActiveGroup(groupId);
+      activeRef.current = groupId;
+      setActiveGroupIdState(groupId);
+      setData(loadCachedData(groupId));
+      void refresh();
+    },
+    [refresh]
+  );
+
+  const adoptGroup = useCallback(
+    (group: GroupSummary) => {
+      setGroups((prev) => {
+        const next = [...(prev ?? []).filter((g) => g.id !== group.id), group];
+        saveGroups(next);
+        return next;
+      });
+      setActiveGroup(group.id);
+    },
+    [setActiveGroup]
+  );
+
   const setSelection = useCallback(
     (slotId: string, status: SelectionStatus | null) => {
-      if (!user) return;
-      const m: Mutation = { op: 'selection', userId: user.id, slotId, status };
+      if (!user || !activeRef.current) return;
+      const m: Mutation = {
+        op: 'selection',
+        group: activeRef.current,
+        userId: user.id,
+        slotId,
+        status,
+      };
       applyLocal(m);
       void sendOrEnqueue(m).then((sent) => {
         if (!sent) setOnline(navigator.onLine ?? false);
@@ -162,8 +264,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const setPosition = useCallback(
     (slotId: string, x: number | null, y: number | null) => {
-      if (!user) return;
-      const m: Mutation = { op: 'position', userId: user.id, slotId, x, y };
+      if (!user || !activeRef.current) return;
+      const m: Mutation = {
+        op: 'position',
+        group: activeRef.current,
+        userId: user.id,
+        slotId,
+        x,
+        y,
+      };
       applyLocal(m);
       void sendOrEnqueue(m).then((sent) => {
         if (!sent) setOnline(navigator.onLine ?? false);
@@ -178,11 +287,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       value={{
         ready,
         user,
+        groups,
+        activeGroupId,
         data,
         online,
         pending,
         loginAs,
         logout,
+        refreshMe,
+        adoptGroup,
+        setActiveGroup,
         setSelection,
         setPosition,
         refresh,

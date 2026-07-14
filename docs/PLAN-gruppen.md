@@ -127,9 +127,10 @@ bestehenden Advisory-Lock, alles idempotent):
 2. **Spalten-Defaults:** bestehende `selections`/`positions`/`blueprints`
    bekommen `festival_id = 'woa2026'` (siehe `ALTER TABLE` oben).
 3. **Default-Gruppe:** existiert noch keine Gruppe **und** gibt es Nutzer →
-   Gruppe „W:O:A Crew 2026“ (überschreibbar via `DEFAULT_GROUP_NAME`) auf
+   Gruppe **„DEFEKT“** (überschreibbar via `DEFAULT_GROUP_NAME`) auf
    `woa2026` anlegen, `invite_code` generieren, alle vorhandenen Nutzer
-   als Mitglieder, ältester Nutzer (`ORDER BY created_at`) wird `owner`.
+   als Mitglieder, ältester Nutzer (`ORDER BY created_at`) wird `owner` –
+   so geht beim Umstieg nichts verloren.
 
 Damit verhält sich die App nach dem Deploy für die bestehende Crew exakt
 wie vorher – niemand muss etwas tun.
@@ -334,13 +335,14 @@ ready?
 
 ## 10. Offene Entscheidungen (mit Empfehlung)
 
-| Frage | Empfehlung |
+| Frage | Entscheidung |
 | --- | --- |
 | Code sichtbar für alle Mitglieder oder nur Owner? | **Alle Mitglieder** – jeder soll Leute einladen können („Link teilen“ im Sheet); rotieren darf nur der Owner. |
-| Letzter Owner verlässt die Gruppe | Nur möglich, wenn die Gruppe leer ist (dann löschen); sonst erst Owner-Rolle übertragen. |
-| Gruppe löschen | Owner-Aktion mit Bestätigung; `ON DELETE CASCADE` räumt Mitgliedschaften ab. Selections/Positions bleiben (hängen an Nutzer+Festival, nicht an der Gruppe). |
-| Feuerrahmen (`HOT_SLOT_THRESHOLD = 5`) | Bleibt fix; bei Mini-Gruppen greift er nie – akzeptabel, später ggf. relativ zur Gruppengröße. |
+| Letzter Owner verlässt die Gruppe | **Owner-Nachrücken:** das dienstälteste verbleibende Mitglied wird automatisch Owner; das letzte Mitglied löscht die Gruppe beim Verlassen mit. Kein Blockieren, keine hängenden Gruppen. |
+| Gruppe löschen | Implizit über „letztes Mitglied verlässt“; `ON DELETE CASCADE` räumt Mitgliedschaften ab. Selections/Positions bleiben (hängen an Nutzer+Festival, nicht an der Gruppe). |
+| Feuerrahmen | **Pro Gruppe einstellbar** (`groups.hot_threshold`, Default 5, 0 = aus) – Owner stellt die Schwelle im Gruppen-Sheet per Stepper ein. |
 | `sb2026` ohne Lineup gründen lassen? | Ja – Gruppe kann warten; App zeigt „Lineup folgt“, Import füllt später. |
+| Alt-Account-Übernahme per Name | Bleibt vorerst an (Crew-Migration), ist aber ein Einfallstor in die Bestands-Gruppe, sobald Fremde die App nutzen → per `LEGACY_NAME_ADOPTION=off` abschalten, sobald alle ihren Passkey haben. |
 | Festival-Anlage im Admin-Panel? | Nicht im ersten Wurf – Festivals kommen per Seed/Import-Script; Admin-UI dafür ist ein Folge-Feature. |
 
 ---

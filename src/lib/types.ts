@@ -50,8 +50,86 @@ export interface Selection {
   status: SelectionStatus;
 }
 
-/** Ab so vielen festen Zusagen bekommt der Slot den Feuerrahmen 🔥 */
-export const HOT_SLOT_THRESHOLD = 5;
+/**
+ * Default für den Feuerrahmen 🔥: ab so vielen festen Zusagen brennt der
+ * Slot. Pro Gruppe einstellbar (`group.hotThreshold`, 0 = aus).
+ */
+export const DEFAULT_HOT_THRESHOLD = 5;
+
+/** Brennt der Slot bei dieser Gruppen-Schwelle? (0 = Feature aus) */
+export function isHotSlot(goingCount: number, threshold: number): boolean {
+  return threshold > 0 && goingCount >= threshold;
+}
+
+/* ------------------------------------------------------------------ */
+/* Gruppen & Festivals                                                 */
+/* ------------------------------------------------------------------ */
+
+export type GroupRole = 'owner' | 'member';
+
+/** Eintrag aus GET /api/festivals – Auswahl bei der Gruppengründung */
+export interface FestivalSummary {
+  id: string;
+  name: string;
+  edition: string;
+  /** false = Lineup noch nicht importiert ("Lineup folgt") */
+  hasLineup: boolean;
+}
+
+/** Meine Mitgliedschaften (GET /api/me bzw. /api/groups/mine) */
+export interface GroupSummary {
+  id: string;
+  name: string;
+  festivalId: string;
+  festivalName: string;
+  role: GroupRole;
+  memberCount: number;
+  /** 0 = kein Gruppenbild; sonst Cache-Buster für /api/groups/[id]/image */
+  imageVersion: number;
+}
+
+/** Gruppen-Block im Daten-Payload – nur für Mitglieder sichtbar */
+export interface GroupInfo {
+  id: string;
+  name: string;
+  festivalId: string;
+  festivalName: string;
+  /** Feuerrahmen-Schwelle dieser Gruppe (0 = aus) */
+  hotThreshold: number;
+  /** Mehrfach nutzbarer Einladungscode (jedes Mitglied darf einladen) */
+  inviteCode: string;
+  imageVersion: number;
+  /** Meine Rolle in der Gruppe */
+  role: GroupRole;
+  /** Rolle je Mitglied (userId -> Rolle) */
+  roles: Record<string, GroupRole>;
+}
+
+/** Öffentliche Mini-Vorschau für die Beitritts-Seite (nur per Code) */
+export interface GroupPreview {
+  name: string;
+  festivalName: string;
+  memberCount: number;
+  imageDataUrl: string | null;
+}
+
+/**
+ * Einladungscodes: 8 Zeichen Crockford-Base32 (ohne 0/O- und 1/I/L-
+ * Verwechsler). Eingaben werden tolerant normalisiert – Groß-/Klein-
+ * schreibung, Bindestriche und O→0, I/L→1 sind egal.
+ */
+export function normalizeInviteCode(raw: string): string {
+  return raw
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .replace(/O/g, '0')
+    .replace(/[IL]/g, '1');
+}
+
+/** Anzeigeformat XXXX-XXXX */
+export function formatInviteCode(code: string): string {
+  return code.length === 8 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
+}
 
 /** Teilnehmer eines Slots, getrennt nach fester Zusage und Interesse */
 export function splitAttendees(
@@ -124,21 +202,18 @@ export interface Blueprint {
   pois: Poi[];
 }
 
-export interface Db {
-  users: User[];
-  selections: Selection[];
-  positions: Position[];
-  blueprints: Record<string, Blueprint>;
-  rev: number;
-}
-
-/** Antwort von GET /api/data – alles, was der Client braucht (und offline cached) */
+/**
+ * Antwort von GET /api/data?group=… – alles, was der Client für die aktive
+ * Gruppe braucht (und offline cached). Nutzer/Auswahlen/Positionen sind auf
+ * die Gruppenmitglieder gescopet, Timetable/Blueprints auf ihr Festival.
+ */
 export interface DataPayload {
   timetable: Timetable;
   users: User[];
   selections: Selection[];
   positions: Position[];
   blueprints: Record<string, Blueprint>;
+  group: GroupInfo;
   rev: number;
   serverTime: string;
 }

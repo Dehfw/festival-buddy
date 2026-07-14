@@ -4,7 +4,7 @@ import { useEffect, useRef, type CSSProperties } from 'react';
 import { attachFire } from '@/lib/client/fireEngine';
 
 /**
- * Feuerrahmen-Overlay für "Hot Slots" (>= HOT_SLOT_THRESHOLD feste Zusagen).
+ * Feuerrahmen-Overlay für "Hot Slots" (feste Zusagen >= Gruppen-Schwelle).
  * Absolut positioniert über der Karte legen. Die Flammen kommen aus einer
  * Doom-Fire-Simulation (fireEngine.ts) auf dem Canvas, der ein paar Pixel
  * über die Karte hinausragt; darunter liegt eine glühende Kante aus CSS

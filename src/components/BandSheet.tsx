@@ -3,9 +3,10 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import {
+  DEFAULT_HOT_THRESHOLD,
   formatAgo,
   formatTime,
-  HOT_SLOT_THRESHOLD,
+  isHotSlot,
   isStalePosition,
   splitAttendees,
   type Slot,
@@ -43,7 +44,10 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
 
   const iGo = !!user && going.some((a) => a.id === user.id);
   const iAmInterested = !!user && interested.some((a) => a.id === user.id);
-  const hot = going.length >= HOT_SLOT_THRESHOLD;
+  const hot = isHotSlot(
+    going.length,
+    data?.group?.hotThreshold ?? DEFAULT_HOT_THRESHOLD
+  );
   const myPosition = data?.positions.find(
     (p) => p.slotId === slot.id && p.userId === user?.id
   );

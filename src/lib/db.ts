@@ -1,8 +1,13 @@
-import { Pool } from 'pg';
+import { randomBytes, randomUUID } from 'crypto';
+import { Pool, type PoolClient } from 'pg';
 import blueprintSeedJson from '../../data/blueprints.seed.json';
 import timetableJson from '../../data/timetable.json';
 import type {
   Blueprint,
+  FestivalSummary,
+  GroupInfo,
+  GroupRole,
+  GroupSummary,
   Position,
   Selection,
   SelectionStatus,
@@ -11,22 +16,24 @@ import type {
 } from './types';
 
 /**
- * Datenschicht: Nutzer, Band-Auswahlen, Positionen und Blueprints liegen
- * in PostgreSQL (DATABASE_URL, z. B. Neon via Vercel). Das Schema wird
- * beim ersten Zugriff automatisch angelegt und die Default-Blueprints
- * werden geseedet.
+ * Datenschicht: Festivals (inkl. Timetable), Gruppen, Nutzer, Band-
+ * Auswahlen, Positionen und Blueprints liegen in PostgreSQL
+ * (DATABASE_URL, z. B. Neon via Vercel). Das Schema wird beim ersten
+ * Zugriff automatisch angelegt bzw. migriert und die Defaults werden
+ * geseedet (Wacken-Timetable aus data/timetable.json, Blueprints,
+ * DEFEKT-Gruppe für Bestandsnutzer).
  *
- * Der Timetable selbst ist statisch (data/timetable.json, generiert aus
- * dem offiziellen W:O:A-Export) und wird ins Bundle kompiliert – kein
- * Dateisystem-Zugriff zur Laufzeit (wichtig für Vercel Serverless).
+ * Mandanten-Modell: Eine Gruppe gehört zu genau einem Festival. Nutzer
+ * können in mehreren Gruppen sein. Auswahlen/Positionen hängen am Nutzer
+ * und am Festival (Slot-IDs sind nur pro Festival eindeutig) – sichtbar
+ * sind sie für alle Gruppen dieses Festivals, in denen der Nutzer ist.
  */
 
-const timetable = timetableJson as unknown as Timetable;
+const wackenTimetable = timetableJson as unknown as Timetable;
 const blueprintSeed = blueprintSeedJson as unknown as Record<string, Blueprint>;
 
-export function getTimetable(): Timetable {
-  return timetable;
-}
+/** Festival-ID der Bestandsdaten (Nur-Wacken-Ära) */
+const LEGACY_FESTIVAL_ID = 'woa2026';
 
 /* ------------------------------------------------------------------ */
 /* Verbindung                                                          */
@@ -87,6 +94,10 @@ function getPool(): Pool {
   return globalForDb.__fbPool;
 }
 
+/* ------------------------------------------------------------------ */
+/* Schema & Migration                                                  */
+/* ------------------------------------------------------------------ */
+
 async function createSchema(): Promise<void> {
   // Advisory-Lock: parallele Cold-Starts (Serverless!) sollen das Schema
   // nicht gleichzeitig anlegen. Lock ist session-gebunden -> ein Client.
@@ -100,24 +111,59 @@ async function createSchema(): Promise<void> {
         color      TEXT NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
+      -- Festivals: Timetable (days/stages/slots) als JSONB-Block – die App
+      -- behandelt ihn als Ganzes, Import ersetzt immer den kompletten Stand.
+      CREATE TABLE IF NOT EXISTS festivals (
+        id           TEXT PRIMARY KEY,
+        name         TEXT NOT NULL,
+        edition      TEXT NOT NULL,
+        data_version TEXT NOT NULL DEFAULT '',
+        timetable    JSONB NOT NULL,
+        updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+      -- Gruppen: ein mehrfach nutzbarer Einladungscode pro Gruppe (Link
+      -- /join/<code> oder manuell eingetippt), rotierbar durch den Owner.
+      CREATE TABLE IF NOT EXISTS groups (
+        id            TEXT PRIMARY KEY,
+        festival_id   TEXT NOT NULL REFERENCES festivals(id),
+        name          TEXT NOT NULL,
+        invite_code   TEXT NOT NULL UNIQUE,
+        hot_threshold INTEGER NOT NULL DEFAULT 5,
+        image         BYTEA,
+        image_mime    TEXT,
+        image_version INTEGER NOT NULL DEFAULT 0,
+        created_by    TEXT REFERENCES users(id) ON DELETE SET NULL,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+      CREATE TABLE IF NOT EXISTS group_members (
+        group_id  TEXT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+        user_id   TEXT NOT NULL REFERENCES users(id)  ON DELETE CASCADE,
+        role      TEXT NOT NULL DEFAULT 'member',
+        joined_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (group_id, user_id)
+      );
+      CREATE INDEX IF NOT EXISTS group_members_user_idx ON group_members (user_id);
       CREATE TABLE IF NOT EXISTS selections (
-        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        slot_id TEXT NOT NULL,
-        status  TEXT NOT NULL DEFAULT 'going',
-        PRIMARY KEY (user_id, slot_id)
+        user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}',
+        slot_id     TEXT NOT NULL,
+        status      TEXT NOT NULL DEFAULT 'going',
+        PRIMARY KEY (user_id, festival_id, slot_id)
       );
-      -- Migration für Bestandsdatenbanken: "interessiert" als weicherer Status
+      -- Migrationen für Bestandsdatenbanken (idempotent)
       ALTER TABLE selections ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'going';
+      ALTER TABLE selections ADD COLUMN IF NOT EXISTS festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}';
       CREATE TABLE IF NOT EXISTS positions (
-        user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        slot_id    TEXT NOT NULL,
-        x          REAL NOT NULL,
-        y          REAL NOT NULL,
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-        PRIMARY KEY (user_id, slot_id)
+        user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}',
+        slot_id     TEXT NOT NULL,
+        x           REAL NOT NULL,
+        y           REAL NOT NULL,
+        updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (user_id, festival_id, slot_id)
       );
-      -- Migration für Bestandsdatenbanken (idempotent)
       ALTER TABLE positions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+      ALTER TABLE positions ADD COLUMN IF NOT EXISTS festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}';
       -- Passkeys: ein Nutzer wird über seine WebAuthn-Credentials
       -- identifiziert, der Name ist nur noch Anzeigename.
       CREATE TABLE IF NOT EXISTS webauthn_credentials (
@@ -130,22 +176,133 @@ async function createSchema(): Promise<void> {
       );
       CREATE INDEX IF NOT EXISTS webauthn_credentials_user_idx ON webauthn_credentials (user_id);
       CREATE TABLE IF NOT EXISTS blueprints (
-        stage_id TEXT PRIMARY KEY,
-        data     JSONB NOT NULL
+        festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}',
+        stage_id    TEXT NOT NULL,
+        data        JSONB NOT NULL,
+        PRIMARY KEY (festival_id, stage_id)
       );
+      ALTER TABLE blueprints ADD COLUMN IF NOT EXISTS festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}';
       CREATE SEQUENCE IF NOT EXISTS db_rev START 1;
+
+      -- Primärschlüssel der Bestandstabellen um festival_id erweitern
+      -- (Slot-IDs "tag-buehne-band" sind nur pro Festival eindeutig).
+      DO $mig$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM pg_constraint
+           WHERE conname = 'selections_pkey'
+             AND pg_get_constraintdef(oid) NOT LIKE '%festival_id%'
+        ) THEN
+          ALTER TABLE selections DROP CONSTRAINT selections_pkey;
+          ALTER TABLE selections ADD CONSTRAINT selections_pkey
+            PRIMARY KEY (user_id, festival_id, slot_id);
+        END IF;
+        IF EXISTS (
+          SELECT 1 FROM pg_constraint
+           WHERE conname = 'positions_pkey'
+             AND pg_get_constraintdef(oid) NOT LIKE '%festival_id%'
+        ) THEN
+          ALTER TABLE positions DROP CONSTRAINT positions_pkey;
+          ALTER TABLE positions ADD CONSTRAINT positions_pkey
+            PRIMARY KEY (user_id, festival_id, slot_id);
+        END IF;
+        IF EXISTS (
+          SELECT 1 FROM pg_constraint
+           WHERE conname = 'blueprints_pkey'
+             AND pg_get_constraintdef(oid) NOT LIKE '%festival_id%'
+        ) THEN
+          ALTER TABLE blueprints DROP CONSTRAINT blueprints_pkey;
+          ALTER TABLE blueprints ADD CONSTRAINT blueprints_pkey
+            PRIMARY KEY (festival_id, stage_id);
+        END IF;
+      END
+      $mig$;
     `);
 
-    // Default-Blueprints für Bühnen seeden, die noch keinen haben
+    // Festivals seeden: Wacken aus dem gebundelten Timetable-JSON, Summer
+    // Breeze als Gerüst (Lineup kommt später per scripts/import-festival.mjs).
+    // Nur einfügen, wenn die Zeile fehlt – danach ist die DB die Wahrheit.
+    await client.query(
+      `INSERT INTO festivals (id, name, edition, data_version, timetable)
+       VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`,
+      [
+        LEGACY_FESTIVAL_ID,
+        wackenTimetable.festival,
+        wackenTimetable.edition,
+        wackenTimetable.dataVersion,
+        JSON.stringify({
+          days: wackenTimetable.days,
+          stages: wackenTimetable.stages,
+          slots: wackenTimetable.slots,
+        }),
+      ]
+    );
+    await client.query(
+      `INSERT INTO festivals (id, name, edition, data_version, timetable)
+       VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`,
+      [
+        'sb2026',
+        'Summer Breeze Open Air 2026',
+        '12.–15.08.2026 · Dinkelsbühl',
+        '',
+        JSON.stringify({
+          days: [
+            { id: 'wed', label: 'Mi', longLabel: 'Mittwoch', date: '2026-08-12' },
+            { id: 'thu', label: 'Do', longLabel: 'Donnerstag', date: '2026-08-13' },
+            { id: 'fri', label: 'Fr', longLabel: 'Freitag', date: '2026-08-14' },
+            { id: 'sat', label: 'Sa', longLabel: 'Samstag', date: '2026-08-15' },
+          ],
+          stages: [],
+          slots: [],
+        }),
+      ]
+    );
+
+    // Default-Blueprints für Wacken-Bühnen seeden, die noch keinen haben
     for (const [stageId, bp] of Object.entries(blueprintSeed)) {
       await client.query(
-        'INSERT INTO blueprints (stage_id, data) VALUES ($1, $2) ON CONFLICT (stage_id) DO NOTHING',
-        [stageId, JSON.stringify(bp)]
+        `INSERT INTO blueprints (festival_id, stage_id, data) VALUES ($1, $2, $3)
+         ON CONFLICT (festival_id, stage_id) DO NOTHING`,
+        [LEGACY_FESTIVAL_ID, stageId, JSON.stringify(bp)]
       );
     }
+
+    // Bestands-Crew in die Default-Gruppe "DEFEKT" übernehmen, damit beim
+    // Umstieg auf Mandantenfähigkeit nichts verloren geht. Läuft nur, wenn
+    // es noch gar keine Gruppe gibt; ältestes Mitglied wird Owner.
+    await migrateLegacyUsersIntoDefaultGroup(client);
   } finally {
     await client.query('SELECT pg_advisory_unlock(724226)').catch(() => {});
     client.release();
+  }
+}
+
+async function migrateLegacyUsersIntoDefaultGroup(client: PoolClient): Promise<void> {
+  const existing = await client.query('SELECT 1 FROM groups LIMIT 1');
+  if ((existing.rowCount ?? 0) > 0) return;
+  const users = await client.query<{ id: string }>(
+    'SELECT id FROM users ORDER BY created_at'
+  );
+  if (users.rows.length === 0) return;
+
+  const groupId = `g-${randomUUID()}`;
+  await client.query(
+    `INSERT INTO groups (id, festival_id, name, invite_code, created_by)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [
+      groupId,
+      LEGACY_FESTIVAL_ID,
+      process.env.DEFAULT_GROUP_NAME || 'DEFEKT',
+      generateInviteCode(),
+      users.rows[0].id,
+    ]
+  );
+  for (const [i, u] of users.rows.entries()) {
+    await client.query(
+      `INSERT INTO group_members (group_id, user_id, role) VALUES ($1, $2, $3)
+       ON CONFLICT DO NOTHING`,
+      [groupId, u.id, i === 0 ? 'owner' : 'member']
+    );
   }
 }
 
@@ -175,7 +332,369 @@ async function bumpRev(): Promise<number> {
 }
 
 /* ------------------------------------------------------------------ */
-/* Lesen                                                               */
+/* Festivals                                                           */
+/* ------------------------------------------------------------------ */
+
+interface FestivalRow {
+  id: string;
+  name: string;
+  edition: string;
+  data_version: string;
+  timetable: { days: Timetable['days']; stages: Timetable['stages']; slots: Timetable['slots'] };
+  updated_at: Date;
+}
+
+// Timetables kurz im Prozess cachen: /api/data wird alle 7 s pro Client
+// gepollt, das JSONB muss nicht jedes Mal von der DB kommen.
+const timetableCache = new Map<string, { at: number; value: Timetable }>();
+const TIMETABLE_CACHE_MS = 15_000;
+
+export async function getTimetable(festivalId: string): Promise<Timetable | null> {
+  const hit = timetableCache.get(festivalId);
+  if (hit && Date.now() - hit.at < TIMETABLE_CACHE_MS) return hit.value;
+  const res = await query<FestivalRow>(
+    'SELECT id, name, edition, data_version, timetable, updated_at FROM festivals WHERE id = $1',
+    [festivalId]
+  );
+  const row = res.rows[0];
+  if (!row) return null;
+  const timetable: Timetable = {
+    festival: row.name,
+    edition: row.edition,
+    dataVersion: row.data_version,
+    days: row.timetable.days ?? [],
+    stages: row.timetable.stages ?? [],
+    slots: row.timetable.slots ?? [],
+  };
+  timetableCache.set(festivalId, { at: Date.now(), value: timetable });
+  return timetable;
+}
+
+export async function getFestivals(): Promise<FestivalSummary[]> {
+  const res = await query<{ id: string; name: string; edition: string; has_lineup: boolean }>(
+    `SELECT id, name, edition,
+            jsonb_array_length(timetable->'slots') > 0 AS has_lineup
+       FROM festivals ORDER BY id`
+  );
+  return res.rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    edition: r.edition,
+    hasLineup: r.has_lineup,
+  }));
+}
+
+export async function festivalExists(festivalId: string): Promise<boolean> {
+  const res = await query('SELECT 1 FROM festivals WHERE id = $1', [festivalId]);
+  return (res.rowCount ?? 0) > 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Gruppen                                                             */
+/* ------------------------------------------------------------------ */
+
+/** Crockford-Base32 ohne Verwechsler (kein I, L, O, U) */
+const INVITE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+
+function generateInviteCode(): string {
+  const bytes = randomBytes(8);
+  let code = '';
+  for (let i = 0; i < 8; i++) code += INVITE_ALPHABET[bytes[i] % 32];
+  return code;
+}
+
+interface GroupSummaryRow {
+  id: string;
+  name: string;
+  festival_id: string;
+  festival_name: string;
+  role: string;
+  member_count: string;
+  image_version: number;
+}
+
+function toGroupSummary(r: GroupSummaryRow): GroupSummary {
+  return {
+    id: r.id,
+    name: r.name,
+    festivalId: r.festival_id,
+    festivalName: r.festival_name,
+    role: r.role === 'owner' ? 'owner' : 'member',
+    memberCount: Number(r.member_count),
+    imageVersion: r.image_version,
+  };
+}
+
+const GROUP_SUMMARY_SELECT = `
+  SELECT g.id, g.name, g.festival_id, f.name AS festival_name, g.image_version,
+         m.role,
+         (SELECT count(*) FROM group_members mm WHERE mm.group_id = g.id) AS member_count
+    FROM group_members m
+    JOIN groups g ON g.id = m.group_id
+    JOIN festivals f ON f.id = g.festival_id`;
+
+export async function getGroupsForUser(userId: string): Promise<GroupSummary[]> {
+  const res = await query<GroupSummaryRow>(
+    `${GROUP_SUMMARY_SELECT} WHERE m.user_id = $1 ORDER BY m.joined_at`,
+    [userId]
+  );
+  return res.rows.map(toGroupSummary);
+}
+
+/** Fallback für Alt-Clients ohne ?group=: erste (älteste) Mitgliedschaft */
+export async function getFirstGroupIdForUser(userId: string): Promise<string | null> {
+  const res = await query<{ group_id: string }>(
+    'SELECT group_id FROM group_members WHERE user_id = $1 ORDER BY joined_at LIMIT 1',
+    [userId]
+  );
+  return res.rows[0]?.group_id ?? null;
+}
+
+/**
+ * Mitgliedschaft + Festival der Gruppe in einem Rutsch – der übliche
+ * Kontext für Mutationen (selection/position). null = kein Mitglied.
+ */
+export async function getGroupContextForUser(
+  groupId: string,
+  userId: string
+): Promise<{ festivalId: string; role: GroupRole } | null> {
+  const res = await query<{ festival_id: string; role: string }>(
+    `SELECT g.festival_id, m.role
+       FROM groups g JOIN group_members m ON m.group_id = g.id
+      WHERE g.id = $1 AND m.user_id = $2`,
+    [groupId, userId]
+  );
+  const r = res.rows[0];
+  if (!r) return null;
+  return { festivalId: r.festival_id, role: r.role === 'owner' ? 'owner' : 'member' };
+}
+
+export async function getMemberRole(
+  groupId: string,
+  userId: string
+): Promise<GroupRole | null> {
+  const res = await query<{ role: string }>(
+    'SELECT role FROM group_members WHERE group_id = $1 AND user_id = $2',
+    [groupId, userId]
+  );
+  const role = res.rows[0]?.role;
+  return role === 'owner' ? 'owner' : role === 'member' ? 'member' : null;
+}
+
+export async function createGroup(
+  userId: string,
+  name: string,
+  festivalId: string
+): Promise<GroupSummary | null> {
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const groupId = `g-${randomUUID()}`;
+    // Code-Kollision ist bei 32^8 praktisch ausgeschlossen, aber UNIQUE
+    // kann theoretisch zuschlagen – dann einfach neu würfeln.
+    let inserted = false;
+    for (let attempt = 0; attempt < 3 && !inserted; attempt++) {
+      try {
+        await client.query('SAVEPOINT ins_group');
+        await client.query(
+          `INSERT INTO groups (id, festival_id, name, invite_code, created_by)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [groupId, festivalId, name, generateInviteCode(), userId]
+        );
+        inserted = true;
+      } catch (err) {
+        await client.query('ROLLBACK TO SAVEPOINT ins_group');
+        if ((err as { code?: string }).code !== '23505') throw err;
+      }
+    }
+    if (!inserted) {
+      await client.query('ROLLBACK');
+      return null;
+    }
+    await client.query(
+      `INSERT INTO group_members (group_id, user_id, role) VALUES ($1, $2, 'owner')`,
+      [groupId, userId]
+    );
+    const res = await client.query<GroupSummaryRow>(
+      `${GROUP_SUMMARY_SELECT} WHERE m.group_id = $1 AND m.user_id = $2`,
+      [groupId, userId]
+    );
+    await client.query('COMMIT');
+    await bumpRev();
+    return res.rows[0] ? toGroupSummary(res.rows[0]) : null;
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/** Beitritt per Einladungscode (normalisiert). null = Code ungültig. */
+export async function joinGroupByCode(
+  userId: string,
+  code: string
+): Promise<GroupSummary | null> {
+  const group = await query<{ id: string }>(
+    'SELECT id FROM groups WHERE invite_code = $1',
+    [code]
+  );
+  const groupId = group.rows[0]?.id;
+  if (!groupId) return null;
+  await query(
+    `INSERT INTO group_members (group_id, user_id) VALUES ($1, $2)
+     ON CONFLICT DO NOTHING`,
+    [groupId, userId]
+  );
+  await bumpRev();
+  const res = await query<GroupSummaryRow>(
+    `${GROUP_SUMMARY_SELECT} WHERE m.group_id = $1 AND m.user_id = $2`,
+    [groupId, userId]
+  );
+  return res.rows[0] ? toGroupSummary(res.rows[0]) : null;
+}
+
+export interface GroupPreviewData {
+  name: string;
+  festivalName: string;
+  memberCount: number;
+  image: Buffer | null;
+  imageMime: string | null;
+}
+
+/** Mini-Vorschau für die Beitritts-Seite – nur per Code, nie per ID. */
+export async function getGroupPreviewByCode(
+  code: string
+): Promise<GroupPreviewData | null> {
+  const res = await query<{
+    name: string;
+    festival_name: string;
+    member_count: string;
+    image: Buffer | null;
+    image_mime: string | null;
+  }>(
+    `SELECT g.name, f.name AS festival_name, g.image, g.image_mime,
+            (SELECT count(*) FROM group_members m WHERE m.group_id = g.id) AS member_count
+       FROM groups g JOIN festivals f ON f.id = g.festival_id
+      WHERE g.invite_code = $1`,
+    [code]
+  );
+  const r = res.rows[0];
+  if (!r) return null;
+  return {
+    name: r.name,
+    festivalName: r.festival_name,
+    memberCount: Number(r.member_count),
+    image: r.image,
+    imageMime: r.image_mime,
+  };
+}
+
+export interface GroupPatch {
+  name?: string;
+  hotThreshold?: number;
+  rotateCode?: boolean;
+}
+
+/** Gruppe ändern (Owner-Check macht die Route). */
+export async function updateGroup(groupId: string, patch: GroupPatch): Promise<boolean> {
+  const sets: string[] = [];
+  const params: unknown[] = [groupId];
+  if (patch.name !== undefined) {
+    params.push(patch.name);
+    sets.push(`name = $${params.length}`);
+  }
+  if (patch.hotThreshold !== undefined) {
+    params.push(patch.hotThreshold);
+    sets.push(`hot_threshold = $${params.length}`);
+  }
+  if (patch.rotateCode) {
+    params.push(generateInviteCode());
+    sets.push(`invite_code = $${params.length}`);
+  }
+  if (sets.length === 0) return true;
+  const res = await query(
+    `UPDATE groups SET ${sets.join(', ')} WHERE id = $1`,
+    params
+  );
+  await bumpRev();
+  return (res.rowCount ?? 0) > 0;
+}
+
+/**
+ * Gruppe verlassen. Verlässt der letzte Owner die Gruppe, rückt das
+ * dienstälteste verbleibende Mitglied nach; das letzte Mitglied nimmt
+ * die Gruppe mit (löschen).
+ */
+export async function leaveGroup(groupId: string, userId: string): Promise<void> {
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      'DELETE FROM group_members WHERE group_id = $1 AND user_id = $2',
+      [groupId, userId]
+    );
+    const remaining = await client.query<{ user_id: string; role: string }>(
+      'SELECT user_id, role FROM group_members WHERE group_id = $1 ORDER BY joined_at',
+      [groupId]
+    );
+    if (remaining.rows.length === 0) {
+      await client.query('DELETE FROM groups WHERE id = $1', [groupId]);
+    } else if (!remaining.rows.some((r) => r.role === 'owner')) {
+      await client.query(
+        `UPDATE group_members SET role = 'owner' WHERE group_id = $1 AND user_id = $2`,
+        [groupId, remaining.rows[0].user_id]
+      );
+    }
+    await client.query('COMMIT');
+    await bumpRev();
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/** Mitglied entfernen (Owner-Check macht die Route). */
+export async function removeMember(groupId: string, targetUserId: string): Promise<boolean> {
+  const res = await query(
+    'DELETE FROM group_members WHERE group_id = $1 AND user_id = $2',
+    [groupId, targetUserId]
+  );
+  await bumpRev();
+  return (res.rowCount ?? 0) > 0;
+}
+
+export async function setGroupImage(
+  groupId: string,
+  image: Buffer,
+  mime: string
+): Promise<void> {
+  await query(
+    `UPDATE groups SET image = $2, image_mime = $3, image_version = image_version + 1
+      WHERE id = $1`,
+    [groupId, image, mime]
+  );
+  await bumpRev();
+}
+
+export async function getGroupImage(
+  groupId: string
+): Promise<{ image: Buffer; mime: string; version: number } | null> {
+  const res = await query<{ image: Buffer | null; image_mime: string | null; image_version: number }>(
+    'SELECT image, image_mime, image_version FROM groups WHERE id = $1',
+    [groupId]
+  );
+  const r = res.rows[0];
+  if (!r || !r.image) return null;
+  return { image: r.image, mime: r.image_mime || 'image/jpeg', version: r.image_version };
+}
+
+/* ------------------------------------------------------------------ */
+/* Gruppengescopeter Datenstand (GET /api/data)                        */
 /* ------------------------------------------------------------------ */
 
 export interface DbState {
@@ -183,22 +702,74 @@ export interface DbState {
   selections: Selection[];
   positions: Position[];
   blueprints: Record<string, Blueprint>;
+  group: GroupInfo;
+  festivalId: string;
   rev: number;
 }
 
-export async function getState(): Promise<DbState> {
+/**
+ * Kompletter Datenstand für EINE Gruppe: Mitglieder, deren Auswahlen und
+ * Positionen (nur fürs Festival der Gruppe) plus die Blueprints des
+ * Festivals. null = Nutzer ist kein Mitglied (Route antwortet 403).
+ */
+export async function getState(groupId: string, userId: string): Promise<DbState | null> {
   await ensureSchema();
   const pool = getPool();
-  const [users, selections, positions, blueprints, rev] = await Promise.all([
-    pool.query('SELECT id, name, color, created_at FROM users ORDER BY created_at'),
-    pool.query('SELECT user_id, slot_id, status FROM selections'),
-    pool.query('SELECT user_id, slot_id, x, y, updated_at FROM positions'),
-    pool.query('SELECT stage_id, data FROM blueprints'),
-    pool.query("SELECT last_value FROM db_rev"),
+
+  const groupRes = await pool.query<{
+    id: string;
+    name: string;
+    festival_id: string;
+    festival_name: string;
+    invite_code: string;
+    hot_threshold: number;
+    image_version: number;
+    role: string;
+  }>(
+    `SELECT g.id, g.name, g.festival_id, f.name AS festival_name, g.invite_code,
+            g.hot_threshold, g.image_version, m.role
+       FROM groups g
+       JOIN festivals f ON f.id = g.festival_id
+       JOIN group_members m ON m.group_id = g.id AND m.user_id = $2
+      WHERE g.id = $1`,
+    [groupId, userId]
+  );
+  const g = groupRes.rows[0];
+  if (!g) return null;
+
+  const [members, selections, positions, blueprints, rev] = await Promise.all([
+    pool.query<{ id: string; name: string; color: string; created_at: Date; role: string }>(
+      `SELECT u.id, u.name, u.color, u.created_at, m.role
+         FROM group_members m JOIN users u ON u.id = m.user_id
+        WHERE m.group_id = $1 ORDER BY m.joined_at`,
+      [groupId]
+    ),
+    pool.query<{ user_id: string; slot_id: string; status: string }>(
+      `SELECT s.user_id, s.slot_id, s.status
+         FROM selections s
+         JOIN group_members m ON m.user_id = s.user_id AND m.group_id = $1
+        WHERE s.festival_id = $2`,
+      [groupId, g.festival_id]
+    ),
+    pool.query<{ user_id: string; slot_id: string; x: number; y: number; updated_at: Date }>(
+      `SELECT p.user_id, p.slot_id, p.x, p.y, p.updated_at
+         FROM positions p
+         JOIN group_members m ON m.user_id = p.user_id AND m.group_id = $1
+        WHERE p.festival_id = $2`,
+      [groupId, g.festival_id]
+    ),
+    pool.query<{ stage_id: string; data: Blueprint }>(
+      'SELECT stage_id, data FROM blueprints WHERE festival_id = $1',
+      [g.festival_id]
+    ),
+    pool.query<{ last_value: string }>('SELECT last_value FROM db_rev'),
   ]);
 
+  const roles: Record<string, GroupRole> = {};
+  for (const m of members.rows) roles[m.id] = m.role === 'owner' ? 'owner' : 'member';
+
   return {
-    users: users.rows.map((r) => ({
+    users: members.rows.map((r) => ({
       id: r.id,
       name: r.name,
       color: r.color,
@@ -216,15 +787,25 @@ export async function getState(): Promise<DbState> {
       y: Number(r.y),
       updatedAt: new Date(r.updated_at).toISOString(),
     })),
-    blueprints: Object.fromEntries(
-      blueprints.rows.map((r) => [r.stage_id, r.data as Blueprint])
-    ),
+    blueprints: Object.fromEntries(blueprints.rows.map((r) => [r.stage_id, r.data])),
+    group: {
+      id: g.id,
+      name: g.name,
+      festivalId: g.festival_id,
+      festivalName: g.festival_name,
+      hotThreshold: g.hot_threshold,
+      inviteCode: g.invite_code,
+      imageVersion: g.image_version,
+      role: g.role === 'owner' ? 'owner' : 'member',
+      roles,
+    },
+    festivalId: g.festival_id,
     rev: Number(rev.rows[0].last_value),
   };
 }
 
 /* ------------------------------------------------------------------ */
-/* Schreiben                                                           */
+/* Nutzer & Passkeys                                                   */
 /* ------------------------------------------------------------------ */
 
 interface UserRow {
@@ -263,7 +844,7 @@ export async function getUserById(id: string): Promise<User | null> {
  * Bestandsnutzer ohne Passkey mit diesem Namen (case-insensitiv) – darf
  * bei der Registrierung übernommen werden, damit Alt-Accounts aus der
  * Nur-Name-Ära ihre Auswahlen behalten. Sobald ein Passkey dran hängt,
- * ist der Name belegt.
+ * ist der Account nicht mehr übernehmbar.
  */
 export async function findAdoptableUser(name: string): Promise<User | null> {
   const res = await query<UserRow>(
@@ -274,18 +855,6 @@ export async function findAdoptableUser(name: string): Promise<User | null> {
     [name]
   );
   return res.rows[0] ? toUser(res.rows[0]) : null;
-}
-
-/** Ist der Name schon von einem Nutzer mit Passkey belegt? */
-export async function isNameTaken(name: string): Promise<boolean> {
-  const res = await query(
-    `SELECT 1 FROM users u
-      WHERE lower(u.name) = lower($1)
-        AND EXISTS (SELECT 1 FROM webauthn_credentials c WHERE c.user_id = u.id)
-      LIMIT 1`,
-    [name]
-  );
-  return (res.rowCount ?? 0) > 0;
 }
 
 /**
@@ -391,12 +960,17 @@ export async function updateCredentialCounter(
   ]);
 }
 
+/* ------------------------------------------------------------------ */
+/* Auswahlen & Positionen                                              */
+/* ------------------------------------------------------------------ */
+
 /**
  * Band-Teilnahme setzen ('going'/'interested') oder entfernen (null).
  * Rückgabe false, wenn der Nutzer nicht existiert (FK-Verletzung).
  */
 export async function setSelection(
   userId: string,
+  festivalId: string,
   slotId: string,
   status: SelectionStatus | null
 ): Promise<boolean> {
@@ -406,19 +980,19 @@ export async function setSelection(
     await client.query('BEGIN');
     if (status) {
       await client.query(
-        `INSERT INTO selections (user_id, slot_id, status) VALUES ($1, $2, $3)
-         ON CONFLICT (user_id, slot_id) DO UPDATE SET status = EXCLUDED.status`,
-        [userId, slotId, status]
+        `INSERT INTO selections (user_id, festival_id, slot_id, status) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (user_id, festival_id, slot_id) DO UPDATE SET status = EXCLUDED.status`,
+        [userId, festivalId, slotId, status]
       );
     } else {
       await client.query(
-        'DELETE FROM selections WHERE user_id = $1 AND slot_id = $2',
-        [userId, slotId]
+        'DELETE FROM selections WHERE user_id = $1 AND festival_id = $2 AND slot_id = $3',
+        [userId, festivalId, slotId]
       );
       // Wer sich austrägt, verliert auch seine Positionsmarkierung
       await client.query(
-        'DELETE FROM positions WHERE user_id = $1 AND slot_id = $2',
-        [userId, slotId]
+        'DELETE FROM positions WHERE user_id = $1 AND festival_id = $2 AND slot_id = $3',
+        [userId, festivalId, slotId]
       );
     }
     await client.query('COMMIT');
@@ -438,40 +1012,72 @@ export type PositionResult = 'ok' | 'not-attending';
 /** Position setzen (nur wenn bei der Band eingetragen) oder entfernen. */
 export async function setPosition(
   userId: string,
+  festivalId: string,
   slotId: string,
   x: number | null,
   y: number | null
 ): Promise<PositionResult> {
   if (x === null || y === null) {
-    await query('DELETE FROM positions WHERE user_id = $1 AND slot_id = $2', [
-      userId,
-      slotId,
-    ]);
+    await query(
+      'DELETE FROM positions WHERE user_id = $1 AND festival_id = $2 AND slot_id = $3',
+      [userId, festivalId, slotId]
+    );
     await bumpRev();
     return 'ok';
   }
   const res = await query(
-    `INSERT INTO positions (user_id, slot_id, x, y)
-     SELECT $1, $2, $3, $4
-     WHERE EXISTS (SELECT 1 FROM selections WHERE user_id = $1 AND slot_id = $2)
-     ON CONFLICT (user_id, slot_id)
+    `INSERT INTO positions (user_id, festival_id, slot_id, x, y)
+     SELECT $1, $2, $3, $4, $5
+     WHERE EXISTS (
+       SELECT 1 FROM selections
+        WHERE user_id = $1 AND festival_id = $2 AND slot_id = $3
+     )
+     ON CONFLICT (user_id, festival_id, slot_id)
      DO UPDATE SET x = EXCLUDED.x, y = EXCLUDED.y, updated_at = now()`,
-    [userId, slotId, x, y]
+    [userId, festivalId, slotId, x, y]
   );
   if (res.rowCount === 0) return 'not-attending';
   await bumpRev();
   return 'ok';
 }
 
+/* ------------------------------------------------------------------ */
+/* Blueprints (Admin)                                                  */
+/* ------------------------------------------------------------------ */
+
 /** Blueprint einer Bühne komplett ersetzen (Admin). */
 export async function saveBlueprint(
+  festivalId: string,
   stageId: string,
   blueprint: Blueprint
 ): Promise<number> {
   await query(
-    `INSERT INTO blueprints (stage_id, data) VALUES ($1, $2)
-     ON CONFLICT (stage_id) DO UPDATE SET data = EXCLUDED.data`,
-    [stageId, JSON.stringify(blueprint)]
+    `INSERT INTO blueprints (festival_id, stage_id, data) VALUES ($1, $2, $3)
+     ON CONFLICT (festival_id, stage_id) DO UPDATE SET data = EXCLUDED.data`,
+    [festivalId, stageId, JSON.stringify(blueprint)]
   );
   return bumpRev();
+}
+
+export async function getBlueprints(festivalId: string): Promise<Record<string, Blueprint>> {
+  const res = await query<{ stage_id: string; data: Blueprint }>(
+    'SELECT stage_id, data FROM blueprints WHERE festival_id = $1',
+    [festivalId]
+  );
+  return Object.fromEntries(res.rows.map((r) => [r.stage_id, r.data]));
+}
+
+/**
+ * Generischer Blueprint für Bühnen ohne gepflegten Grundriss (z. B. frisch
+ * importiertes Festival): Bühne oben, FOH mittig – Admin passt später an.
+ */
+export function defaultBlueprint(stageLabel: string): Blueprint {
+  return {
+    stageLabel,
+    elements: [
+      { type: 'stage', x: 20, y: 4, w: 60, h: 14, label: stageLabel },
+      { type: 'foh', x: 42, y: 52, w: 16, h: 9, label: 'FOH' },
+    ],
+    pois: [],
+  };
 }
