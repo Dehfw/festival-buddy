@@ -1,9 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
-import { formatTime, toMinutes, type Slot } from '@/lib/types';
+import {
+  formatTime,
+  HOT_SLOT_THRESHOLD,
+  splitAttendees,
+  toMinutes,
+  type Slot,
+} from '@/lib/types';
 import { AvatarStack } from './Avatars';
+import { FireFrame } from './FireFrame';
 
 const GUTTER_W = 44;
 const ZOOM_KEY = 'fb.zoom.v1';
@@ -94,12 +101,8 @@ export function TimetableView({
   for (let m = startMin; m <= endMin; m += 60) hours.push(m);
   const bodyH = (endMin - startMin) * z.pxPerMin;
 
-  const attendeesOf = (slotId: string) => {
-    const ids = new Set(
-      data.selections.filter((s) => s.slotId === slotId).map((s) => s.userId)
-    );
-    return data.users.filter((u) => ids.has(u.id));
-  };
+  const attendeesOf = (slotId: string) =>
+    splitAttendees(data.users, data.selections, slotId);
 
   const toggleZoom = () => {
     const next: Zoom = zoom === 'compact' ? 'detail' : 'compact';
@@ -179,8 +182,14 @@ export function TimetableView({
                       zoom === 'compact' ? 24 : 34,
                       (toMinutes(slot.end) - toMinutes(slot.start)) * z.pxPerMin - 3
                     );
-                    const attendees = attendeesOf(slot.id);
-                    const mine = !!user && attendees.some((a) => a.id === user.id);
+                    const { going, interested } = attendeesOf(slot.id);
+                    const attendees = [...going, ...interested];
+                    const fadedIds = new Set(interested.map((u) => u.id));
+                    const iGo = !!user && going.some((a) => a.id === user.id);
+                    const iAmInterested =
+                      !!user && interested.some((a) => a.id === user.id);
+                    // 🔥 Hot Slot: ab HOT_SLOT_THRESHOLD festen Zusagen brennt der Rahmen
+                    const hot = going.length >= HOT_SLOT_THRESHOLD;
                     // Kurze Slots: Avatare neben dem Namen, sonst würden sie abgeschnitten
                     const stacked = height >= z.stackedMinH;
                     // Zweite Namenszeile nur, wenn sie über den Avataren komplett Platz hat
@@ -190,13 +199,15 @@ export function TimetableView({
                         ? 'line-clamp-2'
                         : 'line-clamp-1';
                     return (
+                      <Fragment key={slot.id}>
                       <button
-                        key={slot.id}
                         onClick={() => onSlotTap(slot)}
                         className={`absolute inset-x-0.5 overflow-hidden rounded-md border text-left transition active:scale-[0.98] ${
-                          mine
+                          iGo
                             ? 'border-blood bg-blood/15'
-                            : 'border-rivet bg-steel-2'
+                            : iAmInterested
+                              ? 'border-dashed border-ember/70 bg-ember/10'
+                              : 'border-rivet bg-steel-2'
                         }`}
                         style={{
                           top,
@@ -228,6 +239,7 @@ export function TimetableView({
                                   users={attendees}
                                   size={z.avatar}
                                   max={z.maxAvatars}
+                                  fadedIds={fadedIds}
                                 />
                               </div>
                             )}
@@ -256,12 +268,22 @@ export function TimetableView({
                                   users={attendees}
                                   size={z.avatar}
                                   max={zoom === 'compact' ? 2 : z.maxAvatars}
+                                  fadedIds={fadedIds}
                                 />
                               </div>
                             )}
                           </div>
                         )}
                       </button>
+                      {/* Flammen als Geschwister-Overlay: im Button selbst
+                          würde overflow-hidden den Schein abschneiden */}
+                      {hot && (
+                        <FireFrame
+                          className="inset-x-0.5 z-10 rounded-md"
+                          style={{ top, height }}
+                        />
+                      )}
+                      </Fragment>
                     );
                   })}
               </div>

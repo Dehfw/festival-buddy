@@ -1,6 +1,6 @@
 'use client';
 
-import type { DataPayload, User } from '../types';
+import type { DataPayload, SelectionStatus, User } from '../types';
 
 /**
  * Offline-first Sync:
@@ -19,8 +19,16 @@ const USER_KEY = 'fb.user.v1';
 // userId steckt nur fürs optimistische Update drin – serverseitig zählt
 // ausschließlich die Passkey-Session (Cookie).
 export type Mutation =
-  | { op: 'selection'; userId: string; slotId: string; attending: boolean }
+  | { op: 'selection'; userId: string; slotId: string; status: SelectionStatus | null }
   | { op: 'position'; userId: string; slotId: string; x: number | null; y: number | null };
+
+/** Queue-Eintrag aus der Zeit vor dem "interessiert"-Status */
+type LegacySelectionMutation = {
+  op: 'selection';
+  userId: string;
+  slotId: string;
+  attending: boolean;
+};
 
 const ENDPOINTS: Record<Mutation['op'], string> = {
   selection: '/api/selection',
@@ -37,7 +45,16 @@ function safeParse<T>(raw: string | null): T | null {
 }
 
 export function loadCachedData(): DataPayload | null {
-  return safeParse<DataPayload>(localStorage.getItem(DATA_KEY));
+  const data = safeParse<DataPayload>(localStorage.getItem(DATA_KEY));
+  if (!data) return null;
+  // Cache aus der Zeit vor dem "interessiert"-Status: alles war fest zugesagt
+  return {
+    ...data,
+    selections: (data.selections ?? []).map((s) => ({
+      ...s,
+      status: s.status === 'interested' ? 'interested' : 'going',
+    })),
+  };
 }
 
 export function saveCachedData(data: DataPayload) {
@@ -54,9 +71,25 @@ export function saveUser(user: User | null) {
 }
 
 export function loadQueue(): Mutation[] {
-  const queue = safeParse<Mutation[]>(localStorage.getItem(QUEUE_KEY)) ?? [];
-  // Einträge aus der Nur-Name-Ära (op: 'user') aussortieren
-  return queue.filter((m) => m.op === 'selection' || m.op === 'position');
+  const queue =
+    safeParse<(Mutation | LegacySelectionMutation)[]>(localStorage.getItem(QUEUE_KEY)) ?? [];
+  return (
+    queue
+      // Einträge aus der Nur-Name-Ära (op: 'user') aussortieren
+      .filter((m) => m.op === 'selection' || m.op === 'position')
+      // Alte selection-Einträge (attending: boolean) auf status umschreiben
+      .map((m): Mutation => {
+        if (m.op === 'selection' && 'attending' in m) {
+          return {
+            op: 'selection',
+            userId: m.userId,
+            slotId: m.slotId,
+            status: m.attending ? 'going' : null,
+          };
+        }
+        return m;
+      })
+  );
 }
 
 export function saveQueue(queue: Mutation[]) {
@@ -76,7 +109,8 @@ export function applyMutation(data: DataPayload, m: Mutation): DataPayload {
       next.selections = next.selections.filter(
         (s) => !(s.userId === m.userId && s.slotId === m.slotId)
       );
-      if (m.attending) next.selections.push({ userId: m.userId, slotId: m.slotId });
+      if (m.status)
+        next.selections.push({ userId: m.userId, slotId: m.slotId, status: m.status });
       else
         next.positions = next.positions.filter(
           (p) => !(p.userId === m.userId && p.slotId === m.slotId)
@@ -104,7 +138,7 @@ export function applyMutation(data: DataPayload, m: Mutation): DataPayload {
 function payloadFor(m: Mutation): unknown {
   switch (m.op) {
     case 'selection':
-      return { slotId: m.slotId, attending: m.attending };
+      return { slotId: m.slotId, status: m.status };
     case 'position':
       return { slotId: m.slotId, x: m.x, y: m.y };
   }

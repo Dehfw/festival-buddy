@@ -63,3 +63,47 @@ body {
 .now-line {
   animation: pulse-now 2.4s ease-in-out infinite;
 }
+
+/* ------------------------------------------------------------------ */
+/* Feuerrahmen: Slots, bei denen 5+ Leute fest dabei sind ("Hot Slot") */
+/* ------------------------------------------------------------------ */
+
+.fire-frame {
+  pointer-events: none;
+}
+
+/* Glühende Kante direkt am Rahmen: liegt unter den Canvas-Flammen und
+   ist zugleich der Fallback ohne Canvas bzw. bei prefers-reduced-motion */
+.fire-frame::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 1.5px solid rgba(255, 165, 55, 0.9);
+  box-shadow:
+    0 0 6px 1px rgba(255, 90, 23, 0.6),
+    0 0 18px 4px rgba(255, 122, 42, 0.3),
+    inset 0 0 10px rgba(255, 122, 42, 0.45);
+  animation: fire-ember 1.7s ease-in-out infinite alternate;
+}
+@keyframes fire-ember {
+  from { opacity: 0.7; }
+  to   { opacity: 1; }
+}
+
+/* Doom-Fire-Canvas: ragt über die Karte hinaus, damit die Flammen nach
+   oben schlagen können. Die Überstände MÜSSEN zu PAD_TOP/PAD_X/PAD_BOTTOM
+   in src/lib/client/fireEngine.ts passen. */
+.fire-frame canvas {
+  position: absolute;
+  top: -24px;
+  left: -12px;
+  width: calc(100% + 24px);
+  height: calc(100% + 33px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fire-frame::after {
+    animation: none;
+  }
+}

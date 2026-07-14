@@ -2,12 +2,19 @@
 
 import { useMemo } from 'react';
 import { useApp } from '@/lib/client/store';
-import { formatTime, toMinutes, type Slot } from '@/lib/types';
+import {
+  formatTime,
+  HOT_SLOT_THRESHOLD,
+  splitAttendees,
+  toMinutes,
+  type Slot,
+} from '@/lib/types';
 import { AvatarStack } from './Avatars';
+import { FireFrame } from './FireFrame';
 
 /**
  * Hauptansicht 2: Kompakte Liste – nur Bands, bei denen mindestens
- * ein Crew-Mitglied eingetragen ist, mit Personenanzahl.
+ * ein Crew-Mitglied eingetragen oder interessiert ist, mit Personenanzahl.
  */
 export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
   const { data, user } = useApp();
@@ -30,12 +37,8 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
 
   if (!data) return null;
 
-  const attendeesOf = (slotId: string) => {
-    const ids = new Set(
-      data.selections.filter((s) => s.slotId === slotId).map((s) => s.userId)
-    );
-    return data.users.filter((u) => ids.has(u.id));
-  };
+  const attendeesOf = (slotId: string) =>
+    splitAttendees(data.users, data.selections, slotId);
 
   if (grouped.length === 0) {
     return (
@@ -66,16 +69,26 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
           <ul className="space-y-2">
             {slots.map((slot) => {
               const stage = data.timetable.stages.find((s) => s.id === slot.stageId)!;
-              const attendees = attendeesOf(slot.id);
-              const mine = !!user && attendees.some((a) => a.id === user.id);
+              const { going, interested } = attendeesOf(slot.id);
+              const attendees = [...going, ...interested];
+              const fadedIds = new Set(interested.map((u) => u.id));
+              const iGo = !!user && going.some((a) => a.id === user.id);
+              const iAmInterested =
+                !!user && interested.some((a) => a.id === user.id);
+              const hot = going.length >= HOT_SLOT_THRESHOLD;
               return (
                 <li key={slot.id}>
                   <button
                     onClick={() => onSlotTap(slot)}
-                    className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition active:scale-[0.99] ${
-                      mine ? 'border-blood/60 bg-blood/10' : 'border-rivet bg-steel'
+                    className={`relative flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition active:scale-[0.99] ${
+                      iGo
+                        ? 'border-blood/60 bg-blood/10'
+                        : iAmInterested
+                          ? 'border-dashed border-ember/60 bg-ember/5'
+                          : 'border-rivet bg-steel'
                     }`}
                   >
+                    {hot && <FireFrame className="inset-0 rounded-xl" />}
                     <div
                       className="flex h-11 w-13 shrink-0 flex-col items-center justify-center rounded-lg px-1"
                       style={{ backgroundColor: `${stage.color}22` }}
@@ -97,10 +110,18 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
-                      <AvatarStack users={attendees} size={20} max={4} />
+                      <AvatarStack users={attendees} size={20} max={4} fadedIds={fadedIds} />
                       <span className="min-w-5 rounded-full bg-rivet px-1.5 py-0.5 text-center text-[11px] font-bold text-bone">
-                        {attendees.length}
+                        {going.length}
                       </span>
+                      {interested.length > 0 && (
+                        <span
+                          className="rounded-full border border-dashed border-ember/60 px-1.5 py-0.5 text-[11px] font-bold text-ember"
+                          title={`${interested.length} interessiert`}
+                        >
+                          +{interested.length}
+                        </span>
+                      )}
                     </div>
                   </button>
                 </li>

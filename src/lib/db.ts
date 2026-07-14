@@ -1,7 +1,14 @@
 import { Pool } from 'pg';
 import blueprintSeedJson from '../../data/blueprints.seed.json';
 import timetableJson from '../../data/timetable.json';
-import type { Blueprint, Position, Selection, Timetable, User } from './types';
+import type {
+  Blueprint,
+  Position,
+  Selection,
+  SelectionStatus,
+  Timetable,
+  User,
+} from './types';
 
 /**
  * Datenschicht: Nutzer, Band-Auswahlen, Positionen und Blueprints liegen
@@ -96,8 +103,11 @@ async function createSchema(): Promise<void> {
       CREATE TABLE IF NOT EXISTS selections (
         user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         slot_id TEXT NOT NULL,
+        status  TEXT NOT NULL DEFAULT 'going',
         PRIMARY KEY (user_id, slot_id)
       );
+      -- Migration für Bestandsdatenbanken: "interessiert" als weicherer Status
+      ALTER TABLE selections ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'going';
       CREATE TABLE IF NOT EXISTS positions (
         user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         slot_id    TEXT NOT NULL,
@@ -181,7 +191,7 @@ export async function getState(): Promise<DbState> {
   const pool = getPool();
   const [users, selections, positions, blueprints, rev] = await Promise.all([
     pool.query('SELECT id, name, color, created_at FROM users ORDER BY created_at'),
-    pool.query('SELECT user_id, slot_id FROM selections'),
+    pool.query('SELECT user_id, slot_id, status FROM selections'),
     pool.query('SELECT user_id, slot_id, x, y, updated_at FROM positions'),
     pool.query('SELECT stage_id, data FROM blueprints'),
     pool.query("SELECT last_value FROM db_rev"),
@@ -197,6 +207,7 @@ export async function getState(): Promise<DbState> {
     selections: selections.rows.map((r) => ({
       userId: r.user_id,
       slotId: r.slot_id,
+      status: r.status === 'interested' ? 'interested' : 'going',
     })),
     positions: positions.rows.map((r) => ({
       userId: r.user_id,
@@ -381,22 +392,23 @@ export async function updateCredentialCounter(
 }
 
 /**
- * Band-Teilnahme setzen/entfernen.
+ * Band-Teilnahme setzen ('going'/'interested') oder entfernen (null).
  * Rückgabe false, wenn der Nutzer nicht existiert (FK-Verletzung).
  */
 export async function setSelection(
   userId: string,
   slotId: string,
-  attending: boolean
+  status: SelectionStatus | null
 ): Promise<boolean> {
   await ensureSchema();
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
-    if (attending) {
+    if (status) {
       await client.query(
-        'INSERT INTO selections (user_id, slot_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-        [userId, slotId]
+        `INSERT INTO selections (user_id, slot_id, status) VALUES ($1, $2, $3)
+         ON CONFLICT (user_id, slot_id) DO UPDATE SET status = EXCLUDED.status`,
+        [userId, slotId, status]
       );
     } else {
       await client.query(

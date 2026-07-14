@@ -7,6 +7,7 @@ import type { Slot } from '@/lib/types';
 import { Avatar } from './Avatars';
 import { BandSheet } from './BandSheet';
 import { DefektLogo } from './DefektLogo';
+import { InstallPrompt } from './InstallPrompt';
 import { ListView } from './ListView';
 import { StagesView } from './StagesView';
 import { TimetableView } from './TimetableView';
@@ -152,6 +153,8 @@ export function AppShell() {
       {activeSlot && (
         <BandSheet slot={activeSlot} onClose={() => setActiveSlot(null)} />
       )}
+
+      <InstallPrompt />
     </div>
   );
 }
