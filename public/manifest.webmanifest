@@ -1,5 +1,5 @@
 {
-  "name": "Festival Buddy – Wacken Open Air 2026",
+  "name": "DEFƎKT Festival Buddy – Wacken Open Air 2026",
   "short_name": "Festival Buddy",
   "description": "Wer geht zu welcher Band? Timetable-Planer für unsere Crew beim W:O:A 2026.",
   "id": "/",
@@ -7,8 +7,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0b0b0f",
-  "theme_color": "#0b0b0f",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
   "lang": "de",
   "icons": [
     {

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Festival Buddy – W:O:A 2026',
+  title: 'DEFƎKT Festival Buddy – W:O:A 2026',
   description:
     'Wer geht zu welcher Band? Timetable-Planer für unsere Crew beim Wacken Open Air 2026.',
   manifest: '/manifest.webmanifest',
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0b0b0f',
+  themeColor: '#0a0a0a',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,

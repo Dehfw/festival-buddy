@@ -20,8 +20,8 @@ const icon = (padding) => `
       <stop offset="1" stop-color="#1a1a24"/>
     </linearGradient>
     <linearGradient id="claw" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ff5a66"/>
-      <stop offset="1" stop-color="#b3121f"/>
+      <stop offset="0" stop-color="#ff7a2a"/>
+      <stop offset="1" stop-color="#cc3d00"/>
     </linearGradient>
   </defs>
   <rect x="0" y="0" width="512" height="512" rx="${padding ? 0 : 96}" fill="url(#bg)"/>

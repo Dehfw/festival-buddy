@@ -1,15 +1,16 @@
 @import "tailwindcss";
 
+/* DEFƎKT-Markenfarben (defekt.shop): Signal-Orange auf Tiefschwarz */
 @theme {
-  --color-pit: #0b0b0f;
-  --color-steel: #15151c;
-  --color-steel-2: #1d1d26;
-  --color-rivet: #2a2a35;
-  --color-ash: #9a9aa8;
-  --color-bone: #e7e7ee;
-  --color-blood: #e63946;
-  --color-ember: #f77f00;
-  --font-metal: "Arial Black", "Arial Bold", Impact, system-ui, sans-serif;
+  --color-pit: #0a0a0a;
+  --color-steel: #141414;
+  --color-steel-2: #1c1c1c;
+  --color-rivet: #2a2622;
+  --color-ash: #8a8682;
+  --color-bone: #f4f1ea;
+  --color-blood: #ff5a17;
+  --color-ember: #ff7a2a;
+  --font-metal: Anton, Impact, Haettenschweiler, "Arial Black", system-ui, sans-serif;
 }
 
 html {
@@ -28,10 +29,18 @@ body {
   letter-spacing: 0.04em;
 }
 
-/* Metallischer Header-Schimmer */
+/* Header-Schimmer, DEFƎKT-dunkel mit Orange-Linie */
 .steel-sheen {
-  background: linear-gradient(160deg, #23232e 0%, #15151c 45%, #1a1a24 55%, #101016 100%);
-  border-bottom: 1px solid var(--color-rivet);
+  background: linear-gradient(160deg, #1c1c1c 0%, #101010 50%, #141414 100%);
+  border-bottom: 1px solid rgba(255, 90, 23, 0.18);
+}
+
+/* Feines Grid-Overlay wie auf defekt.shop */
+.defekt-grid {
+  background-image:
+    linear-gradient(rgba(244, 241, 234, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 241, 234, 0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
 }
 
 .scrollbar-thin {

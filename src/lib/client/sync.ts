@@ -99,7 +99,13 @@ export function applyMutation(data: DataPayload, m: Mutation): DataPayload {
         (p) => !(p.userId === m.userId && p.slotId === m.slotId)
       );
       if (m.x !== null && m.y !== null)
-        next.positions.push({ userId: m.userId, slotId: m.slotId, x: m.x, y: m.y });
+        next.positions.push({
+          userId: m.userId,
+          slotId: m.slotId,
+          x: m.x,
+          y: m.y,
+          updatedAt: new Date().toISOString(),
+        });
       break;
     }
   }
@@ -133,37 +139,52 @@ async function post(m: Mutation): Promise<'ok' | 'rejected' | 'offline'> {
 }
 
 /**
- * Mutation ausführen: sofort versuchen, sonst einreihen.
- * Gibt true zurück, wenn sie direkt beim Server angekommen ist.
+ * Mutation ausführen: IMMER erst in die Warteschlange, dann sofort
+ * flushen. Eine Mutation verlässt die Queue erst, wenn der Server sie
+ * bestätigt hat – so kann ein parallel laufender Poll den optimistischen
+ * Zustand nie "zurückdrehen" (fetchData wendet die Queue wieder an).
+ * Gibt true zurück, wenn die Queue danach leer ist (alles gesynct).
  */
 export async function sendOrEnqueue(m: Mutation): Promise<boolean> {
-  const result = await post(m);
-  if (result === 'ok') return true;
-  if (result === 'offline') {
-    const queue = loadQueue();
-    queue.push(m);
-    saveQueue(queue);
-  }
-  return false;
+  const queue = loadQueue();
+  queue.push(m);
+  saveQueue(queue);
+  await flushQueue();
+  return loadQueue().length === 0;
 }
 
-/** Warteschlange abarbeiten (FIFO). Bricht ab, sobald das Netz wieder weg ist. */
-export async function flushQueue(): Promise<number> {
+// Nur ein Flush gleichzeitig – vermeidet Doppel-POSTs von Poll + Tap
+let flushing: Promise<number> | null = null;
+
+/** Warteschlange abarbeiten (FIFO). Bricht ab, sobald das Netz weg ist. */
+export function flushQueue(): Promise<number> {
+  if (flushing) return flushing;
+  flushing = doFlush().finally(() => {
+    flushing = null;
+  });
+  return flushing;
+}
+
+async function doFlush(): Promise<number> {
   let queue = loadQueue();
   if (queue.length === 0) return 0;
 
   // Sicherstellen, dass der Nutzer serverseitig existiert, bevor
   // Selections/Positions gesynct werden (idempotent).
   const user = loadUser();
-  if (user) await post({ op: 'user', name: user.name });
+  if (user && queue.some((m) => m.op !== 'user')) {
+    await post({ op: 'user', name: user.name });
+  }
 
   let flushed = 0;
-  while (queue.length > 0) {
+  while (true) {
+    queue = loadQueue();
+    if (queue.length === 0) break;
     const m = queue[0];
     const result = await post(m);
     if (result === 'offline') break;
-    queue = queue.slice(1);
-    saveQueue(queue);
+    // ok ODER vom Server bewusst abgelehnt -> aus der Queue nehmen
+    saveQueue(loadQueue().slice(1));
     flushed++;
   }
   return flushed;
