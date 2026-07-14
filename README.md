@@ -48,14 +48,28 @@ ausgeliefert werden.
 
 ## Timetable-Daten
 
-`data/timetable.json` enthält Bühnen, Tage und alle Band-Slots.
+`data/timetable.json` enthält Bühnen, Tage und alle Band-Slots. Der
+eingecheckte Stand ist aus dem **offiziellen W:O:A-Datenexport**
+(`wackenlineup.json`) generiert: 233 Slots auf 9 Bühnen und 7 Tagen
+(Warm-up ab So 26.07.), inklusive Spotify-Artist-IDs für den
+„Auf Spotify anhören“-Button im Band-Sheet.
 
-> ⚠️ **Datenstand:** Das eingecheckte Seed basiert auf den zur Running-Order
-> veröffentlichten Pressemeldungen (Stand Juli 2026). Zeit-verifizierte Slots
-> tragen `"confirmed": true`; die übrigen Slots sind plausibel rekonstruiert
-> und als `"confirmed": false` markiert (in der App mit dem Hinweis „Slot
-> unbestätigt“). Vor dem Festival einmal mit den offiziellen Daten
-> aktualisieren:
+Neu importieren (z. B. nach einem Update der Export-Datei):
+
+```bash
+npm run import                     # liest ./wackenlineup.json
+npm run import -- pfad/datei.json  # anderer Pfad
+```
+
+Der Import filtert Alt-Events früherer Jahre und Meet-&-Greets heraus,
+konvertiert die Epoch-Zeiten nach Europe/Berlin (Sets nach Mitternacht
+zählen zum Vortag, z. B. 01:00 → `25:00`) und hält die Slot-IDs stabil
+(`tag-buehne-bandname`), damit bestehende Band-Auswahlen der Crew
+erhalten bleiben.
+
+### Alternative: Scraper
+
+Falls kein Export vorliegt, gibt es weiterhin den Scraper:
 
 ```bash
 npm run scrape                            # wacken.com; Fallback: Clashfinder

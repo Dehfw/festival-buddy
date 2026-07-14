@@ -101,5 +101,39 @@
       { "id": "beergarden-poi-3", "type": "toilet", "x": 90, "y": 80, "label": "Dixis" },
       { "id": "beergarden-poi-4", "type": "water", "x": 10, "y": 80, "label": "Wasser" }
     ]
+  },
+  "jungle": {
+    "stageLabel": "JUNGLE",
+    "elements": [
+      { "type": "tent", "x": 10, "y": 2, "w": 80, "h": 72 },
+      { "type": "stage", "x": 30, "y": 5, "w": 40, "h": 12 },
+      { "type": "foh", "x": 44, "y": 52, "w": 12, "h": 7, "label": "FOH" }
+    ],
+    "pois": [
+      { "id": "jungle-poi-1", "type": "entrance", "x": 50, "y": 78, "label": "Zelteingang" },
+      { "id": "jungle-poi-2", "type": "merch", "x": 12, "y": 88, "label": "Bar" },
+      { "id": "jungle-poi-3", "type": "toilet", "x": 90, "y": 88, "label": "Dixis" }
+    ]
+  },
+  "clubstage": {
+    "stageLabel": "CLUBSTAGE",
+    "elements": [
+      { "type": "tent", "x": 14, "y": 2, "w": 72, "h": 70 },
+      { "type": "stage", "x": 32, "y": 5, "w": 36, "h": 11 },
+      { "type": "foh", "x": 45, "y": 48, "w": 10, "h": 7, "label": "FOH" }
+    ],
+    "pois": [
+      { "id": "clubstage-poi-1", "type": "entrance", "x": 50, "y": 76, "label": "Zelteingang" },
+      { "id": "clubstage-poi-2", "type": "water", "x": 10, "y": 88, "label": "Wasser" }
+    ]
+  },
+  "metalchurch": {
+    "stageLabel": "METAL CHURCH",
+    "elements": [
+      { "type": "stage", "x": 34, "y": 2, "w": 32, "h": 10 }
+    ],
+    "pois": [
+      { "id": "metalchurch-poi-1", "type": "entrance", "x": 50, "y": 92, "label": "Eingang Kirche" }
+    ]
   }
 }

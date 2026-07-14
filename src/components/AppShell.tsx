@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import type { Slot } from '@/lib/types';
 import { Avatar } from './Avatars';
@@ -15,8 +15,18 @@ type Tab = 'timetable' | 'list' | 'stages';
 export function AppShell() {
   const { data, user, online, pending, logout } = useApp();
   const [tab, setTab] = useState<Tab>('timetable');
-  const [dayId, setDayId] = useState('wed');
+  const [dayId, setDayId] = useState('');
   const [activeSlot, setActiveSlot] = useState<Slot | null>(null);
+
+  // Standard-Tag: während des Festivals "heute", sonst der erste Tag
+  useEffect(() => {
+    if (!data) return;
+    const days = data.timetable.days;
+    if (days.some((d) => d.id === dayId)) return;
+    const now = new Date();
+    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    setDayId(days.find((d) => d.date === iso)?.id ?? days[0]?.id ?? '');
+  }, [data, dayId]);
 
   if (!data || !user) return null;
 
@@ -49,12 +59,12 @@ export function AppShell() {
 
       {/* Tages-Tabs (nur Timetable-Ansicht) */}
       {tab === 'timetable' && (
-        <div className="flex border-b border-rivet bg-steel">
+        <div className="flex overflow-x-auto border-b border-rivet bg-steel scrollbar-thin">
           {data.timetable.days.map((d) => (
             <button
               key={d.id}
               onClick={() => setDayId(d.id)}
-              className={`flex-1 py-2.5 text-center text-sm font-black uppercase tracking-wide transition ${
+              className={`min-w-[3.2rem] flex-1 shrink-0 py-2.5 text-center text-sm font-black uppercase tracking-wide transition ${
                 d.id === dayId
                   ? 'border-b-2 border-blood text-bone'
                   : 'text-ash'

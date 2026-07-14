@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "scrape": "node scripts/scrape-wacken.mjs"
+    "scrape": "node scripts/scrape-wacken.mjs",
+    "import": "node scripts/import-lineup.mjs"
   },
   "dependencies": {
     "next": "^15.3.4",

@@ -21,6 +21,8 @@ export interface Slot {
   start: string;
   end: string;
   confirmed: boolean;
+  /** Spotify-Artist-ID aus dem offiziellen W:O:A-Export */
+  spotifyArtistId?: string;
 }
 
 export interface Timetable {

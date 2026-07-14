@@ -28,7 +28,7 @@ export function NameGate() {
             Festival Buddy
           </div>
           <p className="mt-3 text-sm text-ash">
-            Wacken Open Air · 29.07.–01.08.2026
+            Wacken Open Air · 26.07.–01.08.2026
             <br />
             Wer geht zu welcher Band? 🤘
           </p>

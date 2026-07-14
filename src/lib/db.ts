@@ -35,6 +35,14 @@ export function readDb(): Db {
   if (cachedDb) return cachedDb;
   try {
     cachedDb = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) as Db;
+    // Neue Bühnen (z. B. nach einem Timetable-Import) bekommen ihren
+    // Default-Blueprint aus dem Seed, ohne bestehende Edits anzufassen.
+    const seed = JSON.parse(
+      fs.readFileSync(BLUEPRINT_SEED_FILE, 'utf8')
+    ) as Record<string, Blueprint>;
+    for (const [stageId, bp] of Object.entries(seed)) {
+      if (!cachedDb.blueprints[stageId]) cachedDb.blueprints[stageId] = bp;
+    }
   } catch {
     cachedDb = seedDb();
     persist(cachedDb);
