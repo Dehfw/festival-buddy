@@ -19,7 +19,7 @@ export function Avatar({
         height: size,
         fontSize: size * 0.42,
         backgroundColor: user.color,
-        boxShadow: ring ? `0 0 0 2px #e7e7ee` : '0 0 0 1.5px rgba(0,0,0,.5)',
+        boxShadow: ring ? `0 0 0 2px #e7e7ee` : '0 0 0 1.5px #0b0b0f',
       }}
       title={user.name}
     >
@@ -44,7 +44,8 @@ export function AvatarStack({
   return (
     <span className="inline-flex items-center" style={{ paddingLeft: size * 0.28 }}>
       {shown.map((u) => (
-        <span key={u.id} style={{ marginLeft: -size * 0.28 }}>
+        // flex statt inline: sonst macht die Zeilenhöhe den Stack höher als die Kreise
+        <span key={u.id} className="flex" style={{ marginLeft: -size * 0.28 }}>
           <Avatar user={u} size={size} />
         </span>
       ))}
@@ -56,7 +57,7 @@ export function AvatarStack({
             height: size,
             fontSize: size * 0.42,
             marginLeft: -size * 0.28,
-            boxShadow: '0 0 0 1.5px rgba(0,0,0,.5)',
+            boxShadow: '0 0 0 1.5px #0b0b0f',
           }}
         >
           +{rest}
