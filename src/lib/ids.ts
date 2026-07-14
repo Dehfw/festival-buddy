@@ -1,16 +1,5 @@
-/**
- * Deterministische Nutzer-ID aus dem Namen: dadurch erzeugt ein Offline-Login
- * auf dem Handy exakt denselben Nutzer wie der Server – Sync bleibt konfliktfrei.
- */
-export function userIdFromName(name: string): string {
-  const slug = name
-    .trim()
-    .toLowerCase()
-    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return `u-${slug || 'anonym'}`;
-}
+// Nutzer-IDs sind seit dem Passkey-Login zufällig (bzw. geerbt aus der
+// Nur-Name-Ära); hier lebt nur noch die deterministische Farbwahl.
 
 export function hashString(s: string): number {
   let h = 5381;

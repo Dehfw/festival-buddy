@@ -108,6 +108,17 @@ async function createSchema(): Promise<void> {
       );
       -- Migration für Bestandsdatenbanken (idempotent)
       ALTER TABLE positions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+      -- Passkeys: ein Nutzer wird über seine WebAuthn-Credentials
+      -- identifiziert, der Name ist nur noch Anzeigename.
+      CREATE TABLE IF NOT EXISTS webauthn_credentials (
+        id         TEXT PRIMARY KEY,
+        user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        public_key BYTEA NOT NULL,
+        counter    BIGINT NOT NULL DEFAULT 0,
+        transports TEXT NOT NULL DEFAULT '[]',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS webauthn_credentials_user_idx ON webauthn_credentials (user_id);
       CREATE TABLE IF NOT EXISTS blueprints (
         stage_id TEXT PRIMARY KEY,
         data     JSONB NOT NULL
@@ -205,30 +216,168 @@ export async function getState(): Promise<DbState> {
 /* Schreiben                                                           */
 /* ------------------------------------------------------------------ */
 
-/** Nutzer anlegen; existiert die ID schon, kommt der bestehende zurück. */
-export async function upsertUser(user: {
+interface UserRow {
   id: string;
   name: string;
   color: string;
-}): Promise<User> {
-  await query(
-    'INSERT INTO users (id, name, color) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING',
-    [user.id, user.name, user.color]
-  );
-  const res = await query<{
-    id: string;
-    name: string;
-    color: string;
-    created_at: Date;
-  }>('SELECT id, name, color, created_at FROM users WHERE id = $1', [user.id]);
-  const r = res.rows[0];
-  await bumpRev();
+  created_at: Date;
+}
+
+function toUser(r: UserRow): User {
   return {
     id: r.id,
     name: r.name,
     color: r.color,
     createdAt: new Date(r.created_at).toISOString(),
   };
+}
+
+export interface StoredCredential {
+  id: string; // Credential-ID, base64url
+  userId: string;
+  publicKey: Uint8Array<ArrayBuffer>;
+  counter: number;
+  transports: string[];
+}
+
+export async function getUserById(id: string): Promise<User | null> {
+  const res = await query<UserRow>(
+    'SELECT id, name, color, created_at FROM users WHERE id = $1',
+    [id]
+  );
+  return res.rows[0] ? toUser(res.rows[0]) : null;
+}
+
+/**
+ * Bestandsnutzer ohne Passkey mit diesem Namen (case-insensitiv) – darf
+ * bei der Registrierung übernommen werden, damit Alt-Accounts aus der
+ * Nur-Name-Ära ihre Auswahlen behalten. Sobald ein Passkey dran hängt,
+ * ist der Name belegt.
+ */
+export async function findAdoptableUser(name: string): Promise<User | null> {
+  const res = await query<UserRow>(
+    `SELECT u.id, u.name, u.color, u.created_at FROM users u
+      WHERE lower(u.name) = lower($1)
+        AND NOT EXISTS (SELECT 1 FROM webauthn_credentials c WHERE c.user_id = u.id)
+      ORDER BY u.created_at LIMIT 1`,
+    [name]
+  );
+  return res.rows[0] ? toUser(res.rows[0]) : null;
+}
+
+/** Ist der Name schon von einem Nutzer mit Passkey belegt? */
+export async function isNameTaken(name: string): Promise<boolean> {
+  const res = await query(
+    `SELECT 1 FROM users u
+      WHERE lower(u.name) = lower($1)
+        AND EXISTS (SELECT 1 FROM webauthn_credentials c WHERE c.user_id = u.id)
+      LIMIT 1`,
+    [name]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+/**
+ * Registrierung abschließen: Nutzer anlegen (oder namensgleichen
+ * Alt-Account ohne Passkey übernehmen) und das Credential daran binden.
+ * Gibt null zurück, wenn die ID inzwischen anderweitig belegt ist –
+ * das schützt vor manipulierten Challenge-Cookies.
+ */
+export async function createUserWithCredential(
+  user: { id: string; name: string; color: string },
+  credential: { id: string; publicKey: Uint8Array; counter: number; transports: string[] }
+): Promise<User | null> {
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const inserted = await client.query(
+      'INSERT INTO users (id, name, color) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING',
+      [user.id, user.name, user.color]
+    );
+    if (inserted.rowCount === 0) {
+      // ID existiert schon: nur als Legacy-Übernahme okay (gleicher Name,
+      // noch kein Passkey) – sonst abbrechen.
+      const adoptable = await client.query(
+        `SELECT 1 FROM users u
+          WHERE u.id = $1 AND lower(u.name) = lower($2)
+            AND NOT EXISTS (SELECT 1 FROM webauthn_credentials c WHERE c.user_id = u.id)`,
+        [user.id, user.name]
+      );
+      if ((adoptable.rowCount ?? 0) === 0) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+    }
+    await client.query(
+      `INSERT INTO webauthn_credentials (id, user_id, public_key, counter, transports)
+       VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`,
+      [
+        credential.id,
+        user.id,
+        Buffer.from(credential.publicKey),
+        credential.counter,
+        JSON.stringify(credential.transports),
+      ]
+    );
+    const res = await client.query<UserRow>(
+      'SELECT id, name, color, created_at FROM users WHERE id = $1',
+      [user.id]
+    );
+    await client.query('COMMIT');
+    await bumpRev();
+    return toUser(res.rows[0]);
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/** Credential samt zugehörigem Nutzer für den Login nachschlagen */
+export async function getCredentialWithUser(
+  credentialId: string
+): Promise<{ credential: StoredCredential; user: User } | null> {
+  const res = await query<
+    UserRow & { cred_id: string; public_key: Buffer; counter: string; transports: string }
+  >(
+    `SELECT c.id AS cred_id, c.public_key, c.counter, c.transports,
+            u.id, u.name, u.color, u.created_at
+       FROM webauthn_credentials c JOIN users u ON u.id = c.user_id
+      WHERE c.id = $1`,
+    [credentialId]
+  );
+  const r = res.rows[0];
+  if (!r) return null;
+  let transports: string[] = [];
+  try {
+    const parsed = JSON.parse(r.transports);
+    if (Array.isArray(parsed)) transports = parsed;
+  } catch {
+    // kaputte/alte Zeile – ohne Transports weitermachen
+  }
+  return {
+    credential: {
+      id: r.cred_id,
+      userId: r.id,
+      publicKey: new Uint8Array(r.public_key),
+      counter: Number(r.counter),
+      transports,
+    },
+    user: toUser(r),
+  };
+}
+
+/** Signatur-Zähler nach erfolgreichem Login fortschreiben (Replay-Schutz) */
+export async function updateCredentialCounter(
+  credentialId: string,
+  counter: number
+): Promise<void> {
+  await query('UPDATE webauthn_credentials SET counter = $2 WHERE id = $1', [
+    credentialId,
+    counter,
+  ]);
 }
 
 /**

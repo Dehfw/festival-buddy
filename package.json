@@ -12,6 +12,8 @@
     "import": "node scripts/import-lineup.mjs"
   },
   "dependencies": {
+    "@simplewebauthn/browser": "^13.3.0",
+    "@simplewebauthn/server": "^13.3.2",
     "next": "^15.3.4",
     "pg": "^8.22.0",
     "react": "^19.1.0",
