@@ -219,7 +219,7 @@ function GroupPageInner() {
         <button
           onClick={() => isOwner && fileRef.current?.click()}
           disabled={!isOwner || busy}
-          className="relative shrink-0 disabled:cursor-default"
+          className="group relative shrink-0 disabled:cursor-default"
           title={isOwner ? 'Gruppenbild ändern' : undefined}
         >
           <GroupAvatar
@@ -229,7 +229,7 @@ function GroupPageInner() {
             size={64}
           />
           {isOwner && (
-            <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border border-rivet bg-steel-2 text-[10px]">
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border border-rivet bg-steel-2 text-[10px] transition-colors group-hover:border-blood group-hover:bg-rivet">
               ✏️
             </span>
           )}
@@ -244,8 +244,9 @@ function GroupPageInner() {
                 <button
                   onClick={() => setEditName(group.name)}
                   disabled={busy}
-                  className="shrink-0 text-sm text-ash disabled:opacity-40"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-rivet bg-steel-2 text-sm text-ash transition-colors hover:border-blood hover:bg-rivet hover:text-bone active:scale-95 disabled:opacity-40"
                   title="Gruppe umbenennen"
+                  aria-label="Gruppe umbenennen"
                 >
                   ✏️
                 </button>
