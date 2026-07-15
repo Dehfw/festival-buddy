@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { readSessionUserId } from '@/lib/auth';
 import { getGroupsForUser, getMemberRole, updateGroup, type GroupPatch } from '@/lib/db';
+import { isGroupAdmin } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Gruppe ändern (nur Owner): { name?, hotThreshold?, rotateCode? }.
+ * Gruppe ändern (nur Owner/Admins): { name?, hotThreshold?, rotateCode? }.
  * hotThreshold steuert den Feuerrahmen 🔥 der Gruppe (0 = aus).
  */
 export async function PATCH(
@@ -17,8 +18,8 @@ export async function PATCH(
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
   const { id: groupId } = await params;
-  if ((await getMemberRole(groupId, userId)) !== 'owner') {
-    return NextResponse.json({ error: 'Nur der Owner darf das' }, { status: 403 });
+  if (!isGroupAdmin(await getMemberRole(groupId, userId))) {
+    return NextResponse.json({ error: 'Nur Admins dürfen das' }, { status: 403 });
   }
 
   const body = await req.json().catch(() => null);

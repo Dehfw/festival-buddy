@@ -8,12 +8,12 @@ import { GroupAvatar } from '@/components/GroupAvatar';
 import { GroupGate } from '@/components/GroupGate';
 import { resizeImage } from '@/lib/client/image';
 import { AppProvider, useApp } from '@/lib/client/store';
-import { formatInviteCode } from '@/lib/types';
+import { formatInviteCode, isGroupAdmin } from '@/lib/types';
 
 /**
  * Eigene Gruppen-Seite (statt Bottom-Sheet), erreichbar über Profilbild
  * und Gruppen-Chip im Header. Drei klar getrennte Bereiche:
- *   1. Aktive Gruppe: Einladen, Mitglieder, Owner-Einstellungen, Verlassen
+ *   1. Aktive Gruppe: Einladen, Mitglieder, Admin-Einstellungen, Verlassen
  *   2. Meine Gruppen: wechseln, gründen/beitreten
  *   3. Konto: Abmelden
  */
@@ -54,6 +54,7 @@ function GroupPageInner() {
     );
   }
   const isOwner = group.role === 'owner';
+  const isAdmin = isGroupAdmin(group.role);
   const members = data.users;
 
   const flash = (msg: string) => {
@@ -176,10 +177,27 @@ function GroupPageInner() {
     );
   };
 
+  const setRole = async (userId: string, name: string, role: 'admin' | 'member') => {
+    const question =
+      role === 'admin'
+        ? `${name} zum Admin machen? Admins können die Gruppe bearbeiten, Mitglieder entfernen und weitere Admins ernennen.`
+        : `${name} die Admin-Rechte entziehen?`;
+    if (!confirm(question)) return;
+    await api(
+      `/api/groups/${encodeURIComponent(group.id)}/members/${encodeURIComponent(userId)}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      },
+      role === 'admin' ? `${name} ist jetzt Admin` : `${name} ist kein Admin mehr`
+    );
+  };
+
   const leave = async () => {
     const warning =
       isOwner && members.length > 1
-        ? 'Gruppe verlassen? Das dienstälteste Mitglied wird neuer Owner.'
+        ? 'Gruppe verlassen? Der dienstälteste Admin (sonst das dienstälteste Mitglied) wird neuer Owner.'
         : members.length === 1
           ? 'Du bist das letzte Mitglied – die Gruppe wird dabei gelöscht. Sicher?'
           : 'Gruppe wirklich verlassen?';
@@ -217,10 +235,10 @@ function GroupPageInner() {
       {/* ---------- 1) Aktive Gruppe ---------- */}
       <div className="mt-4 flex items-center gap-3">
         <button
-          onClick={() => isOwner && fileRef.current?.click()}
-          disabled={!isOwner || busy}
+          onClick={() => isAdmin && fileRef.current?.click()}
+          disabled={!isAdmin || busy}
           className="group relative shrink-0 disabled:cursor-default"
-          title={isOwner ? 'Gruppenbild ändern' : undefined}
+          title={isAdmin ? 'Gruppenbild ändern' : undefined}
         >
           <GroupAvatar
             groupId={group.id}
@@ -228,7 +246,7 @@ function GroupPageInner() {
             imageVersion={group.imageVersion}
             size={64}
           />
-          {isOwner && (
+          {isAdmin && (
             <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border border-rivet bg-steel-2 text-[10px] transition-colors group-hover:border-blood group-hover:bg-rivet">
               ✏️
             </span>
@@ -240,7 +258,7 @@ function GroupPageInner() {
               <h2 className="truncate font-metal text-2xl font-black leading-tight">
                 {group.name}
               </h2>
-              {isOwner && (
+              {isAdmin && (
                 <button
                   onClick={() => setEditName(group.name)}
                   disabled={busy}
@@ -335,38 +353,70 @@ function GroupPageInner() {
           Mitglieder ({members.length})
         </div>
         <ul className="mt-3 space-y-2.5">
-          {members.map((m) => (
-            <li key={m.id} className="flex items-center gap-2.5 text-sm">
-              <Avatar user={m} size={26} />
-              <span className="min-w-0 flex-1 truncate font-medium">
-                {m.name}
-                {m.id === user.id && <span className="text-ash"> (du)</span>}
-              </span>
-              {group.roles[m.id] === 'owner' && (
-                <span className="rounded-full bg-rivet px-2 py-0.5 text-[10px] font-bold uppercase text-ash">
-                  Owner
+          {members.map((m) => {
+            const role = group.roles[m.id];
+            // Owner ist unantastbar; die eigene Rolle ändert man nicht selbst
+            const manageable = isAdmin && m.id !== user.id && role !== 'owner';
+            return (
+              <li key={m.id} className="flex items-center gap-2.5 text-sm">
+                <Avatar user={m} size={26} />
+                <span className="min-w-0 flex-1 truncate font-medium">
+                  {m.name}
+                  {m.id === user.id && <span className="text-ash"> (du)</span>}
                 </span>
-              )}
-              {isOwner && m.id !== user.id && (
-                <button
-                  onClick={() => kick(m.id, m.name)}
-                  disabled={busy}
-                  className="text-xs font-bold text-blood disabled:opacity-40"
-                  title={`${m.name} entfernen`}
-                >
-                  ✕
-                </button>
-              )}
-            </li>
-          ))}
+                {role === 'owner' && (
+                  <span className="rounded-full bg-rivet px-2 py-0.5 text-[10px] font-bold uppercase text-ash">
+                    Owner
+                  </span>
+                )}
+                {role === 'admin' && (
+                  <span className="rounded-full bg-rivet px-2 py-0.5 text-[10px] font-bold uppercase text-ember">
+                    Admin
+                  </span>
+                )}
+                {manageable && (
+                  <button
+                    onClick={() =>
+                      setRole(m.id, m.name, role === 'admin' ? 'member' : 'admin')
+                    }
+                    disabled={busy}
+                    className="rounded-full border border-rivet px-2 py-0.5 text-[10px] font-bold uppercase text-ash disabled:opacity-40"
+                    title={
+                      role === 'admin'
+                        ? `${m.name} die Admin-Rechte entziehen`
+                        : `${m.name} zum Admin machen`
+                    }
+                  >
+                    {role === 'admin' ? '− Admin' : '+ Admin'}
+                  </button>
+                )}
+                {manageable && (
+                  <button
+                    onClick={() => kick(m.id, m.name)}
+                    disabled={busy}
+                    className="text-xs font-bold text-blood disabled:opacity-40"
+                    title={`${m.name} entfernen`}
+                  >
+                    ✕
+                  </button>
+                )}
+              </li>
+            );
+          })}
         </ul>
+        {isAdmin && (
+          <p className="mt-2.5 text-[11px] leading-relaxed text-ash/70">
+            Admins können die Gruppe bearbeiten, Mitglieder entfernen und
+            weitere Admins ernennen. Der Owner bleibt unantastbar.
+          </p>
+        )}
       </div>
 
-      {/* Owner-Einstellungen */}
-      {isOwner && (
+      {/* Admin-Einstellungen */}
+      {isAdmin && (
         <div className="mt-3 rounded-xl border border-rivet bg-steel p-3.5">
           <div className="text-xs font-semibold uppercase tracking-wider text-ash">
-            Einstellungen (Owner)
+            Einstellungen (Admins)
           </div>
 
           <div className="mt-3 flex items-center justify-between gap-3">

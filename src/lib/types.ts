@@ -65,7 +65,17 @@ export function isHotSlot(goingCount: number, threshold: number): boolean {
 /* Gruppen & Festivals                                                 */
 /* ------------------------------------------------------------------ */
 
-export type GroupRole = 'owner' | 'member';
+export type GroupRole = 'owner' | 'admin' | 'member';
+
+/**
+ * Owner und Admins verwalten die Gruppe: umbenennen, Bild, Code rotieren,
+ * Feuerrahmen-Schwelle, Mitglieder entfernen, Admins ernennen. Der Owner
+ * (Gründer) ist dabei unantastbar – er kann weder entfernt noch degradiert
+ * werden; Owner wird man nur durch Nachrücken beim Verlassen.
+ */
+export function isGroupAdmin(role: GroupRole | null | undefined): boolean {
+  return role === 'owner' || role === 'admin';
+}
 
 /** Eintrag aus GET /api/festivals – Auswahl bei der Gruppengründung */
 export interface FestivalSummary {

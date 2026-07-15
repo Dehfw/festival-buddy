@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readSessionUserId } from '@/lib/auth';
 import { getGroupImage, getMemberRole, setGroupImage } from '@/lib/db';
+import { isGroupAdmin } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +35,7 @@ export async function GET(
   });
 }
 
-/** Gruppenbild setzen (nur Owner). Body = rohe Bilddaten. */
+/** Gruppenbild setzen (nur Owner/Admins). Body = rohe Bilddaten. */
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -44,8 +45,8 @@ export async function POST(
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
   const { id: groupId } = await params;
-  if ((await getMemberRole(groupId, userId)) !== 'owner') {
-    return NextResponse.json({ error: 'Nur der Owner darf das' }, { status: 403 });
+  if (!isGroupAdmin(await getMemberRole(groupId, userId))) {
+    return NextResponse.json({ error: 'Nur Admins dürfen das' }, { status: 403 });
   }
   const mime = (req.headers.get('content-type') ?? '').split(';')[0].trim();
   if (!ALLOWED_MIMES.has(mime)) {
