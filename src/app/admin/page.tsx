@@ -33,13 +33,8 @@ interface AdminState {
  * eigene Datenquelle /api/admin/state statt /api/data.
  */
 function AdminInner() {
-<<<<<<< HEAD
-  const [adminKey, setAdminKey] = useState<string | null>(null);
-=======
-  const { data, refresh } = useApp();
   // null = Session wird noch geprüft, false = Login nötig, true = eingeloggt.
   const [authed, setAuthed] = useState<boolean | null>(null);
->>>>>>> origin/main
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [state, setState] = useState<AdminState | null>(null);
@@ -63,16 +58,14 @@ function AdminInner() {
 
   // Admin-Datenstand fürs gewählte Festival laden
   const loadState = useCallback(
-    async (key: string, festival?: string | null) => {
+    async (festival?: string | null) => {
       try {
         const qs = festival ? `?festival=${encodeURIComponent(festival)}` : '';
         const res = await fetch(`/api/admin/state${qs}`, {
-          headers: { 'x-admin-key': key },
           cache: 'no-store',
         });
         if (res.status === 401) {
-          sessionStorage.removeItem(ADMIN_KEY_STORAGE);
-          setAdminKey(null);
+          setAuthed(false);
           return;
         }
         if (!res.ok) return;
@@ -92,10 +85,10 @@ function AdminInner() {
   );
 
   useEffect(() => {
-    if (adminKey) void loadState(adminKey, festivalId);
+    if (authed) void loadState(festivalId);
     // festivalId ist hier bewusst KEIN Dependency: Wechsel lädt explizit
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminKey, loadState]);
+  }, [authed, loadState]);
 
   // Draft laden, wenn Bühne wechselt oder Daten ankommen
   const serverBlueprint = stageId ? state?.blueprints[stageId] : undefined;
@@ -138,18 +131,14 @@ function AdminInner() {
     }
   };
 
-<<<<<<< HEAD
   const switchFestival = (id: string) => {
-    if (!adminKey || id === festivalId) return;
+    if (id === festivalId) return;
     setStageId(null);
     setState(null);
     setFestivalId(id);
-    void loadState(adminKey, id);
+    void loadState(id);
   };
 
-  const save = async () => {
-    if (!draft || !adminKey || !stageId || !festivalId) return;
-=======
   const logout = async () => {
     try {
       await fetch('/api/admin/logout', { method: 'POST' });
@@ -160,22 +149,13 @@ function AdminInner() {
   };
 
   const save = async () => {
-    if (!draft) return;
->>>>>>> origin/main
+    if (!draft || !stageId || !festivalId) return;
     setStatus('Speichere …');
     try {
       const res = await fetch('/api/admin/blueprint', {
         method: 'POST',
-<<<<<<< HEAD
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-key': adminKey,
-        },
-        body: JSON.stringify({ festivalId, stageId, blueprint: draft }),
-=======
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stageId, blueprint: draft }),
->>>>>>> origin/main
+        body: JSON.stringify({ festivalId, stageId, blueprint: draft }),
       });
       if (res.status === 401) {
         setStatus('');
@@ -183,7 +163,7 @@ function AdminInner() {
         return;
       }
       setStatus(res.ok ? '✓ Gespeichert – für alle sichtbar' : 'Fehler beim Speichern');
-      if (res.ok) void loadState(adminKey, festivalId);
+      if (res.ok) void loadState(festivalId);
     } catch {
       setStatus('Keine Verbindung – Admin braucht Netz');
     }
