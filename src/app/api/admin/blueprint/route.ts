@@ -42,14 +42,19 @@ function sanitize(input: unknown): Blueprint | null {
   return { stageLabel: bp.stageLabel.slice(0, 30), elements, pois };
 }
 
-/** Blueprint einer Bühne komplett speichern: { stageId, blueprint } */
+/** Blueprint einer Bühne komplett speichern: { festivalId, stageId, blueprint } */
 export async function POST(req: Request) {
   if (!isAdminRequest(req)) {
     return NextResponse.json({ error: 'Kein Zugriff' }, { status: 401 });
   }
   const body = await req.json().catch(() => null);
+  const festivalId = typeof body?.festivalId === 'string' ? body.festivalId : 'woa2026';
   const stageId = body?.stageId;
-  if (typeof stageId !== 'string' || !getTimetable().stages.some((s) => s.id === stageId)) {
+  const timetable = await getTimetable(festivalId);
+  if (!timetable) {
+    return NextResponse.json({ error: 'Unbekanntes Festival' }, { status: 404 });
+  }
+  if (typeof stageId !== 'string' || !timetable.stages.some((s) => s.id === stageId)) {
     return NextResponse.json({ error: 'Unbekannte Bühne' }, { status: 404 });
   }
   const blueprint = sanitize(body?.blueprint);
@@ -57,6 +62,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Ungültiger Blueprint' }, { status: 400 });
   }
 
-  const rev = await saveBlueprint(stageId, blueprint);
+  const rev = await saveBlueprint(festivalId, stageId, blueprint);
   return NextResponse.json({ ok: true, rev });
 }

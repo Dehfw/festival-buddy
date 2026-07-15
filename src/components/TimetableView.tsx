@@ -3,8 +3,9 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import {
+  DEFAULT_HOT_THRESHOLD,
   formatTime,
-  HOT_SLOT_THRESHOLD,
+  isHotSlot,
   splitAttendees,
   toMinutes,
   type Slot,
@@ -188,8 +189,11 @@ export function TimetableView({
                     const iGo = !!user && going.some((a) => a.id === user.id);
                     const iAmInterested =
                       !!user && interested.some((a) => a.id === user.id);
-                    // 🔥 Hot Slot: ab HOT_SLOT_THRESHOLD festen Zusagen brennt der Rahmen
-                    const hot = going.length >= HOT_SLOT_THRESHOLD;
+                    // 🔥 Hot Slot: ab der Gruppen-Schwelle brennt der Rahmen
+                    const hot = isHotSlot(
+                      going.length,
+                      data.group?.hotThreshold ?? DEFAULT_HOT_THRESHOLD
+                    );
                     // Kurze Slots: Avatare neben dem Namen, sonst würden sie abgeschnitten
                     const stacked = height >= z.stackedMinH;
                     // Zweite Namenszeile nur, wenn sie über den Avataren komplett Platz hat

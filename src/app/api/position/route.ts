@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { readSessionUserId } from '@/lib/auth';
-import { setPosition } from '@/lib/db';
+import { getFirstGroupIdForUser, getGroupContextForUser, setPosition } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Position im Publikum markieren: { slotId, x, y } (Prozent 0..100).
+ * Position im Publikum markieren: { group, slotId, x, y } (Prozent 0..100).
  * x/y = null entfernt die Markierung. Der Nutzer kommt aus der
- * Passkey-Session, nicht aus dem Request-Body.
+ * Passkey-Session, das Festival aus der Gruppe.
  */
 export async function POST(req: Request) {
   const userId = readSessionUserId(req);
@@ -27,7 +27,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Koordinaten müssen 0–100 sein' }, { status: 400 });
   }
 
-  const result = await setPosition(userId, slotId, remove ? null : x, remove ? null : y);
+  const groupId =
+    typeof body?.group === 'string' && body.group
+      ? body.group
+      : await getFirstGroupIdForUser(userId);
+  if (!groupId) {
+    return NextResponse.json({ error: 'Noch in keiner Gruppe' }, { status: 403 });
+  }
+  const ctx = await getGroupContextForUser(groupId, userId);
+  if (!ctx) {
+    return NextResponse.json({ error: 'Kein Mitglied dieser Gruppe' }, { status: 403 });
+  }
+
+  const result = await setPosition(
+    userId,
+    ctx.festivalId,
+    slotId,
+    remove ? null : x,
+    remove ? null : y
+  );
   if (result === 'not-attending') {
     return NextResponse.json(
       { error: 'Erst bei der Band eintragen, dann Position markieren' },

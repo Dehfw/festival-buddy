@@ -1,33 +1,59 @@
 'use client';
 
-import type { DataPayload, SelectionStatus, User } from '../types';
+import type { DataPayload, GroupSummary, SelectionStatus, User } from '../types';
 
 /**
  * Offline-first Sync:
- *  - Alle Daten liegen als Snapshot in localStorage (überlebt Reloads offline).
- *  - Mutationen laufen durch mutate(): sofort optimistisch anwenden,
- *    an den Server senden – schlägt das Netz fehl, landet die Mutation
- *    in einer Warteschlange und wird beim nächsten Kontakt gesynct.
+ *  - Der Datenstand der aktiven Gruppe liegt als Snapshot in localStorage
+ *    (überlebt Reloads offline); Cache-Key pro Gruppe, damit ein
+ *    Gruppenwechsel offline nicht die falschen Leute zeigt.
+ *  - Mutationen laufen durch sendOrEnqueue(): sofort optimistisch
+ *    anwenden, an den Server senden – schlägt das Netz fehl, landet die
+ *    Mutation in einer Warteschlange und wird beim nächsten Kontakt
+ *    gesynct.
  *  - Nach jedem Server-Fetch werden noch offene Mutationen erneut auf den
  *    Snapshot angewendet, damit die UI nicht "zurückspringt".
  */
 
-const DATA_KEY = 'fb.data.v1';
+const DATA_KEY_PREFIX = 'fb.data.v2:'; // v2: Payload enthält jetzt `group`
+const LEGACY_DATA_KEY = 'fb.data.v1';
 const QUEUE_KEY = 'fb.queue.v1';
 const USER_KEY = 'fb.user.v1';
+const GROUPS_KEY = 'fb.groups.v1';
+const ACTIVE_GROUP_KEY = 'fb.group.v1';
+const PENDING_INVITE_KEY = 'fb.pendingInvite';
 
 // userId steckt nur fürs optimistische Update drin – serverseitig zählt
-// ausschließlich die Passkey-Session (Cookie).
+// ausschließlich die Passkey-Session (Cookie). group bestimmt, in welchem
+// Gruppen-/Festival-Kontext die Mutation gilt ('' = Alt-Eintrag, der
+// Server nimmt dann die erste Gruppe).
 export type Mutation =
-  | { op: 'selection'; userId: string; slotId: string; status: SelectionStatus | null }
-  | { op: 'position'; userId: string; slotId: string; x: number | null; y: number | null };
+  | {
+      op: 'selection';
+      group: string;
+      userId: string;
+      slotId: string;
+      status: SelectionStatus | null;
+    }
+  | {
+      op: 'position';
+      group: string;
+      userId: string;
+      slotId: string;
+      x: number | null;
+      y: number | null;
+    };
 
-/** Queue-Eintrag aus der Zeit vor dem "interessiert"-Status */
-type LegacySelectionMutation = {
-  op: 'selection';
+/** Queue-Einträge älterer App-Versionen */
+type LegacyMutation = {
+  op: 'selection' | 'position';
   userId: string;
   slotId: string;
-  attending: boolean;
+  group?: string;
+  attending?: boolean;
+  status?: SelectionStatus | null;
+  x?: number | null;
+  y?: number | null;
 };
 
 const ENDPOINTS: Record<Mutation['op'], string> = {
@@ -44,21 +70,24 @@ function safeParse<T>(raw: string | null): T | null {
   }
 }
 
-export function loadCachedData(): DataPayload | null {
-  const data = safeParse<DataPayload>(localStorage.getItem(DATA_KEY));
-  if (!data) return null;
-  // Cache aus der Zeit vor dem "interessiert"-Status: alles war fest zugesagt
-  return {
-    ...data,
-    selections: (data.selections ?? []).map((s) => ({
-      ...s,
-      status: s.status === 'interested' ? 'interested' : 'going',
-    })),
-  };
+export function loadCachedData(groupId: string): DataPayload | null {
+  const data = safeParse<DataPayload>(localStorage.getItem(DATA_KEY_PREFIX + groupId));
+  // Snapshot ohne group-Block (sollte es unter v2 nicht geben) verwerfen
+  if (!data || !data.group) return null;
+  return data;
 }
 
-export function saveCachedData(data: DataPayload) {
-  localStorage.setItem(DATA_KEY, JSON.stringify(data));
+export function saveCachedData(groupId: string, data: DataPayload) {
+  localStorage.setItem(DATA_KEY_PREFIX + groupId, JSON.stringify(data));
+}
+
+export function clearCachedData(groupId: string) {
+  localStorage.removeItem(DATA_KEY_PREFIX + groupId);
+}
+
+/** Cache aus der Ein-Gruppen-Ära wegräumen (Payload-Form hat sich geändert) */
+export function cleanupLegacyCache() {
+  localStorage.removeItem(LEGACY_DATA_KEY);
 }
 
 export function loadUser(): User | null {
@@ -70,26 +99,66 @@ export function saveUser(user: User | null) {
   else localStorage.removeItem(USER_KEY);
 }
 
+export function loadGroups(): GroupSummary[] | null {
+  return safeParse<GroupSummary[]>(localStorage.getItem(GROUPS_KEY));
+}
+
+export function saveGroups(groups: GroupSummary[] | null) {
+  if (groups) localStorage.setItem(GROUPS_KEY, JSON.stringify(groups));
+  else localStorage.removeItem(GROUPS_KEY);
+}
+
+export function loadActiveGroup(): string | null {
+  return localStorage.getItem(ACTIVE_GROUP_KEY);
+}
+
+export function saveActiveGroup(groupId: string | null) {
+  if (groupId) localStorage.setItem(ACTIVE_GROUP_KEY, groupId);
+  else localStorage.removeItem(ACTIVE_GROUP_KEY);
+}
+
+/**
+ * Einladungscode aus einem /join/<code>-Link, der den Passkey-Login
+ * überleben muss (sessionStorage: gilt nur für diesen Tab/Besuch).
+ */
+export function loadPendingInvite(): string | null {
+  try {
+    return sessionStorage.getItem(PENDING_INVITE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function savePendingInvite(code: string | null) {
+  try {
+    if (code) sessionStorage.setItem(PENDING_INVITE_KEY, code);
+    else sessionStorage.removeItem(PENDING_INVITE_KEY);
+  } catch {
+    // Safari Private Mode o. Ä. – dann eben ohne Merken
+  }
+}
+
 export function loadQueue(): Mutation[] {
-  const queue =
-    safeParse<(Mutation | LegacySelectionMutation)[]>(localStorage.getItem(QUEUE_KEY)) ?? [];
-  return (
-    queue
-      // Einträge aus der Nur-Name-Ära (op: 'user') aussortieren
-      .filter((m) => m.op === 'selection' || m.op === 'position')
-      // Alte selection-Einträge (attending: boolean) auf status umschreiben
-      .map((m): Mutation => {
-        if (m.op === 'selection' && 'attending' in m) {
-          return {
-            op: 'selection',
-            userId: m.userId,
-            slotId: m.slotId,
-            status: m.attending ? 'going' : null,
-          };
-        }
-        return m;
-      })
-  );
+  const queue = safeParse<LegacyMutation[]>(localStorage.getItem(QUEUE_KEY)) ?? [];
+  return queue
+    .filter((m) => m.op === 'selection' || m.op === 'position')
+    .map((m): Mutation => {
+      const group = typeof m.group === 'string' ? m.group : '';
+      if (m.op === 'selection') {
+        // Alt-Einträge (attending: boolean) auf status umschreiben
+        const status =
+          m.status !== undefined ? m.status : m.attending ? 'going' : null;
+        return { op: 'selection', group, userId: m.userId, slotId: m.slotId, status: status ?? null };
+      }
+      return {
+        op: 'position',
+        group,
+        userId: m.userId,
+        slotId: m.slotId,
+        x: m.x ?? null,
+        y: m.y ?? null,
+      };
+    });
 }
 
 export function saveQueue(queue: Mutation[]) {
@@ -138,9 +207,9 @@ export function applyMutation(data: DataPayload, m: Mutation): DataPayload {
 function payloadFor(m: Mutation): unknown {
   switch (m.op) {
     case 'selection':
-      return { slotId: m.slotId, status: m.status };
+      return { slotId: m.slotId, status: m.status, ...(m.group ? { group: m.group } : {}) };
     case 'position':
-      return { slotId: m.slotId, x: m.x, y: m.y };
+      return { slotId: m.slotId, x: m.x, y: m.y, ...(m.group ? { group: m.group } : {}) };
   }
 }
 
@@ -204,16 +273,30 @@ async function doFlush(): Promise<number> {
   return flushed;
 }
 
-/** Frische Daten vom Server holen; wendet offene Mutationen wieder an. */
-export async function fetchData(): Promise<DataPayload | null> {
+export type FetchResult =
+  | { kind: 'ok'; data: DataPayload }
+  /** Session weg/abgelaufen -> zurück zum Passkey-Login */
+  | { kind: 'unauthorized' }
+  /** Kein Mitglied (mehr) dieser Gruppe -> Mitgliedschaften neu laden */
+  | { kind: 'forbidden' }
+  | { kind: 'offline' };
+
+/** Frische Daten der Gruppe holen; wendet offene Mutationen wieder an. */
+export async function fetchData(groupId: string): Promise<FetchResult> {
   try {
-    const res = await fetch('/api/data', { cache: 'no-store' });
-    if (!res.ok) return null;
+    const res = await fetch(`/api/data?group=${encodeURIComponent(groupId)}`, {
+      cache: 'no-store',
+    });
+    if (res.status === 401) return { kind: 'unauthorized' };
+    if (res.status === 403) return { kind: 'forbidden' };
+    if (!res.ok) return { kind: 'offline' }; // 5xx wie Funkloch behandeln
     let data = (await res.json()) as DataPayload;
-    for (const m of loadQueue()) data = applyMutation(data, m);
-    saveCachedData(data);
-    return data;
+    for (const m of loadQueue()) {
+      if (m.group === groupId || m.group === '') data = applyMutation(data, m);
+    }
+    saveCachedData(groupId, data);
+    return { kind: 'ok', data };
   } catch {
-    return null;
+    return { kind: 'offline' };
   }
 }

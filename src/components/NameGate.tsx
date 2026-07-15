@@ -18,7 +18,7 @@ import { DefektLogo } from './DefektLogo';
  * angeboten – oder über den "Ich hab schon einen Passkey"-Button.
  */
 export function NameGate() {
-  const { loginAs, data } = useApp();
+  const { loginAs } = useApp();
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +86,7 @@ export function NameGate() {
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
           <div className="mb-8 inline-flex items-center gap-2 border border-blood/20 bg-blood/5 px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-blood">
-            <span className="opacity-50">//</span> Tja… Wacken 2026
+            <span className="opacity-50">//</span> Tja… Festival-Saison 2026
           </div>
           <div>
             <DefektLogo variant="hero" />
@@ -97,9 +97,9 @@ export function NameGate() {
             Geplant
           </div>
           <p className="mt-4 text-sm text-ash">
-            Festival Buddy · W:O:A · 26.07.–01.08.2026
+            Festival Buddy · Wer geht zu welcher Band? 🤘
             <br />
-            Wer geht zu welcher Band? 🤘
+            Nach dem Login gründest du eine Gruppe oder trittst einer bei.
           </p>
         </div>
 
@@ -154,7 +154,6 @@ export function NameGate() {
           Kein Passwort: Dein Gerät merkt sich dich per Passkey
           (Face ID / Fingerabdruck). Der Name ist nur dein Anzeigename.
           Anderes Gerät? Beim Login einfach die QR-Code-Option nehmen.
-          {data ? ` · ${data.users.length} von 17 sind schon drin.` : ''}
         </p>
 
         <p className="mt-10 text-center font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">

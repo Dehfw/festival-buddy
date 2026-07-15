@@ -1,7 +1,11 @@
-# 🤘 Festival Buddy – Wacken Open Air 2026
+# 🤘 Festival Buddy
 
-Timetable-Planer für eine geschlossene Crew (17 Leute) beim **W:O:A 2026**
-(29.07.–01.08.2026): Wer geht zu welcher Band – und wo steht ihr im Publikum?
+Timetable-Planer für Festival-Crews: Wer geht zu welcher Band – und wo
+steht ihr im Publikum? Mandantenfähig über **Gruppen**: Nach dem Login
+gründet man eine Gruppe (mit Festival-Auswahl, Name und Gruppenbild) oder
+tritt per **Einladungscode** bei – als Link (`/join/<code>`) oder zum
+Abtippen. Aktuell angelegte Festivals: **Wacken Open Air 2026** und
+**Summer Breeze 2026** (Lineup folgt per Import).
 
 Login per **Passkey** (Face ID / Fingerabdruck): Beim ersten Mal Namen
 eintippen und Passkey anlegen, danach bietet das Gerät den Passkey beim
@@ -10,13 +14,23 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
 
 ## Features
 
+- **Gruppen (Mandantenfähigkeit)** – jede Gruppe gehört zu einem Festival
+  und sieht nur ihre eigenen Mitglieder, Auswahlen und Positionen. Ein
+  mehrfach nutzbarer Einladungscode pro Gruppe (rotierbar durch den
+  Owner), teilbar als Link oder manuell eintippbar. Owner können die
+  Gruppe umbenennen, ein Gruppenbild setzen (clientseitig auf 512 px
+  verkleinert, in der DB gespeichert), Mitglieder entfernen und die
+  Feuerrahmen-Schwelle 🔥 einstellen (0 = aus). Verwaltet wird alles auf
+  der Gruppen-Seite `/gruppe` (Tap aufs Profilbild oder den Gruppen-Chip
+  im Header); dort wechselt man auch zwischen mehreren Gruppen.
 - **Passkey-Login mit Autodiscovery** – kein Passwort: einmal registrieren,
   danach schlägt iPhone/Android den Passkey am Namensfeld automatisch vor
   (`@simplewebauthn`, discoverable Credentials). Alt-Accounts aus der
   Nur-Name-Ära werden bei der ersten Passkey-Registrierung mit gleichem
-  Namen übernommen (Auswahlen bleiben erhalten). Passkeys syncen über
-  iCloud-Schlüsselbund bzw. Google Passwortmanager; für ein fremdes Gerät
-  gibt es beim Login den QR-Code-Flow.
+  Namen übernommen (Auswahlen bleiben erhalten; abschaltbar über
+  `LEGACY_NAME_ADOPTION=off`, empfohlen sobald alle migriert sind).
+  Passkeys syncen über iCloud-Schlüsselbund bzw. Google Passwortmanager;
+  für ein fremdes Gerät gibt es beim Login den QR-Code-Flow.
 - **Timetable-Grid** – alle 8 Bühnen nebeneinander (X-Achse), Zeit auf der
   Y-Achse, Tabs für die vier Festivaltage. In den Band-Slots zeigen bunte
   Kreise mit Initialen, wer hingeht. Band antippen → eintragen.
@@ -44,10 +58,14 @@ npm run dev        # Entwicklung: http://localhost:3000
 npm run build && npm start   # Produktion
 ```
 
-Nutzer, Band-Auswahlen, Positionen und Blueprints liegen in **PostgreSQL**
-(`DATABASE_URL`). Das Schema wird beim ersten Zugriff automatisch angelegt
-und die Default-Blueprints werden geseedet – keine Migrationen nötig.
-Backup: `pg_dump`. Wer noch Daten aus der früheren Datei-Datenbank hat:
+Festivals (inkl. Timetable), Gruppen, Nutzer, Band-Auswahlen, Positionen
+und Blueprints liegen in **PostgreSQL** (`DATABASE_URL`). Das Schema wird
+beim ersten Zugriff automatisch angelegt bzw. migriert und die Defaults
+werden geseedet: Wacken-Timetable aus `data/timetable.json`, Summer Breeze
+als Gerüst, Blueprints – und **Bestandsnutzer landen automatisch in der
+Default-Gruppe „DEFEKT“** (Name über `DEFAULT_GROUP_NAME` überschreibbar),
+damit beim Umstieg auf Gruppen nichts verloren geht. Backup: `pg_dump`.
+Wer noch Daten aus der früheren Datei-Datenbank hat:
 `DATABASE_URL=... node scripts/migrate-db-json.mjs` überträgt `data/db.json`.
 
 Fürs Handy: Seite im Browser öffnen → „Zum Startbildschirm hinzufügen“.
@@ -63,6 +81,12 @@ Damit Service Worker **und Passkeys** laufen, muss die App über **HTTPS**
 |                   | Serverless-Instanzen rechnen gleich). Setzen = empfohlen. |
 | `WEBAUTHN_RP_ID`  | Relying-Party-ID (Domain). Default: Hostname des Requests.|
 | `WEBAUTHN_ORIGIN` | Erwartete Origin (`https://…`). Default: Request-Origin.  |
+| `DEFAULT_GROUP_NAME` | Name der Migrations-Gruppe für Bestandsnutzer          |
+|                   | (Default: `DEFEKT`). Greift nur beim allerersten Anlegen. |
+| `LEGACY_NAME_ADOPTION` | `off` = Alt-Accounts ohne Passkey können nicht mehr  |
+|                   | per Namensgleichheit übernommen werden. Empfohlen, sobald |
+|                   | die ganze Crew ihren Passkey hat (sonst könnte sich ein   |
+|                   | Fremder per Namen in die Bestands-Gruppe setzen).         |
 
 Achtung: Passkeys sind an die Domain (RP ID) gebunden. Zieht die App auf
 eine andere Domain um, sind bestehende Passkeys dort nicht mehr nutzbar.
@@ -74,10 +98,9 @@ eine andere Domain um, sind bestehende Passkeys dort nicht mehr nutzbar.
    automatisch als Env-Variable. Den **pooled** Connection-String verwenden
    (Host mit `-pooler`), mit `?sslmode=require` am Ende.
 2. `ADMIN_PASSWORD` als Env-Variable setzen.
-3. Deploy – fertig. Der Timetable wird beim Build aus
-   `data/timetable.json` ins Bundle kompiliert (kein Laufzeit-Dateizugriff,
-   Serverless-tauglich); nach einem `npm run import` also einmal neu
-   deployen.
+3. Deploy – fertig. Der Wacken-Timetable wird beim ersten Schemalauf aus
+   `data/timetable.json` in die DB geseedet; danach laufen Lineup-Updates
+   über `npm run import:db` direkt gegen die Datenbank (kein Redeploy).
 
 ## Admin
 
@@ -91,16 +114,36 @@ eine andere Domain um, sind bestehende Passkeys dort nicht mehr nutzbar.
   (Cookie `fb_admin`, 12 h gültig). Das Passwort landet nie im Browser-Storage
   und wird nicht bei jedem Request mitgeschickt. „Abmelden" beendet die
   Session serverseitig.
+- Globales Betreiber-Tool (hängt an keiner Gruppe): Blueprints & POIs
+  **pro Festival** pflegen – oben umschalten. Festivals ohne importiertes
+  Lineup zeigen einen Hinweis statt des Editors.
 
 ## Timetable-Daten
 
-`data/timetable.json` enthält Bühnen, Tage und alle Band-Slots. Der
-eingecheckte Stand ist aus dem **offiziellen W:O:A-Datenexport**
+Die Timetables liegen **pro Festival in der Datenbank** (Tabelle
+`festivals`, JSONB). `data/timetable.json` dient nur noch als Seed für
+Wacken beim allerersten Schemalauf; danach ist die DB die Wahrheit und
+ein Lineup-Update braucht **keinen Redeploy** mehr:
+
+```bash
+npm run import                                # W:O:A-Export -> data/timetable.json
+DATABASE_URL=... npm run import:db -- --festival woa2026   # -> Datenbank
+DATABASE_URL=... npm run import:db -- --festival sb2026 pfad/sb.json
+```
+
+`scripts/import-festival.mjs` nimmt jede Datei im App-Timetable-Format
+(`{ festival, edition, dataVersion, days, stages, slots }`). Für Summer
+Breeze ist der Clashfinder-Export die realistischste Quelle – die
+Parse-Logik des Scrapers lässt sich mit eigener Bühnen-Tabelle
+wiederverwenden. Slot-IDs (`tag-buehne-bandslug`) müssen über Re-Importe
+stabil bleiben, damit bestehende Auswahlen erhalten bleiben.
+
+Der eingecheckte Wacken-Stand ist aus dem **offiziellen W:O:A-Datenexport**
 (`wackenlineup.json`) generiert: 233 Slots auf 9 Bühnen und 7 Tagen
 (Warm-up ab So 26.07.), inklusive Spotify-Artist-IDs für den
 „Auf Spotify anhören“-Button im Band-Sheet.
 
-Neu importieren (z. B. nach einem Update der Export-Datei):
+Wacken-Export neu einlesen (z. B. nach einem Update der Export-Datei):
 
 ```bash
 npm run import                     # liest ./wackenlineup.json
@@ -147,8 +190,8 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | Framework  | Next.js 15 (App Router) + React 19 + TypeScript             |
 | Styling    | Tailwind CSS 4, Mobile-First, dunkles Metal-Theme           |
 | Datenbank  | PostgreSQL via `pg` (Neon/Vercel-tauglich); Schema wird     |
-|            | automatisch angelegt, Timetable statisch ins Bundle         |
-|            | kompiliert                                                  |
+|            | automatisch angelegt/migriert; Timetables pro Festival als  |
+|            | JSONB in der DB (Lineup-Update ohne Redeploy)               |
 | Sync       | Client pollt `GET /api/data` alle 7 s; Mutationen werden    |
 |            | optimistisch angewendet und offline in `localStorage`       |
 |            | eingereiht (Replay bei Reconnect, last-write-wins)          |
@@ -160,19 +203,29 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 
 | Route                                | Zweck                                        |
 | ------------------------------------ | -------------------------------------------- |
-| `GET  /api/data`                     | Kompletter Datenstand (Timetable, Nutzer, …) |
+| `GET  /api/data?group=…`             | Datenstand der Gruppe (Timetable des Gruppen-Festivals, Mitglieder, Auswahlen, Positionen, Blueprints); nur für Mitglieder |
 | `POST /api/webauthn/register/options`| Passkey-Registrierung starten (`{ name }`)   |
 | `POST /api/webauthn/register/verify` | Registrierung prüfen, Nutzer + Session       |
 | `POST /api/webauthn/login/options`   | Passkey-Login starten (discoverable)         |
 | `POST /api/webauthn/login/verify`    | Login prüfen, Session setzen                 |
-| `GET  /api/me`                       | Nutzer zur aktuellen Session (401 = raus)    |
+| `GET  /api/me`                       | Nutzer + Gruppenliste zur Session (401 = raus) |
 | `POST /api/logout`                   | Session-Cookie löschen                       |
-| `POST /api/selection`                | Band-Teilnahme setzen/entfernen (Session)    |
-| `POST /api/position`                 | ✕-Position setzen/löschen (Session)          |
+| `GET  /api/festivals`                | Festival-Liste für die Gruppengründung       |
+| `POST /api/groups`                   | Gruppe erstellen (`{ name, festivalId }`)    |
+| `GET  /api/groups/mine`              | Meine Mitgliedschaften                       |
+| `POST /api/groups/join`              | Beitritt per Einladungscode (`{ code }`)     |
+| `GET  /api/groups/preview?code=…`    | Öffentliche Gruppen-Vorschau für die Join-Seite |
+| `PATCH /api/groups/[id]`             | Owner: umbenennen, Feuerrahmen-Schwelle, Code rotieren |
+| `GET/POST /api/groups/[id]/image`    | Gruppenbild laden (Mitglieder) / setzen (Owner) |
+| `POST /api/groups/[id]/leave`        | Gruppe verlassen (Owner-Nachrücken, letzte:r löscht) |
+| `DELETE /api/groups/[id]/members/[userId]` | Owner: Mitglied entfernen              |
+| `POST /api/selection`                | Band-Teilnahme setzen/entfernen (Session, `{ group, slotId, status }`) |
+| `POST /api/position`                 | ✕-Position setzen/löschen (Session, `{ group, slotId, x, y }`) |
 | `POST /api/admin/login`              | Admin-Passwort prüfen, Session-Cookie setzen |
 | `GET  /api/admin/me`                 | Admin-Session gültig? (401 = Login nötig)    |
 | `POST /api/admin/logout`             | Admin-Session-Cookie löschen                 |
-| `POST /api/admin/blueprint`          | Blueprint einer Bühne speichern (Admin)      |
+| `GET  /api/admin/state?festival=…`   | Admin: Festivals, Timetable, Blueprints      |
+| `POST /api/admin/blueprint`          | Blueprint einer Bühne speichern (Admin, `{ festivalId, stageId, blueprint }`) |
 
 ### Icons neu erzeugen
 
