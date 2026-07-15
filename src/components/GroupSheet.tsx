@@ -8,9 +8,11 @@ import { Avatar } from './Avatars';
 import { GroupAvatar } from './GroupAvatar';
 
 /**
- * Bottom-Sheet für die aktive Gruppe: Mitglieder, Einladungscode teilen,
- * Gruppe wechseln/verlassen – und für den Owner: umbenennen, Gruppenbild,
- * Feuerrahmen-Schwelle, Code rotieren, Mitglieder entfernen.
+ * Bottom-Sheet für die aktive Gruppe – erreichbar über den Gruppen-Chip
+ * UND das eigene Profilbild im Header. Aufbau (bewusst aufgeräumt):
+ *   Kopf (Bild/Name/Festival) -> Einladen (immer sichtbar) ->
+ *   aufklappbar: Mitglieder, Meine Gruppen, Owner-Einstellungen ->
+ *   Fußzeile: Gruppe verlassen · Abmelden.
  */
 export function GroupSheet({
   onClose,
@@ -19,7 +21,7 @@ export function GroupSheet({
   onClose: () => void;
   onOpenGroupGate: () => void;
 }) {
-  const { data, user, groups, setActiveGroup, refresh, refreshMe } = useApp();
+  const { data, user, groups, setActiveGroup, refresh, refreshMe, logout } = useApp();
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
   const [editName, setEditName] = useState<string | null>(null);
@@ -148,6 +150,12 @@ export function GroupSheet({
     }
   };
 
+  const doLogout = () => {
+    if (!confirm('Abmelden? Dein Passkey bleibt auf dem Gerät.')) return;
+    onClose();
+    logout();
+  };
+
   const otherGroups = (groups ?? []).filter((g) => g.id !== group.id);
 
   return (
@@ -160,14 +168,26 @@ export function GroupSheet({
       <div className="relative max-h-[88dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border-x border-t border-rivet bg-steel px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl">
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-rivet" />
 
-        {/* Kopf: Bild + Name + Festival */}
+        {/* Kopf: Bild + Name + Festival (Owner: Bild antippen = ändern) */}
         <div className="flex items-center gap-3">
-          <GroupAvatar
-            groupId={group.id}
-            name={group.name}
-            imageVersion={group.imageVersion}
-            size={56}
-          />
+          <button
+            onClick={() => isOwner && fileRef.current?.click()}
+            disabled={!isOwner || busy}
+            className="relative shrink-0 disabled:cursor-default"
+            title={isOwner ? 'Gruppenbild ändern' : undefined}
+          >
+            <GroupAvatar
+              groupId={group.id}
+              name={group.name}
+              imageVersion={group.imageVersion}
+              size={56}
+            />
+            {isOwner && (
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border border-rivet bg-steel-2 text-[10px]">
+                ✏️
+              </span>
+            )}
+          </button>
           <div className="min-w-0 flex-1">
             {editName === null ? (
               <h2 className="truncate font-metal text-2xl font-black leading-tight">
@@ -198,6 +218,17 @@ export function GroupSheet({
             </p>
           </div>
         </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void uploadImage(f);
+            e.target.value = '';
+          }}
+        />
 
         {status && (
           <p className="mt-3 rounded-xl border border-rivet bg-steel-2 px-3 py-2 text-xs text-bone">
@@ -205,8 +236,8 @@ export function GroupSheet({
           </p>
         )}
 
-        {/* Einladen */}
-        <div className="mt-5 rounded-xl border border-rivet bg-steel-2 p-3.5">
+        {/* Einladen – der häufigste Griff, deshalb immer sichtbar */}
+        <div className="mt-4 rounded-xl border border-rivet bg-steel-2 p-3.5">
           <div className="text-xs font-semibold uppercase tracking-wider text-ash">
             Leute einladen
           </div>
@@ -222,27 +253,16 @@ export function GroupSheet({
             </button>
           </div>
           <p className="mt-2 text-[11px] leading-relaxed text-ash/70">
-            Ein Code für alle: Wer den Link öffnet oder den Code eintippt,
-            ist drin.
-            {isOwner && ' Geleakt? Unten neu würfeln – alte Links sterben sofort.'}
+            Ein Code für alle: Link öffnen oder Code eintippen – fertig.
           </p>
-          {isOwner && (
-            <button
-              onClick={rotateCode}
-              disabled={busy}
-              className="mt-2 text-xs font-bold text-ember underline disabled:opacity-40"
-            >
-              ↻ Code neu würfeln
-            </button>
-          )}
         </div>
 
         {/* Mitglieder */}
-        <div className="mt-5">
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-ash">
-            Mitglieder
-          </div>
-          <ul className="space-y-2">
+        <details open className="mt-3 rounded-xl border border-rivet bg-steel-2 p-3.5">
+          <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-wider text-ash">
+            Mitglieder ({members.length})
+          </summary>
+          <ul className="mt-3 space-y-2">
             {members.map((m) => (
               <li key={m.id} className="flex items-center gap-2.5 text-sm">
                 <Avatar user={m} size={26} />
@@ -268,14 +288,64 @@ export function GroupSheet({
               </li>
             ))}
           </ul>
-        </div>
+        </details>
+
+        {/* Meine Gruppen */}
+        <details
+          open={otherGroups.length > 0}
+          className="mt-3 rounded-xl border border-rivet bg-steel-2 p-3.5"
+        >
+          <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-wider text-ash">
+            Meine Gruppen ({(groups ?? []).length})
+          </summary>
+          <ul className="mt-3 space-y-1.5">
+            {otherGroups.map((g) => (
+              <li key={g.id}>
+                <button
+                  onClick={() => {
+                    setActiveGroup(g.id);
+                    onClose();
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl border border-rivet bg-steel px-3 py-2 text-left"
+                >
+                  <GroupAvatar
+                    groupId={g.id}
+                    name={g.name}
+                    imageVersion={g.imageVersion}
+                    size={28}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-bold text-bone">
+                      {g.name}
+                    </span>
+                    <span className="block text-[11px] text-ash">
+                      {g.festivalName}
+                    </span>
+                  </span>
+                  <span className="text-xs text-ash">wechseln →</span>
+                </button>
+              </li>
+            ))}
+            <li>
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenGroupGate();
+                }}
+                className="w-full rounded-xl border border-dashed border-rivet px-3 py-2.5 text-sm font-bold text-ash"
+              >
+                + Gruppe gründen oder beitreten
+              </button>
+            </li>
+          </ul>
+        </details>
 
         {/* Owner-Einstellungen */}
         {isOwner && (
-          <div className="mt-5 rounded-xl border border-rivet bg-steel-2 p-3.5">
-            <div className="text-xs font-semibold uppercase tracking-wider text-ash">
+          <details className="mt-3 rounded-xl border border-rivet bg-steel-2 p-3.5">
+            <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-wider text-ash">
               Einstellungen (Owner)
-            </div>
+            </summary>
 
             <div className="mt-3 flex items-center justify-between gap-3">
               <span className="text-sm text-bone">
@@ -322,76 +392,32 @@ export function GroupSheet({
               >
                 🖼️ Gruppenbild {group.imageVersion > 0 ? 'ändern' : 'hochladen'}
               </button>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void uploadImage(f);
-                  e.target.value = '';
-                }}
-              />
+              <button
+                onClick={rotateCode}
+                disabled={busy}
+                className="rounded-lg border border-rivet px-3 py-2 text-xs font-bold text-ember disabled:opacity-40"
+                title="Alter Einladungslink/-code wird sofort ungültig"
+              >
+                ↻ Code neu würfeln
+              </button>
             </div>
-          </div>
+          </details>
         )}
 
-        {/* Meine Gruppen */}
-        <div className="mt-5">
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-ash">
-            Meine Gruppen
-          </div>
-          <ul className="space-y-1.5">
-            {otherGroups.map((g) => (
-              <li key={g.id}>
-                <button
-                  onClick={() => {
-                    setActiveGroup(g.id);
-                    onClose();
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-xl border border-rivet bg-steel-2 px-3 py-2 text-left"
-                >
-                  <GroupAvatar
-                    groupId={g.id}
-                    name={g.name}
-                    imageVersion={g.imageVersion}
-                    size={28}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-bold text-bone">
-                      {g.name}
-                    </span>
-                    <span className="block text-[11px] text-ash">
-                      {g.festivalName}
-                    </span>
-                  </span>
-                  <span className="text-xs text-ash">wechseln →</span>
-                </button>
-              </li>
-            ))}
-            <li>
-              <button
-                onClick={() => {
-                  onClose();
-                  onOpenGroupGate();
-                }}
-                className="w-full rounded-xl border border-dashed border-rivet px-3 py-2.5 text-sm font-bold text-ash"
-              >
-                + Gruppe gründen oder beitreten
-              </button>
-            </li>
-          </ul>
+        {/* Fußzeile: dezent statt Riesen-Buttons */}
+        <div className="mt-5 flex items-center justify-between border-t border-rivet pt-4 text-xs">
+          <button
+            onClick={leave}
+            disabled={busy}
+            className="font-bold uppercase tracking-wider text-blood disabled:opacity-40"
+          >
+            Gruppe verlassen
+          </button>
+          <button onClick={doLogout} className="flex items-center gap-1.5 text-ash">
+            <Avatar user={user} size={18} />
+            <span className="underline">Abmelden</span>
+          </button>
         </div>
-
-        {/* Verlassen */}
-        <button
-          onClick={leave}
-          disabled={busy}
-          className="mt-6 w-full rounded-xl border border-blood/40 bg-blood/10 px-4 py-3 text-sm font-bold uppercase tracking-wider text-blood disabled:opacity-40"
-        >
-          Gruppe verlassen
-        </button>
       </div>
     </div>
   );

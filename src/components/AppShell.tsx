@@ -27,7 +27,7 @@ function todayFestivalDate(): string {
 }
 
 export function AppShell() {
-  const { data, user, online, pending, logout } = useApp();
+  const { data, user, online, pending } = useApp();
   const [tab, setTab] = useState<Tab>('timetable');
   const [dayId, setDayId] = useState('');
   const [activeSlot, setActiveSlot] = useState<Slot | null>(null);
@@ -100,7 +100,11 @@ export function AppShell() {
               Sync … {pending}
             </span>
           )}
-          <button onClick={logout} title={`${user.name} – abmelden`}>
+          {/* Profilbild öffnet das Gruppen-Sheet (Abmelden lebt dort) */}
+          <button
+            onClick={() => setShowGroupSheet(true)}
+            title={`${user.name} – Gruppe & Konto`}
+          >
             <Avatar user={user} size={30} ring />
           </button>
         </div>
