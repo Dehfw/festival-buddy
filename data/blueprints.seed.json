@@ -135,5 +135,39 @@
     "pois": [
       { "id": "metalchurch-poi-1", "type": "entrance", "x": 50, "y": 92, "label": "Eingang Kirche" }
     ]
+  },
+  "main": {
+    "stageLabel": "MAIN STAGE",
+    "elements": [
+      { "type": "stage", "x": 20, "y": 2, "w": 60, "h": 14 },
+      { "type": "foh", "x": 44, "y": 52, "w": 12, "h": 8, "label": "FOH-Turm" },
+      { "type": "barrier", "x": 15, "y": 20, "w": 70, "h": 1.5 }
+    ],
+    "pois": []
+  },
+  "tstage": {
+    "stageLabel": "T-STAGE",
+    "elements": [
+      { "type": "tent", "x": 10, "y": 2, "w": 80, "h": 75 },
+      { "type": "stage", "x": 30, "y": 5, "w": 40, "h": 12 },
+      { "type": "foh", "x": 44, "y": 55, "w": 12, "h": 7, "label": "FOH" }
+    ],
+    "pois": []
+  },
+  "toolrebel": {
+    "stageLabel": "TOOL REBEL STAGE",
+    "elements": [
+      { "type": "stage", "x": 26, "y": 2, "w": 48, "h": 12 },
+      { "type": "foh", "x": 45, "y": 46, "w": 10, "h": 7, "label": "FOH" }
+    ],
+    "pois": []
+  },
+  "circus": {
+    "stageLabel": "CAMPSITE CIRCUS",
+    "elements": [
+      { "type": "tent", "x": 14, "y": 2, "w": 72, "h": 70 },
+      { "type": "stage", "x": 32, "y": 5, "w": 36, "h": 11 }
+    ],
+    "pois": []
   }
 }

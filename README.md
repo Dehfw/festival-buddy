@@ -113,6 +113,31 @@ zählen zum Vortag, z. B. 01:00 → `25:00`) und hält die Slot-IDs stabil
 (`tag-buehne-bandname`), damit bestehende Band-Auswahlen der Crew
 erhalten bleiben.
 
+### Summer Breeze 2026
+
+Die Running Order fürs **Summer Breeze Open Air 2026** (12.–15.08., Warm-up
+ab Di 11.08., Dinkelsbühl) liegt als `summerbreeze-runningorder.json` bei –
+abgetippt aus dem offiziellen Runningorder-PDF: 150 Slots auf 4 Bühnen
+(Main Stage, T-Stage, Tool Rebel Stage, Campsite Circus Stage) und 5 Tagen.
+
+```bash
+npm run import:sb                     # liest ./summerbreeze-runningorder.json
+npm run import:sb -- pfad/datei.json  # anderer Pfad
+```
+
+**Achtung:** Die App zeigt immer genau ein Festival – der Import überschreibt
+`data/timetable.json` und stellt die App (nach Build/Deploy) von Wacken auf
+Summer Breeze um. Zurück zu Wacken: `npm run import`. Die Slot-IDs beider
+Festivals kollidieren nicht (andere Bühnen-IDs), bestehende Eintragungen
+bleiben also in der Datenbank erhalten und greifen wieder, sobald das
+jeweilige Festival aktiv ist. Am besten erst nach Wacken umstellen – oder
+für Summer Breeze ein eigenes Deployment mit eigener `DATABASE_URL` aufsetzen.
+
+Zeiten nach Mitternacht stehen in der Quelldatei wie im PDF (`01:30`); der
+Import rechnet sie auf den Festivaltag um (`25:30`). Bei einem Update des
+PDFs einfach die JSON-Datei anpassen und neu importieren – die Slot-IDs
+(`tag-buehne-bandname`) bleiben stabil.
+
 ### Alternative: Scraper
 
 Falls kein Export vorliegt, gibt es weiterhin den Scraper:

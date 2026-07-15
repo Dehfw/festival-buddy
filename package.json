@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "scrape": "node scripts/scrape-wacken.mjs",
-    "import": "node scripts/import-lineup.mjs"
+    "import": "node scripts/import-lineup.mjs",
+    "import:sb": "node scripts/import-summerbreeze.mjs"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.3.0",
