@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import {
@@ -158,6 +159,14 @@ export function NameGate() {
 
         <p className="mt-10 text-center font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">
           © 2026 DEFƎKT — Alle Rechte defekt.
+        </p>
+        <p className="mt-3 text-center">
+          <Link
+            href="/impressum"
+            className="font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50 underline underline-offset-2 hover:text-ash"
+          >
+            Impressum
+          </Link>
         </p>
       </div>
     </main>
