@@ -237,7 +237,7 @@ function GroupPageInner() {
         <button
           onClick={() => isAdmin && fileRef.current?.click()}
           disabled={!isAdmin || busy}
-          className="relative shrink-0 disabled:cursor-default"
+          className="group relative shrink-0 disabled:cursor-default"
           title={isAdmin ? 'Gruppenbild ändern' : undefined}
         >
           <GroupAvatar
@@ -247,16 +247,29 @@ function GroupPageInner() {
             size={64}
           />
           {isAdmin && (
-            <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border border-rivet bg-steel-2 text-[10px]">
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border border-rivet bg-steel-2 text-[10px] transition-colors group-hover:border-blood group-hover:bg-rivet">
               ✏️
             </span>
           )}
         </button>
         <div className="min-w-0 flex-1">
           {editName === null ? (
-            <h2 className="truncate font-metal text-2xl font-black leading-tight">
-              {group.name}
-            </h2>
+            <div className="flex items-center gap-1.5">
+              <h2 className="truncate font-metal text-2xl font-black leading-tight">
+                {group.name}
+              </h2>
+              {isAdmin && (
+                <button
+                  onClick={() => setEditName(group.name)}
+                  disabled={busy}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-rivet bg-steel-2 text-sm text-ash transition-colors hover:border-blood hover:bg-rivet hover:text-bone active:scale-95 disabled:opacity-40"
+                  title="Gruppe umbenennen"
+                  aria-label="Gruppe umbenennen"
+                >
+                  ✏️
+                </button>
+              )}
+            </div>
           ) : (
             <div className="flex gap-2">
               <input
@@ -437,20 +450,6 @@ function GroupPageInner() {
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              onClick={() => setEditName(group.name)}
-              disabled={busy}
-              className="rounded-lg border border-rivet px-3 py-2 text-xs font-bold text-bone disabled:opacity-40"
-            >
-              ✏️ Umbenennen
-            </button>
-            <button
-              onClick={() => fileRef.current?.click()}
-              disabled={busy}
-              className="rounded-lg border border-rivet px-3 py-2 text-xs font-bold text-bone disabled:opacity-40"
-            >
-              🖼️ Gruppenbild {group.imageVersion > 0 ? 'ändern' : 'hochladen'}
-            </button>
             <button
               onClick={rotateCode}
               disabled={busy}
