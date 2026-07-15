@@ -162,10 +162,10 @@ export function NameGate() {
         </p>
         <p className="mt-3 text-center">
           <Link
-            href="/impressum"
+            href="/datenschutz"
             className="font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50 underline underline-offset-2 hover:text-ash"
           >
-            Impressum
+            Datenschutz
           </Link>
         </p>
       </div>
