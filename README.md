@@ -105,11 +105,23 @@ eine andere Domain um, sind bestehende Passkeys dort nicht mehr nutzbar.
 ## Admin
 
 - URL: `/admin` (auch über das ⚙️ in der unteren Navigation)
+<<<<<<< HEAD
 - Passwort: `wacken2026` – ändern über die Umgebungsvariable
   `ADMIN_PASSWORD`.
 - Globales Betreiber-Tool (hängt an keiner Gruppe): Blueprints & POIs
   **pro Festival** pflegen – oben umschalten. Festivals ohne importiertes
   Lineup zeigen einen Hinweis statt des Editors.
+=======
+- Passwort: über die Umgebungsvariable `ADMIN_PASSWORD` setzen – am besten
+  ein langes, zufälliges. **In der Produktion gibt es keinen Default:** ist
+  `ADMIN_PASSWORD` nicht gesetzt, ist der Admin-Bereich deaktiviert (fail
+  closed), Login und Speichern werden abgelehnt. Nur in der lokalen
+  Entwicklung greift der Fallback `wacken2026`.
+- Nach dem Login setzt der Server eine signierte, `httpOnly`-Session
+  (Cookie `fb_admin`, 12 h gültig). Das Passwort landet nie im Browser-Storage
+  und wird nicht bei jedem Request mitgeschickt. „Abmelden" beendet die
+  Session serverseitig.
+>>>>>>> origin/main
 
 ## Timetable-Daten
 
@@ -203,6 +215,7 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | `POST /api/webauthn/login/verify`    | Login prüfen, Session setzen                 |
 | `GET  /api/me`                       | Nutzer + Gruppenliste zur Session (401 = raus) |
 | `POST /api/logout`                   | Session-Cookie löschen                       |
+<<<<<<< HEAD
 | `GET  /api/festivals`                | Festival-Liste für die Gruppengründung       |
 | `POST /api/groups`                   | Gruppe erstellen (`{ name, festivalId }`)    |
 | `GET  /api/groups/mine`              | Meine Mitgliedschaften                       |
@@ -217,6 +230,14 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | `POST /api/admin/login`              | Admin-Passwort prüfen                        |
 | `GET  /api/admin/state?festival=…`   | Admin: Festivals, Timetable, Blueprints      |
 | `POST /api/admin/blueprint`          | Blueprint einer Bühne speichern (Admin, `{ festivalId, stageId, blueprint }`) |
+=======
+| `POST /api/selection`                | Band-Teilnahme setzen/entfernen (Session)    |
+| `POST /api/position`                 | ✕-Position setzen/löschen (Session)          |
+| `POST /api/admin/login`              | Admin-Passwort prüfen, Session-Cookie setzen |
+| `GET  /api/admin/me`                 | Admin-Session gültig? (401 = Login nötig)    |
+| `POST /api/admin/logout`             | Admin-Session-Cookie löschen                 |
+| `POST /api/admin/blueprint`          | Blueprint einer Bühne speichern (Admin)      |
+>>>>>>> origin/main
 
 ### Icons neu erzeugen
 
