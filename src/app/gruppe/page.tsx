@@ -236,9 +236,21 @@ function GroupPageInner() {
         </button>
         <div className="min-w-0 flex-1">
           {editName === null ? (
-            <h2 className="truncate font-metal text-2xl font-black leading-tight">
-              {group.name}
-            </h2>
+            <div className="flex items-center gap-1.5">
+              <h2 className="truncate font-metal text-2xl font-black leading-tight">
+                {group.name}
+              </h2>
+              {isOwner && (
+                <button
+                  onClick={() => setEditName(group.name)}
+                  disabled={busy}
+                  className="shrink-0 text-sm text-ash disabled:opacity-40"
+                  title="Gruppe umbenennen"
+                >
+                  ✏️
+                </button>
+              )}
+            </div>
           ) : (
             <div className="flex gap-2">
               <input
@@ -387,20 +399,6 @@ function GroupPageInner() {
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              onClick={() => setEditName(group.name)}
-              disabled={busy}
-              className="rounded-lg border border-rivet px-3 py-2 text-xs font-bold text-bone disabled:opacity-40"
-            >
-              ✏️ Umbenennen
-            </button>
-            <button
-              onClick={() => fileRef.current?.click()}
-              disabled={busy}
-              className="rounded-lg border border-rivet px-3 py-2 text-xs font-bold text-bone disabled:opacity-40"
-            >
-              🖼️ Gruppenbild {group.imageVersion > 0 ? 'ändern' : 'hochladen'}
-            </button>
             <button
               onClick={rotateCode}
               disabled={busy}
