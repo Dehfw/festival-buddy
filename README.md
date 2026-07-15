@@ -20,8 +20,9 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
   Owner), teilbar als Link oder manuell eintippbar. Owner können die
   Gruppe umbenennen, ein Gruppenbild setzen (clientseitig auf 512 px
   verkleinert, in der DB gespeichert), Mitglieder entfernen und die
-  Feuerrahmen-Schwelle 🔥 einstellen (0 = aus). Nutzer können in mehreren
-  Gruppen sein und im Gruppen-Sheet wechseln.
+  Feuerrahmen-Schwelle 🔥 einstellen (0 = aus). Verwaltet wird alles auf
+  der Gruppen-Seite `/gruppe` (Tap aufs Profilbild oder den Gruppen-Chip
+  im Header); dort wechselt man auch zwischen mehreren Gruppen.
 - **Passkey-Login mit Autodiscovery** – kein Passwort: einmal registrieren,
   danach schlägt iPhone/Android den Passkey am Namensfeld automatisch vor
   (`@simplewebauthn`, discoverable Credentials). Alt-Accounts aus der

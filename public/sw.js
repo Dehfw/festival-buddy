@@ -11,13 +11,14 @@
  *    eine eigene Offline-Warteschlange, die synct, sobald Netz da ist.
  */
 
-const VERSION = 'v2'; // v2: Gruppen/Festivals – Daten-Cache keyt auf ?group=
+const VERSION = 'v3'; // v3: eigene Gruppen-Seite /gruppe im Precache
 const STATIC_CACHE = `fb-static-${VERSION}`;
 const DATA_CACHE = `fb-data-${VERSION}`;
 const PAGE_CACHE = `fb-pages-${VERSION}`;
 
 const PRECACHE = [
   '/',
+  '/gruppe',
   '/admin',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
