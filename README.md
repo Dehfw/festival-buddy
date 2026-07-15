@@ -12,6 +12,17 @@ eintippen und Passkey anlegen, danach bietet das Gerät den Passkey beim
 Öffnen von selbst an (WebAuthn Conditional UI). Der Name ist nur der
 Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
 
+> 📚 **Wie funktioniert das unter der Haube?** Das
+> [Wiki](docs/wiki/README.md) erklärt die wichtigen Funktionen im
+> Detail: [Architektur & Datenmodell](docs/wiki/architektur.md),
+> [Login & Passkeys](docs/wiki/auth-passkeys.md),
+> [Gruppen](docs/wiki/gruppen.md) (Rollen, Beitritt, Entfernen – und
+> was dabei mit den Teilnahmen passiert),
+> [Teilnahmen & Positionen](docs/wiki/teilnahmen-positionen.md),
+> [Sync & Offline](docs/wiki/sync-offline.md),
+> [Festivals & Timetable](docs/wiki/festivals-timetable.md) und
+> [Admin-Panel](docs/wiki/admin.md).
+
 ## Features
 
 - **Gruppen (Mandantenfähigkeit)** – jede Gruppe gehört zu einem Festival
