@@ -82,8 +82,13 @@ Damit Service Worker **und Passkeys** laufen, muss die App über **HTTPS**
 | `AUTH_SECRET`     | HMAC-Schlüssel für Session-/Challenge-Cookies. Ohne die   |
 |                   | Variable wird er aus der `DATABASE_URL` abgeleitet (alle  |
 |                   | Serverless-Instanzen rechnen gleich). Setzen = empfohlen. |
-| `WEBAUTHN_RP_ID`  | Relying-Party-ID (Domain). Default: Hostname des Requests.|
-| `WEBAUTHN_ORIGIN` | Erwartete Origin (`https://…`). Default: Request-Origin.  |
+| `WEBAUTHN_RP_ID`  | Relying-Party-ID (Domain), an die Passkeys gebunden sind.  |
+|                   | Default: Hostname des Requests. Am besten die nackte Domain |
+|                   | **ohne `www.`** eintragen (z. B. `festivalbuddy.app`), dann |
+|                   | gelten Passkeys für `www.` **und** apex. Mehr dazu unten.  |
+| `WEBAUTHN_ORIGIN` | Erwartete Origin (`https://…`). Default: Request-Origin.   |
+|                   | Am besten leer lassen – sonst wird nur genau diese eine    |
+|                   | Origin akzeptiert (www- **oder** apex-Domain, nicht beide).|
 | `DEFAULT_GROUP_NAME` | Name der Migrations-Gruppe für Bestandsnutzer          |
 |                   | (Default: `DEFEKT`). Greift nur beim allerersten Anlegen. |
 | `LEGACY_NAME_ADOPTION` | `off` = Alt-Accounts ohne Passkey können nicht mehr  |
@@ -93,6 +98,15 @@ Damit Service Worker **und Passkeys** laufen, muss die App über **HTTPS**
 
 Achtung: Passkeys sind an die Domain (RP ID) gebunden. Zieht die App auf
 eine andere Domain um, sind bestehende Passkeys dort nicht mehr nutzbar.
+
+**`www.` vs. nackte Domain:** Ein Passkey mit RP ID `www.festivalbuddy.app`
+funktioniert **nur** auf `www.festivalbuddy.app`, einer mit RP ID
+`festivalbuddy.app` dagegen auf `festivalbuddy.app` **und**
+`www.festivalbuddy.app`. Wer die App unter `www.` erreicht, sollte deshalb
+`WEBAUTHN_RP_ID=festivalbuddy.app` (ohne `www.`) setzen und `WEBAUTHN_ORIGIN`
+leer lassen, damit Login und Registrierung auf beiden Varianten klappen.
+Zusätzlich empfiehlt sich ein permanenter Redirect `www.` → apex (oder
+umgekehrt) im Hosting, damit die Origin konsistent bleibt.
 
 ### Deployment auf Vercel mit Neon
 
