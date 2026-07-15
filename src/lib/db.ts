@@ -122,7 +122,7 @@ async function createSchema(): Promise<void> {
         updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
       );
       -- Gruppen: ein mehrfach nutzbarer Einladungscode pro Gruppe (Link
-      -- /join/<code> oder manuell eingetippt), rotierbar durch den Owner.
+      -- /join/<code> oder manuell eingetippt), rotierbar durch Admins.
       CREATE TABLE IF NOT EXISTS groups (
         id            TEXT PRIMARY KEY,
         festival_id   TEXT NOT NULL REFERENCES festivals(id),
@@ -393,6 +393,11 @@ export async function festivalExists(festivalId: string): Promise<boolean> {
 /* Gruppen                                                             */
 /* ------------------------------------------------------------------ */
 
+/** DB-Rollenwert defensiv in den GroupRole-Typ übersetzen */
+function parseRole(role: string | undefined): GroupRole {
+  return role === 'owner' ? 'owner' : role === 'admin' ? 'admin' : 'member';
+}
+
 /** Crockford-Base32 ohne Verwechsler (kein I, L, O, U) */
 const INVITE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
@@ -419,7 +424,7 @@ function toGroupSummary(r: GroupSummaryRow): GroupSummary {
     name: r.name,
     festivalId: r.festival_id,
     festivalName: r.festival_name,
-    role: r.role === 'owner' ? 'owner' : 'member',
+    role: parseRole(r.role),
     memberCount: Number(r.member_count),
     imageVersion: r.image_version,
   };
@@ -466,7 +471,7 @@ export async function getGroupContextForUser(
   );
   const r = res.rows[0];
   if (!r) return null;
-  return { festivalId: r.festival_id, role: r.role === 'owner' ? 'owner' : 'member' };
+  return { festivalId: r.festival_id, role: parseRole(r.role) };
 }
 
 export async function getMemberRole(
@@ -478,7 +483,7 @@ export async function getMemberRole(
     [groupId, userId]
   );
   const role = res.rows[0]?.role;
-  return role === 'owner' ? 'owner' : role === 'member' ? 'member' : null;
+  return role === undefined ? null : parseRole(role);
 }
 
 export async function createGroup(
@@ -597,7 +602,7 @@ export interface GroupPatch {
   rotateCode?: boolean;
 }
 
-/** Gruppe ändern (Owner-Check macht die Route). */
+/** Gruppe ändern (Admin-Check macht die Route). */
 export async function updateGroup(groupId: string, patch: GroupPatch): Promise<boolean> {
   const sets: string[] = [];
   const params: unknown[] = [groupId];
@@ -623,9 +628,9 @@ export async function updateGroup(groupId: string, patch: GroupPatch): Promise<b
 }
 
 /**
- * Gruppe verlassen. Verlässt der letzte Owner die Gruppe, rückt das
- * dienstälteste verbleibende Mitglied nach; das letzte Mitglied nimmt
- * die Gruppe mit (löschen).
+ * Gruppe verlassen. Verlässt der letzte Owner die Gruppe, rückt der
+ * dienstälteste Admin nach (sonst das dienstälteste Mitglied); das letzte
+ * Mitglied nimmt die Gruppe mit (löschen).
  */
 export async function leaveGroup(groupId: string, userId: string): Promise<void> {
   await ensureSchema();
@@ -643,9 +648,11 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
     if (remaining.rows.length === 0) {
       await client.query('DELETE FROM groups WHERE id = $1', [groupId]);
     } else if (!remaining.rows.some((r) => r.role === 'owner')) {
+      const successor =
+        remaining.rows.find((r) => r.role === 'admin') ?? remaining.rows[0];
       await client.query(
         `UPDATE group_members SET role = 'owner' WHERE group_id = $1 AND user_id = $2`,
-        [groupId, remaining.rows[0].user_id]
+        [groupId, successor.user_id]
       );
     }
     await client.query('COMMIT');
@@ -658,11 +665,31 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
   }
 }
 
-/** Mitglied entfernen (Owner-Check macht die Route). */
+/** Mitglied entfernen (Admin-Check macht die Route; Owner ist tabu). */
 export async function removeMember(groupId: string, targetUserId: string): Promise<boolean> {
   const res = await query(
-    'DELETE FROM group_members WHERE group_id = $1 AND user_id = $2',
+    `DELETE FROM group_members
+      WHERE group_id = $1 AND user_id = $2 AND role <> 'owner'`,
     [groupId, targetUserId]
+  );
+  await bumpRev();
+  return (res.rowCount ?? 0) > 0;
+}
+
+/**
+ * Mitglied befördern ('admin') oder degradieren ('member'). Der Owner ist
+ * bewusst ausgenommen – seine Rolle ändert sich nur durch Nachrücken.
+ * false = Zielnutzer ist kein (änderbares) Mitglied dieser Gruppe.
+ */
+export async function setMemberRole(
+  groupId: string,
+  targetUserId: string,
+  role: 'admin' | 'member'
+): Promise<boolean> {
+  const res = await query(
+    `UPDATE group_members SET role = $3
+      WHERE group_id = $1 AND user_id = $2 AND role <> 'owner'`,
+    [groupId, targetUserId, role]
   );
   await bumpRev();
   return (res.rowCount ?? 0) > 0;
@@ -766,7 +793,7 @@ export async function getState(groupId: string, userId: string): Promise<DbState
   ]);
 
   const roles: Record<string, GroupRole> = {};
-  for (const m of members.rows) roles[m.id] = m.role === 'owner' ? 'owner' : 'member';
+  for (const m of members.rows) roles[m.id] = parseRole(m.role);
 
   return {
     users: members.rows.map((r) => ({
@@ -796,7 +823,7 @@ export async function getState(groupId: string, userId: string): Promise<DbState
       hotThreshold: g.hot_threshold,
       inviteCode: g.invite_code,
       imageVersion: g.image_version,
-      role: g.role === 'owner' ? 'owner' : 'member',
+      role: parseRole(g.role),
       roles,
     },
     festivalId: g.festival_id,

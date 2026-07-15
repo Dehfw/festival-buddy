@@ -16,13 +16,16 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
 
 - **Gruppen (Mandantenfähigkeit)** – jede Gruppe gehört zu einem Festival
   und sieht nur ihre eigenen Mitglieder, Auswahlen und Positionen. Ein
-  mehrfach nutzbarer Einladungscode pro Gruppe (rotierbar durch den
-  Owner), teilbar als Link oder manuell eintippbar. Owner können die
-  Gruppe umbenennen, ein Gruppenbild setzen (clientseitig auf 512 px
-  verkleinert, in der DB gespeichert), Mitglieder entfernen und die
-  Feuerrahmen-Schwelle 🔥 einstellen (0 = aus). Verwaltet wird alles auf
-  der Gruppen-Seite `/gruppe` (Tap aufs Profilbild oder den Gruppen-Chip
-  im Header); dort wechselt man auch zwischen mehreren Gruppen.
+  mehrfach nutzbarer Einladungscode pro Gruppe (rotierbar durch Admins),
+  teilbar als Link oder manuell eintippbar. Der Owner (Gründer) kann
+  weitere Mitglieder zu **Admins** ernennen; nur Owner und Admins können
+  die Gruppe umbenennen, ein Gruppenbild setzen (clientseitig auf 512 px
+  verkleinert, in der DB gespeichert), Mitglieder entfernen, Admins
+  ernennen/entfernen und die Feuerrahmen-Schwelle 🔥 einstellen (0 = aus).
+  Der Owner selbst kann weder entfernt noch degradiert werden. Verwaltet
+  wird alles auf der Gruppen-Seite `/gruppe` (Tap aufs Profilbild oder den
+  Gruppen-Chip im Header); dort wechselt man auch zwischen mehreren
+  Gruppen.
 - **Passkey-Login mit Autodiscovery** – kein Passwort: einmal registrieren,
   danach schlägt iPhone/Android den Passkey am Namensfeld automatisch vor
   (`@simplewebauthn`, discoverable Credentials). Alt-Accounts aus der
@@ -215,10 +218,11 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | `GET  /api/groups/mine`              | Meine Mitgliedschaften                       |
 | `POST /api/groups/join`              | Beitritt per Einladungscode (`{ code }`)     |
 | `GET  /api/groups/preview?code=…`    | Öffentliche Gruppen-Vorschau für die Join-Seite |
-| `PATCH /api/groups/[id]`             | Owner: umbenennen, Feuerrahmen-Schwelle, Code rotieren |
-| `GET/POST /api/groups/[id]/image`    | Gruppenbild laden (Mitglieder) / setzen (Owner) |
-| `POST /api/groups/[id]/leave`        | Gruppe verlassen (Owner-Nachrücken, letzte:r löscht) |
-| `DELETE /api/groups/[id]/members/[userId]` | Owner: Mitglied entfernen              |
+| `PATCH /api/groups/[id]`             | Owner/Admins: umbenennen, Feuerrahmen-Schwelle, Code rotieren |
+| `GET/POST /api/groups/[id]/image`    | Gruppenbild laden (Mitglieder) / setzen (Owner/Admins) |
+| `POST /api/groups/[id]/leave`        | Gruppe verlassen (Owner-Nachrücken: ältester Admin, sonst ältestes Mitglied; letzte:r löscht) |
+| `DELETE /api/groups/[id]/members/[userId]` | Owner/Admins: Mitglied entfernen (Owner nie) |
+| `PATCH /api/groups/[id]/members/[userId]` | Owner/Admins: Rolle setzen (`{ role: 'admin' \| 'member' }`) |
 | `POST /api/selection`                | Band-Teilnahme setzen/entfernen (Session, `{ group, slotId, status }`) |
 | `POST /api/position`                 | ✕-Position setzen/löschen (Session, `{ group, slotId, x, y }`) |
 | `POST /api/admin/login`              | Admin-Passwort prüfen, Session-Cookie setzen |
