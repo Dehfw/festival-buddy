@@ -98,8 +98,33 @@ function GroupPageInner() {
       okMsg
     );
 
+  const inviteUrl = () =>
+    `${location.origin}/join/${formatInviteCode(group.inviteCode)}`;
+
+  /** In die Zwischenablage kopieren; Fallback für ältere Browser */
+  const copyText = async (text: string, okMsg: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      flash(okMsg);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        flash(okMsg);
+      } catch {
+        flash(text); // wenigstens anzeigen, dann kann man manuell kopieren
+      }
+      document.body.removeChild(ta);
+    }
+  };
+
   const shareInvite = async () => {
-    const url = `${location.origin}/join/${formatInviteCode(group.inviteCode)}`;
+    const url = inviteUrl();
     const text = `Komm in unsere Festival-Gruppe „${group.name}“ (${group.festivalName})! Code: ${formatInviteCode(group.inviteCode)}`;
     try {
       if (navigator.share) {
@@ -109,12 +134,7 @@ function GroupPageInner() {
     } catch {
       return; // Nutzer hat das Teilen abgebrochen
     }
-    try {
-      await navigator.clipboard.writeText(url);
-      flash('Link kopiert 📋');
-    } catch {
-      flash(url);
-    }
+    await copyText(url, 'Link kopiert 📋');
   };
 
   const rotateCode = async () => {
@@ -267,19 +287,32 @@ function GroupPageInner() {
         <div className="text-xs font-semibold uppercase tracking-wider text-ash">
           Leute einladen
         </div>
-        <div className="mt-2 flex items-center gap-2">
-          <code className="flex-1 rounded-lg border border-dashed border-rivet px-3 py-2 text-center font-mono text-lg font-bold tracking-[0.2em] text-bone">
-            {formatInviteCode(group.inviteCode)}
-          </code>
+        <button
+          onClick={() =>
+            copyText(formatInviteCode(group.inviteCode), 'Code kopiert 📋')
+          }
+          title="Code kopieren"
+          className="mt-2 w-full rounded-lg border border-dashed border-rivet px-3 py-2 text-center font-mono text-lg font-bold tracking-[0.2em] text-bone active:scale-[0.99]"
+        >
+          {formatInviteCode(group.inviteCode)}
+        </button>
+        <div className="mt-2 flex gap-2">
+          <button
+            onClick={() => copyText(inviteUrl(), 'Link kopiert 📋')}
+            className="flex-1 rounded-lg border border-rivet px-3.5 py-2.5 text-sm font-bold text-bone active:scale-[0.97]"
+          >
+            🔗 Link kopieren
+          </button>
           <button
             onClick={shareInvite}
-            className="shrink-0 rounded-lg bg-blood px-3.5 py-2.5 text-sm font-bold text-black active:scale-[0.97]"
+            className="flex-1 rounded-lg bg-blood px-3.5 py-2.5 text-sm font-bold text-black active:scale-[0.97]"
           >
             Link teilen
           </button>
         </div>
         <p className="mt-2 text-[11px] leading-relaxed text-ash/70">
           Ein Code für alle: Link öffnen oder Code eintippen – fertig.
+          Code antippen kopiert ihn.
         </p>
       </div>
 
