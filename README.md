@@ -132,11 +132,47 @@ DATABASE_URL=... npm run import:db -- --festival sb2026 pfad/sb.json
 ```
 
 `scripts/import-festival.mjs` nimmt jede Datei im App-Timetable-Format
-(`{ festival, edition, dataVersion, days, stages, slots }`). Für Summer
-Breeze ist der Clashfinder-Export die realistischste Quelle – die
-Parse-Logik des Scrapers lässt sich mit eigener Bühnen-Tabelle
-wiederverwenden. Slot-IDs (`tag-buehne-bandslug`) müssen über Re-Importe
-stabil bleiben, damit bestehende Auswahlen erhalten bleiben.
+(`{ festival, edition, dataVersion, days, stages, slots }`). Slot-IDs
+(`tag-buehne-bandslug`) müssen über Re-Importe stabil bleiben, damit
+bestehende Auswahlen erhalten bleiben.
+
+### Running Order importieren (z. B. Summer Breeze)
+
+Für Festivals ohne offiziellen Datenexport gibt es einen Konverter für
+ein einfaches Running-Order-Format (Tage → Bühnen → `[Start, Ende, Band]`):
+
+```jsonc
+{
+  "festival": "Summer Breeze Open Air 2026",
+  "edition": "12.–15.08.2026 · Dinkelsbühl",
+  "days": [
+    {
+      "date": "2026-08-13",
+      "slots": {
+        "main":      [["12:00", "12:40", "Our Promise"], ["19:10", "20:30", "Saxon"]],
+        "tstage":    [["02:15", "03:00", "Saor"]],
+        "toolrebel": [["12:20", "12:50", "Fireborn"]],
+        "circus":    [["09:30", "10:15", "Metalza – Metal Workout"]]
+      }
+    }
+  ]
+}
+```
+
+```bash
+npm run import:ro -- sb.json                        # -> sb.timetable.json
+DATABASE_URL=... npm run import:db -- --festival sb2026 sb.timetable.json
+```
+
+Slots nach Mitternacht gehören zum Festivaltag, unter dem sie stehen –
+der Konverter normalisiert alles vor 08:00 automatisch auf Stunden ≥ 24
+(01:00 → `25:00`), auch für Endzeiten über Mitternacht hinaus. Für die
+Summer-Breeze-Bühnen-Keys (`main`, `tstage`, `toolrebel`, `circus`) sind
+Name/Kürzel/Farbe eingebaut; andere Keys bekommen generierte Werte, die
+sich per `"stages"`-Array in der Eingabedatei übersteuern lassen. Der
+Import ersetzt immer den kompletten Stand des Festivals – die Datei muss
+also **alle Tage** enthalten. Slot-IDs bleiben über Re-Importe stabil,
+Band-Auswahlen der Crew gehen daher nicht verloren.
 
 Der eingecheckte Wacken-Stand ist aus dem **offiziellen W:O:A-Datenexport**
 (`wackenlineup.json`) generiert: 233 Slots auf 9 Bühnen und 7 Tagen
