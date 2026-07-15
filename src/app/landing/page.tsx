@@ -1,19 +1,84 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { DefektLogo } from '@/components/DefektLogo';
+import { FireFrame } from '@/components/FireFrame';
+import { siteUrl } from '@/lib/siteUrl';
+
+const TITLE = 'Festival Buddy – Wer geht zu welcher Band? | DEFƎKT W:O:A 2026';
+const DESCRIPTION =
+  'Der Timetable-Planer für deine Festival-Crew. Wer geht zu welcher Band? Gruppen gründen, Bands markieren, Hot Slots sehen – offline-fähig, ohne Passwort. Wacken Open Air 2026.';
 
 export const metadata: Metadata = {
-  title: 'Festival Buddy – Wer geht zu welcher Band? | DEFƎKT W:O:A 2026',
-  description:
-    'Der Timetable-Planer für deine Festival-Crew. Wer geht zu welcher Band? Gruppen gründen, Bands markieren, Hot Slots sehen – offline-fähig, ohne Passwort. Wacken Open Air 2026.',
+  title: TITLE,
+  description: DESCRIPTION,
+  keywords: [
+    'Festival Buddy',
+    'Wacken Open Air 2026',
+    'W:O:A 2026',
+    'Timetable Planer',
+    'Running Order',
+    'Festival Planer',
+    'Festival App',
+    'Band Planer',
+    'Festival Gruppe',
+    'DEFƎKT',
+  ],
+  alternates: { canonical: '/landing' },
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: 'website',
+    url: '/landing',
+    siteName: 'DEFƎKT Festival Buddy',
+    locale: 'de_DE',
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [
+      {
+        url: '/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'Festival Buddy – Wer geht zu welcher Band? Timetable-Planer für deine Crew.',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ['/og.png'],
+  },
 };
+
+/** Strukturierte Daten für Google (Rich Results): App-Steckbrief als JSON-LD */
+function jsonLd() {
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'DEFƎKT Festival Buddy',
+    url: `${siteUrl()}/landing`,
+    description: DESCRIPTION,
+    applicationCategory: 'LifestyleApplication',
+    operatingSystem: 'Web, iOS, Android',
+    inLanguage: 'de',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+    about: {
+      '@type': 'Festival',
+      name: 'Wacken Open Air 2026',
+      location: {
+        '@type': 'Place',
+        name: 'Wacken',
+        address: { '@type': 'PostalAddress', addressCountry: 'DE' },
+      },
+    },
+  });
+}
 
 /* ------------------------------------------------------------------ */
 /* Öffentliche Landingpage. Die eigentliche App lebt auf "/" (gated);  */
 /* diese Seite erklärt das Produkt und schickt Leute rein.            */
 /* ------------------------------------------------------------------ */
 
-const FEATURES: { icon: string; title: string; body: string }[] = [
+const FEATURES: { icon: string; title: string; body: string; hot?: boolean }[] = [
   {
     icon: '🗓️',
     title: 'Timetable-Planer',
@@ -27,7 +92,8 @@ const FEATURES: { icon: string; title: string; body: string }[] = [
   {
     icon: '🔥',
     title: 'Hot Slots',
-    body: 'Wenn genug aus der Crew fest zusagen, fängt der Slot an zu brennen. Die Pflichttermine erkennst du auf einen Blick.',
+    body: 'Wenn genug aus der Crew fest zusagen, fängt der Slot an zu brennen. Genau wie diese Karte – die Pflichttermine erkennst du auf einen Blick.',
+    hot: true,
   },
   {
     icon: '👥',
@@ -67,6 +133,10 @@ const STEPS: { n: string; title: string; body: string }[] = [
 export default function LandingPage() {
   return (
     <main className="defekt-grid min-h-dvh">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLd() }}
+      />
       {/* Topbar */}
       <header className="steel-sheen sticky top-0 z-20">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
@@ -136,9 +206,18 @@ export default function LandingPage() {
             Kein Excel, kein Gruppenchat-Scrollen. Ein Ort für die ganze Crew.
           </p>
 
-          <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-rivet/60 bg-rivet/40 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Einzelkarten mit Abstand statt geteiltem Grid: der Feuerrahmen
+              der Hot-Slot-Karte ragt nach oben hinaus und darf nicht von
+              einem overflow-hidden-Container abgeschnitten werden */}
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
-              <div key={f.title} className="bg-steel p-7">
+              <div
+                key={f.title}
+                className={`relative rounded-2xl border bg-steel p-7 ${
+                  f.hot ? 'border-blood/40' : 'border-rivet/60'
+                }`}
+              >
+                {f.hot && <FireFrame className="inset-0 rounded-2xl" />}
                 <div className="text-3xl">{f.icon}</div>
                 <h3 className="mt-4 font-metal text-lg uppercase tracking-wide text-bone">
                   {f.title}
