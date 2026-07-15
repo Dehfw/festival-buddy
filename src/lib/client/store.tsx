@@ -181,12 +181,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
   }, [refresh, refreshMe]);
 
-  // Service Worker registrieren (PWA / Offline-Shell)
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
-    }
-  }, []);
+  // Service-Worker-Registrierung + Update-Hinweis: siehe <UpdatePrompt />
+  // (global im Root-Layout gemountet, damit es auf allen Seiten greift).
 
   const applyLocal = useCallback((m: Mutation) => {
     const current = dataRef.current;

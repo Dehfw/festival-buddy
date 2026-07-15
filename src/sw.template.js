@@ -1,5 +1,11 @@
 /*
- * Festival Buddy – Service Worker
+ * Festival Buddy – Service Worker (Vorlage)
+ *
+ * Diese Datei wird NICHT direkt ausgeliefert. Der Route-Handler unter
+ * src/app/sw.js/route.ts liest sie ein und ersetzt __SW_VERSION__ durch
+ * eine pro Deploy eindeutige Version (siehe next.config.mjs). Dadurch
+ * ändert sich der Byte-Inhalt von /sw.js bei jedem Deploy -> der Browser
+ * erkennt den neuen SW und die App kann einen Update-Hinweis anzeigen.
  *
  * Strategie:
  *  - App-Shell ('/'), Admin, Manifest & Icons werden beim Install vorge-cached.
@@ -9,12 +15,18 @@
  *  - Statische Assets (/_next/static, Icons): stale-while-revalidate.
  *  - Schreibzugriffe (POST) laufen NICHT über den SW – die App hat dafür
  *    eine eigene Offline-Warteschlange, die synct, sobald Netz da ist.
+ *
+ * Update-Ablauf:
+ *  - Beim Install wird NICHT sofort skipWaiting() gerufen: der neue SW
+ *    bleibt "waiting", bis der Nutzer im UI-Hinweis "Neu laden" tippt.
+ *  - Die App schickt dann {type:'SKIP_WAITING'} -> der SW aktiviert sich,
+ *    übernimmt via clients.claim() und die Seite lädt sich einmal neu.
  */
 
-const VERSION = 'v3'; // v3: eigene Gruppen-Seite /gruppe im Precache
-const STATIC_CACHE = `fb-static-${VERSION}`;
-const DATA_CACHE = `fb-data-${VERSION}`;
-const PAGE_CACHE = `fb-pages-${VERSION}`;
+const VERSION = '__SW_VERSION__';
+const STATIC_CACHE = 'fb-static-' + VERSION;
+const DATA_CACHE = 'fb-data-' + VERSION;
+const PAGE_CACHE = 'fb-pages-' + VERSION;
 
 const PRECACHE = [
   '/',
@@ -28,11 +40,10 @@ const PRECACHE = [
 ];
 
 self.addEventListener('install', (event) => {
+  // Kein skipWaiting(): der neue SW wartet, bis der Nutzer das Update
+  // über den Hinweis in der App bestätigt (siehe message-Listener unten).
   event.waitUntil(
-    caches
-      .open(PAGE_CACHE)
-      .then((cache) => cache.addAll(PRECACHE))
-      .then(() => self.skipWaiting())
+    caches.open(PAGE_CACHE).then((cache) => cache.addAll(PRECACHE))
   );
 });
 
@@ -49,6 +60,13 @@ self.addEventListener('activate', (event) => {
       )
       .then(() => self.clients.claim())
   );
+});
+
+// Vom UI ausgelöst ("Neu laden"-Hinweis): wartenden SW sofort aktivieren.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 function fetchWithTimeout(request, ms) {

@@ -195,9 +195,11 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | Sync       | Client pollt `GET /api/data` alle 7 s; Mutationen werden    |
 |            | optimistisch angewendet und offline in `localStorage`       |
 |            | eingereiht (Replay bei Reconnect, last-write-wins)          |
-| PWA        | Web App Manifest + eigener Service Worker (`public/sw.js`): |
+| PWA        | Web App Manifest + eigener Service Worker (`/sw.js` aus      |
+|            | `src/sw.template.js`, Version pro Deploy eingestempelt):     |
 |            | Precache der Shell, network-first mit Cache-Fallback für    |
-|            | Daten, stale-while-revalidate für statische Assets          |
+|            | Daten, stale-while-revalidate für Assets; `UpdatePrompt`    |
+|            | bietet neue Versionen als „Neu laden“-Hinweis an            |
 
 ### API
 
