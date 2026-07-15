@@ -98,6 +98,9 @@ export function TimetableView({
   if (!data || !day) return null;
 
   const stages = data.timetable.stages;
+  // Mindestbreite des Grids: darunter (Handy) wird horizontal gescrollt,
+  // auf breiten Screens dehnen sich die Spalten per flex-grow bis zum Rand.
+  const minGridW = GUTTER_W + stages.length * z.colW;
   const hours: number[] = [];
   for (let m = startMin; m <= endMin; m += 60) hours.push(m);
   const bodyH = (endMin - startMin) * z.pxPerMin;
@@ -114,7 +117,7 @@ export function TimetableView({
   return (
     <div className="relative h-full">
       <div ref={scrollRef} className="h-full overflow-auto scrollbar-thin">
-        <div style={{ width: GUTTER_W + stages.length * z.colW }}>
+        <div style={{ minWidth: minGridW }}>
           {/* Kopfzeile: Bühnennamen */}
           <div className="sticky top-0 z-30 flex steel-sheen">
             <div
@@ -124,8 +127,7 @@ export function TimetableView({
             {stages.map((stage) => (
               <div
                 key={stage.id}
-                className="shrink-0 border-l border-rivet px-1 py-2.5 text-center"
-                style={{ width: z.colW }}
+                className="min-w-0 flex-1 border-l border-rivet px-1 py-2.5 text-center"
               >
                 <div
                   className="truncate font-metal text-[10px] font-black uppercase tracking-wider"
@@ -172,8 +174,7 @@ export function TimetableView({
             {stages.map((stage) => (
               <div
                 key={stage.id}
-                className="relative shrink-0 border-l border-rivet/60"
-                style={{ width: z.colW }}
+                className="relative min-w-0 flex-1 border-l border-rivet/60"
               >
                 {daySlots
                   .filter((s) => s.stageId === stage.id)
