@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import {
   DEFAULT_HOT_THRESHOLD,
@@ -29,6 +29,121 @@ function SpotifyIcon() {
 export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }) {
   const { data, user, setSelection, setPosition } = useApp();
   const [mapMode, setMapMode] = useState(false);
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  // onClose in einer Ref halten, damit die Effekte unten nicht bei jedem
+  // Render neu registriert werden (onClose kommt als Inline-Arrow rein).
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Android-Back-Button: beim Öffnen einen History-Eintrag pushen, sodass
+  // "Zurück" das Sheet schließt statt die (PWA-)App zu beenden.
+  useEffect(() => {
+    window.history.pushState({ bandSheet: true }, '');
+    let closedByPop = false;
+    const onPop = () => {
+      closedByPop = true;
+      onCloseRef.current();
+    };
+    window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      // Wurde das Sheet anders geschlossen (Backdrop, Swipe), den
+      // gepushten Eintrag wieder entfernen.
+      if (!closedByPop) window.history.back();
+    };
+  }, []);
+
+  // Swipe-down zum Schließen: Sheet folgt dem Finger, ab genug Weg oder
+  // Geschwindigkeit wird geschlossen, sonst schnappt es zurück.
+  const rendered = !!(data && data.timetable.stages.some((s) => s.id === slot.stageId));
+  useEffect(() => {
+    const el = sheetRef.current;
+    if (!el) return;
+    let startY = 0;
+    let lastY = 0;
+    let lastT = 0;
+    let velocity = 0; // px/ms
+    let offset = 0;
+    let tracking = false;
+    let dragging = false;
+
+    const settle = (transform: string) => {
+      el.style.transition = 'transform 0.2s ease';
+      el.style.transform = transform;
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      tracking = true;
+      dragging = false;
+      startY = lastY = e.touches[0].clientY;
+      lastT = e.timeStamp;
+      velocity = 0;
+      offset = 0;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!tracking) return;
+      const y = e.touches[0].clientY;
+      const dy = y - startY;
+      if (!dragging) {
+        // Erst ziehen, wenn klar nach unten gewischt wird und der Inhalt
+        // ganz oben steht – sonst normales Scrollen zulassen.
+        if (dy > 10 && el.scrollTop <= 0) {
+          dragging = true;
+          startY = y;
+          el.style.transition = 'none';
+        } else if (dy < -10 || el.scrollTop > 0) {
+          tracking = false;
+          return;
+        } else {
+          return;
+        }
+      }
+      e.preventDefault();
+      const dt = e.timeStamp - lastT;
+      if (dt > 0) velocity = (y - lastY) / dt;
+      lastY = y;
+      lastT = e.timeStamp;
+      offset = Math.max(0, y - startY);
+      el.style.transform = `translateY(${offset}px)`;
+    };
+
+    const onTouchEnd = () => {
+      tracking = false;
+      if (!dragging) return;
+      dragging = false;
+      if (offset > 96 || velocity > 0.5) {
+        settle('translateY(105%)');
+        setTimeout(() => onCloseRef.current(), 180);
+      } else {
+        settle('');
+      }
+    };
+
+    const onTouchCancel = () => {
+      tracking = false;
+      if (!dragging) return;
+      dragging = false;
+      settle('');
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    // passive: false, damit preventDefault() das Scrollen/Pull-to-Refresh
+    // während des Ziehens unterbindet.
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd);
+    el.addEventListener('touchcancel', onTouchCancel);
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchCancel);
+    };
+  }, [rendered]);
 
   const stage = data?.timetable.stages.find((s) => s.id === slot.stageId);
   const day = data?.timetable.days.find((d) => d.id === slot.dayId);
@@ -80,7 +195,10 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
         className="absolute inset-0 bg-black/70"
         onClick={onClose}
       />
-      <div className="relative max-h-[88dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border-t border-x border-rivet bg-steel px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl">
+      <div
+        ref={sheetRef}
+        className="relative max-h-[88dvh] w-full max-w-lg touch-pan-y overflow-y-auto overscroll-contain rounded-t-2xl border-t border-x border-rivet bg-steel px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl"
+      >
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-rivet" />
 
         <div className="mb-1 flex items-center gap-2">
