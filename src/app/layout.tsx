@@ -5,9 +5,9 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
-  title: 'DEFƎKT Festival Buddy – W:O:A 2026',
+  title: 'DEFƎKT Festival Buddy – Wer geht zu welcher Band?',
   description:
-    'Wer geht zu welcher Band? Timetable-Planer für unsere Crew beim Wacken Open Air 2026.',
+    'Wer geht zu welcher Band? Timetable-Planer für deine Crew – auf jedem Festival.',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
