@@ -4,19 +4,20 @@ import { DefektLogo } from '@/components/DefektLogo';
 import { FireFrame } from '@/components/FireFrame';
 import { siteUrl } from '@/lib/siteUrl';
 
-const TITLE = 'Festival Buddy – Wer geht zu welcher Band? | DEFƎKT W:O:A 2026';
+const TITLE = 'Festival Buddy – Wer geht zu welcher Band? | DEFƎKT';
 const DESCRIPTION =
-  'Der Timetable-Planer für deine Festival-Crew. Wer geht zu welcher Band? Gruppen gründen, Bands markieren, Hot Slots sehen – offline-fähig, ohne Passwort. Wacken Open Air 2026.';
+  'Der Timetable-Planer für deine Festival-Crew. Wer geht zu welcher Band? Gruppen gründen, Bands markieren, Hot Slots sehen – offline-fähig, ohne Passwort. Für jedes Festival.';
 
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   keywords: [
     'Festival Buddy',
-    'Wacken Open Air 2026',
-    'W:O:A 2026',
+    'Festival Timetable',
+    'Open Air Planer',
     'Timetable Planer',
     'Running Order',
+    'Line-up Planer',
     'Festival Planer',
     'Festival App',
     'Band Planer',
@@ -61,15 +62,6 @@ function jsonLd() {
     operatingSystem: 'Web, iOS, Android',
     inLanguage: 'de',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
-    about: {
-      '@type': 'Festival',
-      name: 'Wacken Open Air 2026',
-      location: {
-        '@type': 'Place',
-        name: 'Wacken',
-        address: { '@type': 'PostalAddress', addressCountry: 'DE' },
-      },
-    },
   });
 }
 
@@ -153,7 +145,7 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="mx-auto max-w-5xl px-6 pt-16 pb-14 text-center sm:pt-24 sm:pb-20">
         <div className="mb-8 inline-flex items-center gap-2 border border-blood/20 bg-blood/5 px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-blood">
-          <span className="opacity-50">//</span> Wacken Open Air 2026
+          <span className="opacity-50">//</span> Für dein Festival
         </div>
 
         <h1 className="font-metal text-5xl uppercase leading-[0.95] text-bone sm:text-7xl">
@@ -280,8 +272,7 @@ export default function LandingPage() {
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-6 py-10 text-center">
           <DefektLogo variant="mini" />
           <p className="max-w-md text-xs leading-relaxed text-ash/70">
-            Festival Buddy · Timetable-Planer für die Crew beim Wacken Open Air
-            2026.
+            Festival Buddy · Timetable-Planer für die Crew – auf jedem Festival.
           </p>
           <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">
             © 2026 DEFƎKT — Alle Rechte defekt.
