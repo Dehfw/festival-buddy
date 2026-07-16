@@ -226,7 +226,7 @@ function AdminInner() {
             Entsperren
           </button>
         </form>
-        <Link href="/" className="mt-6 text-center text-sm text-ash underline">
+        <Link href="/app" className="mt-6 text-center text-sm text-ash underline">
           ← Zurück zur App
         </Link>
       </main>
@@ -253,7 +253,7 @@ function AdminInner() {
           <button onClick={logout} className="text-sm text-ash underline">
             Abmelden
           </button>
-          <Link href="/" className="text-sm text-ash underline">
+          <Link href="/app" className="text-sm text-ash underline">
             ← App
           </Link>
         </div>

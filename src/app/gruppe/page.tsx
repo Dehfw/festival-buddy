@@ -39,7 +39,7 @@ function GroupPageInner() {
   // Ohne Login bzw. ohne Gruppe übernimmt das Gate auf der Startseite
   useEffect(() => {
     if (ready && (!user || (groups !== null && groups.length === 0))) {
-      router.replace('/');
+      router.replace('/app');
     }
   }, [ready, user, groups, router]);
 
@@ -208,26 +208,27 @@ function GroupPageInner() {
     );
     if (ok) {
       await refreshMe();
-      router.push('/');
+      router.push('/app');
     }
   };
 
   const doLogout = () => {
     if (!confirm('Abmelden? Dein Passkey bleibt auf dem Gerät.')) return;
     logout();
+    // Nach dem Abmelden zurück auf die öffentliche Startseite (mit Login).
     router.push('/');
   };
 
   const switchTo = (id: string) => {
     setActiveGroup(id);
-    router.push('/');
+    router.push('/app');
   };
 
   return (
     <main className="mx-auto max-w-lg px-4 pb-16 pt-[max(0.75rem,env(safe-area-inset-top))]">
       <div className="flex items-center justify-between">
         <h1 className="font-metal text-xl font-black uppercase">Gruppe</h1>
-        <Link href="/" className="text-sm text-ash underline">
+        <Link href="/app" className="text-sm text-ash underline">
           ← App
         </Link>
       </div>
