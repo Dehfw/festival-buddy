@@ -1,0 +1,233 @@
+{
+  "festival": "Pell-Mell Festival 2026",
+  "edition": "Pell-Mell Festival – 04.–06.09.2026 (Einlass Camping & Caravan 04.09. 09:00 Uhr)",
+  "dataVersion": "2026-07-16 (Zeitplan laut Festival-Plakat)",
+  "days": [
+    {
+      "id": "fri",
+      "label": "Fr",
+      "longLabel": "Freitag",
+      "date": "2026-09-04"
+    },
+    {
+      "id": "sat",
+      "label": "Sa",
+      "longLabel": "Samstag",
+      "date": "2026-09-05"
+    }
+  ],
+  "stages": [
+    {
+      "id": "sparkasse",
+      "name": "Sparkasse-Bitburger Stage",
+      "short": "SBS",
+      "color": "#f77f00"
+    },
+    {
+      "id": "moonshine",
+      "name": "Moonshine Stage",
+      "short": "MOON",
+      "color": "#2a9d8f"
+    }
+  ],
+  "slots": [
+    {
+      "id": "fri-sparkasse-palebloom",
+      "dayId": "fri",
+      "stageId": "sparkasse",
+      "band": "Palebloom",
+      "start": "14:45",
+      "end": "15:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-sparkasse-never-back-down",
+      "dayId": "fri",
+      "stageId": "sparkasse",
+      "band": "Never Back Down",
+      "start": "16:00",
+      "end": "16:45",
+      "confirmed": true
+    },
+    {
+      "id": "fri-sparkasse-tyna",
+      "dayId": "fri",
+      "stageId": "sparkasse",
+      "band": "Tyna",
+      "start": "17:15",
+      "end": "18:00",
+      "confirmed": true
+    },
+    {
+      "id": "fri-sparkasse-samurai-pizza-cats",
+      "dayId": "fri",
+      "stageId": "sparkasse",
+      "band": "Samurai Pizza Cats",
+      "start": "19:05",
+      "end": "20:05",
+      "confirmed": true
+    },
+    {
+      "id": "fri-sparkasse-itchy",
+      "dayId": "fri",
+      "stageId": "sparkasse",
+      "band": "Itchy",
+      "start": "21:10",
+      "end": "22:10",
+      "confirmed": true
+    },
+    {
+      "id": "fri-sparkasse-raised-fist",
+      "dayId": "fri",
+      "stageId": "sparkasse",
+      "band": "Raised Fist",
+      "start": "23:15",
+      "end": "00:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-moonshine-treptow",
+      "dayId": "fri",
+      "stageId": "moonshine",
+      "band": "Treptow",
+      "start": "18:10",
+      "end": "18:55",
+      "confirmed": true
+    },
+    {
+      "id": "fri-moonshine-venues",
+      "dayId": "fri",
+      "stageId": "moonshine",
+      "band": "Venues",
+      "start": "20:15",
+      "end": "21:00",
+      "confirmed": true
+    },
+    {
+      "id": "fri-moonshine-the-narrator",
+      "dayId": "fri",
+      "stageId": "moonshine",
+      "band": "The Narrator",
+      "start": "22:20",
+      "end": "23:05",
+      "confirmed": true
+    },
+    {
+      "id": "fri-moonshine-damn-it",
+      "dayId": "fri",
+      "stageId": "moonshine",
+      "band": "Damn It! (Aftershow)",
+      "start": "00:40",
+      "end": "01:40",
+      "confirmed": true
+    },
+    {
+      "id": "sat-sparkasse-kaff-panda",
+      "dayId": "sat",
+      "stageId": "sparkasse",
+      "band": "Kaff Panda",
+      "start": "13:00",
+      "end": "13:45",
+      "confirmed": true
+    },
+    {
+      "id": "sat-sparkasse-left-betrayed",
+      "dayId": "sat",
+      "stageId": "sparkasse",
+      "band": "Left Betrayed",
+      "start": "14:15",
+      "end": "15:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-sparkasse-lost-in-hollywood",
+      "dayId": "sat",
+      "stageId": "sparkasse",
+      "band": "Lost In Hollywood",
+      "start": "15:30",
+      "end": "16:15",
+      "confirmed": true
+    },
+    {
+      "id": "sat-sparkasse-monsters-of-liedermaching",
+      "dayId": "sat",
+      "stageId": "sparkasse",
+      "band": "Monsters Of Liedermaching",
+      "start": "17:20",
+      "end": "18:05",
+      "confirmed": true
+    },
+    {
+      "id": "sat-sparkasse-rantanplan",
+      "dayId": "sat",
+      "stageId": "sparkasse",
+      "band": "Rantanplan",
+      "start": "19:10",
+      "end": "20:10",
+      "confirmed": true
+    },
+    {
+      "id": "sat-sparkasse-caliban",
+      "dayId": "sat",
+      "stageId": "sparkasse",
+      "band": "Caliban",
+      "start": "21:15",
+      "end": "22:15",
+      "confirmed": true
+    },
+    {
+      "id": "sat-sparkasse-haematom",
+      "dayId": "sat",
+      "stageId": "sparkasse",
+      "band": "Hämatom",
+      "start": "23:20",
+      "end": "00:35",
+      "confirmed": true
+    },
+    {
+      "id": "sat-moonshine-stesy",
+      "dayId": "sat",
+      "stageId": "moonshine",
+      "band": "Stesy",
+      "start": "16:25",
+      "end": "17:10",
+      "confirmed": true
+    },
+    {
+      "id": "sat-moonshine-king-nugget-gang",
+      "dayId": "sat",
+      "stageId": "moonshine",
+      "band": "King Nugget Gang",
+      "start": "18:15",
+      "end": "19:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-moonshine-vmzt",
+      "dayId": "sat",
+      "stageId": "moonshine",
+      "band": "VMZT",
+      "start": "20:20",
+      "end": "21:05",
+      "confirmed": true
+    },
+    {
+      "id": "sat-moonshine-destination-anywhere",
+      "dayId": "sat",
+      "stageId": "moonshine",
+      "band": "Destination Anywhere",
+      "start": "22:25",
+      "end": "23:10",
+      "confirmed": true
+    },
+    {
+      "id": "sat-moonshine-evil-jared-x-krogi",
+      "dayId": "sat",
+      "stageId": "moonshine",
+      "band": "Evil Jared x Krogi (Aftershow)",
+      "start": "00:45",
+      "end": "02:00",
+      "confirmed": true
+    }
+  ]
+}
