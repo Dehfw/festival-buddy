@@ -115,9 +115,9 @@ export function LandingLogin() {
             type="button"
             aria-label="Schließen"
             onClick={() => setOpen(false)}
-            className="fixed inset-0 z-30 cursor-default"
+            className="fixed inset-0 z-40 cursor-default"
           />
-          <div className="absolute right-0 top-full z-40 mt-2 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-rivet bg-steel-2 p-4 shadow-2xl shadow-black/60">
+          <div className="absolute right-0 top-full z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-rivet bg-steel-2 p-4 shadow-2xl shadow-black/60">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-ash">
               Rein per Passkey – ohne Passwort
             </p>

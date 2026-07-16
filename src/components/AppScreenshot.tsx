@@ -202,8 +202,8 @@ function SlotCard({ s }: { s: Slot }) {
       </div>
       <div className="flex shrink-0 items-center gap-1">
         <span className="flex items-center pl-[5px]">
-          {s.crew.map((p, i) => (
-            <Ava key={i} p={p} faded={s.variant === 'interested'} />
+          {s.crew.map((p) => (
+            <Ava key={p.i} p={p} faded={s.variant === 'interested'} />
           ))}
           {s.extra ? (
             <span
@@ -297,7 +297,7 @@ export function AppScreenshot() {
                 </div>
                 <div className="space-y-1.5">
                   {d.slots.map((s) => (
-                    <SlotCard key={s.band} s={s} />
+                    <SlotCard key={`${s.time}-${s.band}`} s={s} />
                   ))}
                 </div>
               </div>

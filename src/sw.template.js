@@ -8,8 +8,8 @@
  * erkennt den neuen SW und die App kann einen Update-Hinweis anzeigen.
  *
  * Strategie:
- *  - Landing ('/'), App-Shell ('/app'), Admin, Manifest & Icons werden beim
- *    Install vorge-cached.
+ *  - Landing ('/'), App-Shell ('/app'), Gruppe, Admin, Manifest & Icons
+ *    werden beim Install vorge-cached.
  *  - GET /api/data: Netz zuerst (kurzer Timeout), Fallback auf Cache.
  *    Jede erfolgreiche Antwort aktualisiert den Cache -> die App funktioniert
  *    komplett offline mit dem letzten bekannten Stand.
