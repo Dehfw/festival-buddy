@@ -9,12 +9,12 @@ import {
 } from '@/lib/types';
 import { DefektLogo } from './DefektLogo';
 
-/** Vorbefüllte Wunsch-Mail, damit direkt alles Nötige drinsteht */
+/** Vorbefüllte Wunsch-Mail; Umbrüche als CRLF gemäß RFC 6068 */
 const MISSING_FESTIVAL_MAILTO =
   'mailto:moin@festivalbuddy.app' +
   `?subject=${encodeURIComponent('Festival-Wunsch für FestivalBuddy')}` +
   `&body=${encodeURIComponent(
-    'Moin!\n\nMir fehlt ein Festival in der Auswahl:\n\nFestival: \nJahr: \nLink zum Lineup (falls vorhanden): \n\nDanke & 🤘',
+    'Moin!\r\n\r\nMir fehlt ein Festival in der Auswahl:\r\n\r\nFestival: \r\nJahr: \r\nLink zum Lineup (falls vorhanden): \r\n\r\nDanke & 🤘',
   )}`;
 
 /**
@@ -219,6 +219,7 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
                   type="button"
                   onClick={() => setMissingOpen((v) => !v)}
                   aria-expanded={missingOpen}
+                  aria-controls="missing-festival-panel"
                   className={`w-full rounded-xl border border-dashed px-3.5 py-2.5 text-left transition ${
                     missingOpen
                       ? 'border-ash/70 bg-steel-2'
@@ -233,7 +234,10 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
                   </span>
                 </button>
                 {missingOpen && (
-                  <div className="rounded-xl border border-rivet bg-steel-2 px-3.5 py-3">
+                  <div
+                    id="missing-festival-panel"
+                    className="rounded-xl border border-rivet bg-steel-2 px-3.5 py-3"
+                  >
                     <p className="text-xs leading-relaxed text-ash">
                       Schreib uns kurz, welches Festival dir fehlt – am
                       besten mit Jahr und Link zum Lineup. Wir melden uns,
