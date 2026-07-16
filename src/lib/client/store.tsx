@@ -20,6 +20,7 @@ import {
   loadGroups,
   loadQueue,
   loadUser,
+  migrateLegacyQueue,
   saveActiveGroup,
   saveCachedData,
   saveGroups,
@@ -149,6 +150,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Initial: lokalen Stand sofort anzeigen, dann Netz versuchen; Poll-Loop.
   useEffect(() => {
     cleanupLegacyCache();
+    // Alte globale Queue auf Nutzer-Queues verteilen, bevor irgendetwas
+    // geflusht wird – sonst könnten fremde Mutationen unter der
+    // aktuellen Session rausgehen.
+    migrateLegacyQueue();
     setUser(loadUser());
     const cachedGroups = loadGroups();
     setGroups(cachedGroups);
@@ -212,9 +217,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     activeRef.current = null;
     setActiveGroupIdState(null);
     setData(null);
+    // Noch nicht gesyncte Mutationen bleiben in der Nutzer-Queue
+    // (fb.queue.v2:<userId>) liegen und werden erst gesendet, wenn sich
+    // derselbe Nutzer wieder anmeldet – nie unter einer fremden Session.
+    syncPending();
     // Session-Cookie serverseitig löschen; der Passkey bleibt auf dem Gerät
     void fetch('/api/logout', { method: 'POST' }).catch(() => {});
-  }, []);
+  }, [syncPending]);
 
   const setActiveGroup = useCallback(
     (groupId: string) => {

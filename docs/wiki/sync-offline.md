@@ -30,8 +30,9 @@ Es gibt genau zwei Mutationen: `selection` und `position`. Beide
 laufen durch `sendOrEnqueue()`:
 
 1. Mutation kommt **immer zuerst in die Warteschlange** (localStorage,
-   `fb.queue.v1`) und wird sofort optimistisch auf den lokalen
-   Snapshot angewendet – die UI reagiert ohne Wartezeit.
+   `fb.queue.v2:<userId>` – eine Queue pro Nutzer) und wird sofort
+   optimistisch auf den lokalen Snapshot angewendet – die UI reagiert
+   ohne Wartezeit.
 2. Dann wird die Queue **FIFO geflusht**. Eine Mutation verlässt die
    Queue erst, wenn der Server sie bestätigt hat – so kann ein
    parallel laufender Poll den optimistischen Zustand nie
@@ -44,8 +45,14 @@ laufen durch `sendOrEnqueue()`:
    statt endlos zu wiederholen.
 
 Serverseitig zählt für die Identität ausschließlich die
-Passkey-Session (Cookie) – die `userId` in der Queue dient nur dem
-optimistischen Update.
+Passkey-Session (Cookie) – die `userId` in der Queue dient dem
+optimistischen Update und bindet die Queue an ihren Besitzer:
+Geflusht wird nur die Queue des gerade angemeldeten Nutzers. Beim
+Logout bleiben offene Mutationen benutzerspezifisch liegen und werden
+erst gesendet, wenn sich **derselbe** Nutzer wieder anmeldet – nie
+unter der Session eines anderen. Einträge der alten globalen Queue
+(`fb.queue.v1`) werden beim Start anhand ihrer `userId` auf die
+Nutzer-Queues verteilt.
 
 ## PWA & Service Worker
 

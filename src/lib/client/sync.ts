@@ -17,16 +17,20 @@ import type { DataPayload, GroupSummary, SelectionStatus, User } from '../types'
 
 const DATA_KEY_PREFIX = 'fb.data.v2:'; // v2: Payload enthält jetzt `group`
 const LEGACY_DATA_KEY = 'fb.data.v1';
-const QUEUE_KEY = 'fb.queue.v1';
+const QUEUE_KEY_PREFIX = 'fb.queue.v2:'; // v2: Queue pro Nutzer isoliert (Nutzerwechsel!)
+const LEGACY_QUEUE_KEY = 'fb.queue.v1';
 const USER_KEY = 'fb.user.v1';
 const GROUPS_KEY = 'fb.groups.v1';
 const ACTIVE_GROUP_KEY = 'fb.group.v1';
 const PENDING_INVITE_KEY = 'fb.pendingInvite';
 
-// userId steckt nur fürs optimistische Update drin – serverseitig zählt
-// ausschließlich die Passkey-Session (Cookie). group bestimmt, in welchem
-// Gruppen-/Festival-Kontext die Mutation gilt ('' = Alt-Eintrag, der
-// Server nimmt dann die erste Gruppe).
+// userId dient dem optimistischen Update und bestimmt, in welcher
+// Nutzer-Queue die Mutation liegt – serverseitig zählt weiterhin
+// ausschließlich die Passkey-Session (Cookie). Damit eine Mutation nie
+// unter der Session eines anderen Nutzers landet, wird sie nur geflusht,
+// solange ihr Besitzer der angemeldete Nutzer ist. group bestimmt, in
+// welchem Gruppen-/Festival-Kontext die Mutation gilt ('' = Alt-Eintrag,
+// der Server nimmt dann die erste Gruppe).
 export type Mutation =
   | {
       op: 'selection';
@@ -138,8 +142,8 @@ export function savePendingInvite(code: string | null) {
   }
 }
 
-export function loadQueue(): Mutation[] {
-  const queue = safeParse<LegacyMutation[]>(localStorage.getItem(QUEUE_KEY)) ?? [];
+function parseQueue(raw: string | null): Mutation[] {
+  const queue = safeParse<LegacyMutation[]>(raw) ?? [];
   return queue
     .filter((m) => m.op === 'selection' || m.op === 'position')
     .map((m): Mutation => {
@@ -161,8 +165,55 @@ export function loadQueue(): Mutation[] {
     });
 }
 
-export function saveQueue(queue: Mutation[]) {
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+/**
+ * Besitzer der aktiven Queue = lokal gespeicherter Nutzer. Der stammt
+ * immer vom Server (Passkey-Login bzw. /api/me) und wird bei Logout/401
+ * gelöscht – die Queue folgt also der tatsächlichen Session.
+ */
+function queueOwnerId(): string | null {
+  return loadUser()?.id ?? null;
+}
+
+function queueKeyFor(userId: string): string {
+  return QUEUE_KEY_PREFIX + userId;
+}
+
+function loadQueueFor(userId: string): Mutation[] {
+  return parseQueue(localStorage.getItem(queueKeyFor(userId)));
+}
+
+function saveQueueFor(userId: string, queue: Mutation[]) {
+  if (queue.length === 0) localStorage.removeItem(queueKeyFor(userId));
+  else localStorage.setItem(queueKeyFor(userId), JSON.stringify(queue));
+}
+
+/** Warteschlange des aktuell angemeldeten Nutzers (leer, wenn keiner angemeldet ist). */
+export function loadQueue(): Mutation[] {
+  const owner = queueOwnerId();
+  if (!owner) return [];
+  return loadQueueFor(owner);
+}
+
+/**
+ * Alte globale Queue (fb.queue.v1) auf benutzerspezifische Queues
+ * verteilen: Jede Mutation wandert anhand ihrer userId in die Queue
+ * ihres Besitzers und wird erst wieder gesendet, wenn genau dieser
+ * Nutzer angemeldet ist. Einträge ohne userId sind niemandem sicher
+ * zuordenbar und werden verworfen, statt sie unter einer womöglich
+ * fremden Session zu senden.
+ */
+export function migrateLegacyQueue() {
+  const raw = localStorage.getItem(LEGACY_QUEUE_KEY);
+  if (raw === null) return;
+  localStorage.removeItem(LEGACY_QUEUE_KEY);
+  const byUser = new Map<string, Mutation[]>();
+  for (const m of parseQueue(raw)) {
+    if (!m.userId) continue;
+    const list = byUser.get(m.userId) ?? loadQueueFor(m.userId);
+    list.push(m);
+    byUser.set(m.userId, list);
+  }
+  for (const [userId, queue] of byUser) saveQueueFor(userId, queue);
 }
 
 /** Mutation lokal auf den Daten-Snapshot anwenden (optimistisches Update). */
@@ -236,11 +287,13 @@ async function post(m: Mutation): Promise<'ok' | 'rejected' | 'offline'> {
  * Gibt true zurück, wenn die Queue danach leer ist (alles gesynct).
  */
 export async function sendOrEnqueue(m: Mutation): Promise<boolean> {
-  const queue = loadQueue();
+  // Immer in die Queue des Nutzers, der die Mutation ausgelöst hat –
+  // niemals in eine fremde.
+  const queue = loadQueueFor(m.userId);
   queue.push(m);
-  saveQueue(queue);
+  saveQueueFor(m.userId, queue);
   await flushQueue();
-  return loadQueue().length === 0;
+  return loadQueueFor(m.userId).length === 0;
 }
 
 // Nur ein Flush gleichzeitig – vermeidet Doppel-POSTs von Poll + Tap
@@ -256,18 +309,24 @@ export function flushQueue(): Promise<number> {
 }
 
 async function doFlush(): Promise<number> {
-  let queue = loadQueue();
-  if (queue.length === 0) return 0;
+  // Besitzer beim Start festhalten: Es wird ausschließlich die Queue
+  // des gerade angemeldeten Nutzers gesendet.
+  const owner = queueOwnerId();
+  if (!owner) return 0;
 
   let flushed = 0;
   while (true) {
-    queue = loadQueue();
+    // Zwischenzeitlicher Logout/Nutzerwechsel? Dann sofort aufhören –
+    // die restliche Queue bleibt beim ursprünglichen Besitzer liegen
+    // und wird erst bei dessen erneuter Anmeldung gesendet.
+    if (queueOwnerId() !== owner) break;
+    const queue = loadQueueFor(owner);
     if (queue.length === 0) break;
     const m = queue[0];
     const result = await post(m);
     if (result === 'offline') break;
     // ok ODER vom Server bewusst abgelehnt -> aus der Queue nehmen
-    saveQueue(loadQueue().slice(1));
+    saveQueueFor(owner, loadQueueFor(owner).slice(1));
     flushed++;
   }
   return flushed;
