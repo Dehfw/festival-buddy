@@ -98,12 +98,39 @@ function getPool(): Pool {
 /* Schema & Migration                                                  */
 /* ------------------------------------------------------------------ */
 
+/** Existiert die Kern-Tabelle schon? (billiger Steady-State-Check) */
+async function schemaAlreadyExists(client: PoolClient): Promise<boolean> {
+  const res = await client.query<{ t: string | null }>(
+    "SELECT to_regclass('public.festivals') AS t"
+  );
+  return res.rows[0]?.t != null;
+}
+
 async function createSchema(): Promise<void> {
   // Advisory-Lock: parallele Cold-Starts (Serverless!) sollen das Schema
   // nicht gleichzeitig anlegen. Lock ist session-gebunden -> ein Client.
   const client = await getPool().connect();
+  let locked = false;
   try {
-    await client.query('SELECT pg_advisory_lock(724226)');
+    // Steady-State: existiert das Schema bereits, ist der Lock überflüssig.
+    // So blockiert kein warmer Cold-Start auf einem Lock, den eine
+    // eingefrorene Serverless-Verbindung evtl. noch hält.
+    if (await schemaAlreadyExists(client)) return;
+
+    // Lock-Wait hart begrenzen: ein geleakter Advisory-Lock (suspendierte
+    // Lambda-Verbindung) darf nicht jede Anfrage unendlich hängen lassen.
+    // Ohne Timeout wartet pg_advisory_lock() für immer -> /api/festivals & Co
+    // laden nie. lock_timeout gilt auch für Advisory-Locks.
+    await client.query("SET lock_timeout = '5s'");
+    try {
+      await client.query('SELECT pg_advisory_lock(724226)');
+      locked = true;
+    } catch {
+      // Lock nicht rechtzeitig bekommen: ein anderer Worker legt das Schema
+      // gerade an (oder hält einen abgestandenen Lock). Ist es inzwischen da,
+      // sind wir fertig; sonst unten idempotent weiterbauen (verträgt Races).
+      if (await schemaAlreadyExists(client)) return;
+    }
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id         TEXT PRIMARY KEY,
@@ -272,7 +299,12 @@ async function createSchema(): Promise<void> {
     // es noch gar keine Gruppe gibt; ältestes Mitglied wird Owner.
     await migrateLegacyUsersIntoDefaultGroup(client);
   } finally {
-    await client.query('SELECT pg_advisory_unlock(724226)').catch(() => {});
+    // lock_timeout ist session-gebunden -> vor Rückgabe an den Pool
+    // zurücksetzen, damit spätere Nutzer der Verbindung es nicht erben.
+    await client.query('RESET lock_timeout').catch(() => {});
+    if (locked) {
+      await client.query('SELECT pg_advisory_unlock(724226)').catch(() => {});
+    }
     client.release();
   }
 }
