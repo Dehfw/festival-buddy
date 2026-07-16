@@ -264,18 +264,52 @@ function payloadFor(m: Mutation): unknown {
   }
 }
 
-async function post(m: Mutation): Promise<'ok' | 'rejected' | 'offline'> {
+type PostResult =
+  | { kind: 'ok' }
+  /** Dauerhaft abgelehnt (z. B. 400/403/404) – Wiederholen ändert nichts */
+  | { kind: 'rejected' }
+  /** Temporärer Fehler (z. B. 5xx/429) – Mutation behalten, später erneut */
+  | { kind: 'retry'; retryAfterMs: number | null }
+  | { kind: 'offline' };
+
+/**
+ * Temporäre, potenziell wiederherstellbare Fehler: Timeouts, Rate-Limits
+ * und Serverfehler (Deploy, Überlastung, Proxy, DB-Schluckauf …). Solche
+ * Antworten bestätigen die Mutation nicht – sie muss in der Queue bleiben.
+ * 401 zählt ebenfalls dazu: Da ist die Session weg, nicht die Mutation
+ * ungültig – der Poll (fetchData) stößt den Login-Fluss an und nach
+ * erneuter Anmeldung desselben Nutzers wird die Queue normal geflusht.
+ */
+function isTransientStatus(status: number): boolean {
+  return status === 401 || status === 408 || status === 425 || status === 429 || status >= 500;
+}
+
+/** Retry-After-Header (Sekunden oder HTTP-Datum) in Millisekunden. */
+function parseRetryAfter(res: Response): number | null {
+  const raw = res.headers.get('Retry-After');
+  if (!raw) return null;
+  const seconds = Number(raw);
+  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+  const date = Date.parse(raw);
+  if (!Number.isNaN(date)) return Math.max(0, date - Date.now());
+  return null;
+}
+
+async function post(m: Mutation): Promise<PostResult> {
   try {
     const res = await fetch(ENDPOINTS[m.op], {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payloadFor(m)),
     });
-    if (res.ok) return 'ok';
-    // 4xx/5xx: Server hat bewusst abgelehnt -> nicht endlos wiederholen
-    return 'rejected';
+    if (res.ok) return { kind: 'ok' };
+    if (isTransientStatus(res.status))
+      return { kind: 'retry', retryAfterMs: parseRetryAfter(res) };
+    // Übrige 4xx: dauerhaft abgelehnt (ungültige Payload, keine
+    // Gruppenberechtigung, Slot weg) -> nicht endlos wiederholen
+    return { kind: 'rejected' };
   } catch {
-    return 'offline';
+    return { kind: 'offline' };
   }
 }
 
@@ -296,6 +330,26 @@ export async function sendOrEnqueue(m: Mutation): Promise<boolean> {
   return loadQueueFor(m.userId).length === 0;
 }
 
+// Backoff nach temporären Serverfehlern: Vor Ablauf der Wartezeit startet
+// flushQueue() keinen Sende-Versuch – kein enger Retry-Loop, wenn der
+// Server 5xx/429 liefert. Getrieben wird der Retry vom bestehenden
+// Poll-/online-/visibilitychange-Zyklus, der flushQueue() ohnehin
+// regelmäßig aufruft; die Wartezeit verdoppelt sich pro Fehlschlag bis
+// zur Obergrenze, mit Jitter gegen gleichzeitige Retries vieler Clients.
+const RETRY_BASE_MS = 5_000;
+const RETRY_MAX_MS = 5 * 60_000;
+let retryNotBefore = 0;
+let retryFailures = 0;
+
+function scheduleRetry(retryAfterMs: number | null) {
+  const capped = Math.min(RETRY_MAX_MS, RETRY_BASE_MS * 2 ** Math.min(retryFailures, 10));
+  // 50–100 % der Backoff-Zeit (Jitter); ein Retry-After des Servers
+  // (z. B. bei 429/503) gilt als Untergrenze und wird nie unterschritten.
+  const jittered = capped * (0.5 + Math.random() * 0.5);
+  retryNotBefore = Date.now() + Math.max(jittered, retryAfterMs ?? 0);
+  retryFailures++;
+}
+
 // Nur ein Flush gleichzeitig – vermeidet Doppel-POSTs von Poll + Tap
 let flushing: Promise<number> | null = null;
 
@@ -313,6 +367,9 @@ async function doFlush(): Promise<number> {
   // des gerade angemeldeten Nutzers gesendet.
   const owner = queueOwnerId();
   if (!owner) return 0;
+  // Backoff nach temporärem Serverfehler noch aktiv? Dann jetzt keinen
+  // Versuch starten – der nächste Poll nach Ablauf übernimmt den Retry.
+  if (Date.now() < retryNotBefore) return 0;
 
   let flushed = 0;
   while (true) {
@@ -324,8 +381,24 @@ async function doFlush(): Promise<number> {
     if (queue.length === 0) break;
     const m = queue[0];
     const result = await post(m);
-    if (result === 'offline') break;
-    // ok ODER vom Server bewusst abgelehnt -> aus der Queue nehmen
+    if (result.kind === 'offline') break;
+    if (result.kind === 'retry') {
+      // Temporärer Fehler (5xx, 429, Session weg): Die Mutation bleibt
+      // an der Spitze der Queue (FIFO), der Flush endet und ein
+      // späterer Versuch bekommt eine Backoff-Wartezeit verpasst.
+      scheduleRetry(result.retryAfterMs);
+      break;
+    }
+    if (result.kind === 'rejected') {
+      // Dauerhaft abgelehnt (z. B. 400/403/404): Eintrag verwerfen,
+      // damit er die Queue nicht ewig blockiert. Der nächste Poll holt
+      // den Server-Stand, die UI zeigt wieder die bestätigte Wahrheit.
+      saveQueueFor(owner, loadQueueFor(owner).slice(1));
+      continue;
+    }
+    // Vom Server bestätigt -> aus der Queue nehmen, Backoff zurücksetzen
+    retryFailures = 0;
+    retryNotBefore = 0;
     saveQueueFor(owner, loadQueueFor(owner).slice(1));
     flushed++;
   }

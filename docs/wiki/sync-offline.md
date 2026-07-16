@@ -40,9 +40,17 @@ laufen durch `sendOrEnqueue()`:
    Mutationen erneut auf den frischen Snapshot angewendet.
 3. **Kein Netz** → Flush bricht ab, die Queue bleibt liegen und wird
    beim nächsten Poll/`online`-Event abgearbeitet (Replay,
-   last-write-wins). **4xx/5xx** → der Server hat bewusst abgelehnt
-   (z. B. nicht mehr Mitglied), die Mutation fliegt aus der Queue
-   statt endlos zu wiederholen.
+   last-write-wins). **Temporäre Fehler** (5xx, 408, 425, 429 sowie
+   401) bestätigen die Mutation nicht: Sie bleibt an der Spitze der
+   Queue (FIFO), der Flush endet und der nächste Poll versucht es
+   erneut – mit begrenztem exponentiellem Backoff samt Jitter
+   (5 s … 5 min); ein `Retry-After`-Header (z. B. bei 429/503) wird
+   als Untergrenze respektiert. Bei 401 stößt der Poll zusätzlich den
+   Login-Fluss an; nach erneuter Anmeldung desselben Nutzers wird die
+   Queue normal geflusht. **Dauerhafte 4xx** (400/403/404 …) → der
+   Server hat bewusst abgelehnt (z. B. nicht mehr Mitglied), die
+   Mutation fliegt aus der Queue statt sie zu blockieren; der nächste
+   Poll stellt den bestätigten Server-Stand wieder her.
 
 Serverseitig zählt für die Identität ausschließlich die
 Passkey-Session (Cookie) – die `userId` in der Queue dient dem
