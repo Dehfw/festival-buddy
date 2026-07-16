@@ -9,6 +9,14 @@ import {
 } from '@/lib/types';
 import { DefektLogo } from './DefektLogo';
 
+/** Vorbefüllte Wunsch-Mail; Umbrüche als CRLF gemäß RFC 6068 */
+const MISSING_FESTIVAL_MAILTO =
+  'mailto:moin@festivalbuddy.app' +
+  `?subject=${encodeURIComponent('Festival-Wunsch für FestivalBuddy')}` +
+  `&body=${encodeURIComponent(
+    'Moin!\r\n\r\nMir fehlt ein Festival in der Auswahl:\r\n\r\nFestival: \r\nJahr: \r\nLink zum Lineup (falls vorhanden): \r\n\r\nDanke & 🤘',
+  )}`;
+
 /**
  * Zweites Gate nach dem Passkey-Login: Gruppe gründen (mit Festival-
  * Auswahl) oder per Einladungscode beitreten. Als Vollbild für Neue
@@ -22,6 +30,7 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState<'create' | 'join' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [missingOpen, setMissingOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -206,6 +215,45 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
                     </span>
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => setMissingOpen((v) => !v)}
+                  aria-expanded={missingOpen}
+                  aria-controls="missing-festival-panel"
+                  className={`w-full rounded-xl border border-dashed px-3.5 py-2.5 text-left transition ${
+                    missingOpen
+                      ? 'border-ash/70 bg-steel-2'
+                      : 'border-rivet'
+                  }`}
+                >
+                  <span className="block text-sm font-bold text-ash">
+                    Dein Festival ist nicht dabei?
+                  </span>
+                  <span className="block text-[11px] text-ash/60">
+                    Sag uns Bescheid – wir kümmern uns drum.
+                  </span>
+                </button>
+                {missingOpen && (
+                  <div
+                    id="missing-festival-panel"
+                    className="rounded-xl border border-rivet bg-steel-2 px-3.5 py-3"
+                  >
+                    <p className="text-xs leading-relaxed text-ash">
+                      Schreib uns kurz, welches Festival dir fehlt – am
+                      besten mit Jahr und Link zum Lineup. Wir melden uns,
+                      sobald es am Start ist. 🤘
+                    </p>
+                    <a
+                      href={MISSING_FESTIVAL_MAILTO}
+                      className="mt-2.5 block rounded-xl border border-blood/60 px-4 py-2.5 text-center text-sm font-black uppercase tracking-wide text-blood transition active:scale-[0.98]"
+                    >
+                      E-Mail schreiben
+                    </a>
+                    <p className="mt-1.5 text-center text-[10px] text-ash/50">
+                      moin@festivalbuddy.app
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </label>
