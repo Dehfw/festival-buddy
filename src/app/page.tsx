@@ -4,7 +4,7 @@ import { AppScreenshot } from '@/components/AppScreenshot';
 import { DefektLogo } from '@/components/DefektLogo';
 import { FireFrame } from '@/components/FireFrame';
 import { LandingLogin } from '@/components/LandingLogin';
-import { siteUrl } from '@/lib/siteUrl';
+import { resolveSiteUrl } from '@/lib/siteUrl';
 
 const TITLE = 'Festival Buddy – Wer geht zu welcher Band? | DEFƎKT';
 const DESCRIPTION =
@@ -53,12 +53,12 @@ export const metadata: Metadata = {
 };
 
 /** Strukturierte Daten für Google (Rich Results): App-Steckbrief als JSON-LD */
-function jsonLd() {
+async function jsonLd() {
   return JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: 'DEFƎKT Festival Buddy',
-    url: siteUrl(),
+    url: await resolveSiteUrl(),
     description: DESCRIPTION,
     applicationCategory: 'LifestyleApplication',
     operatingSystem: 'Web, iOS, Android',
@@ -124,12 +124,13 @@ const STEPS: { n: string; title: string; body: string }[] = [
   },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const structuredData = await jsonLd();
   return (
     <main className="defekt-grid min-h-dvh">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLd() }}
+        dangerouslySetInnerHTML={{ __html: structuredData }}
       />
       {/* Topbar mit prominentem Login */}
       <header className="steel-sheen sticky top-0 z-40">

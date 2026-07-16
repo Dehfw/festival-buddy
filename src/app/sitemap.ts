@@ -1,8 +1,8 @@
 import type { MetadataRoute } from 'next';
-import { siteUrl } from '@/lib/siteUrl';
+import { resolveSiteUrl } from '@/lib/siteUrl';
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const base = siteUrl();
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const base = await resolveSiteUrl();
   return [
     {
       url: `${base}/`,
