@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 /**
  * Impressum (Anbieterkennzeichnung nach § 5 DDG / § 18 Abs. 2 MStV).
  * Statisch gerendert, kein Login nötig – erreichbar über den Footer der
- * Startseite. Ladungsfähige c/o-Anschrift, keine private Wohnadresse.
+ * Startseite. Ladungsfähige Anschrift.
  */
 export default function ImpressumPage() {
   return (
@@ -31,7 +31,7 @@ export default function ImpressumPage() {
             <p className="mt-2">
               David Schiminski
               <br />
-              c/o Lechstraße 24
+              Lechstraße 24
               <br />
               90451 Nürnberg
               <br />
@@ -61,7 +61,7 @@ export default function ImpressumPage() {
             <p className="mt-2">
               David Schiminski
               <br />
-              c/o Lechstraße 24
+              Lechstraße 24
               <br />
               90451 Nürnberg
             </p>
