@@ -8,7 +8,8 @@
  * erkennt den neuen SW und die App kann einen Update-Hinweis anzeigen.
  *
  * Strategie:
- *  - App-Shell ('/'), Admin, Manifest & Icons werden beim Install vorge-cached.
+ *  - Landing ('/'), App-Shell ('/app'), Admin, Manifest & Icons werden beim
+ *    Install vorge-cached.
  *  - GET /api/data: Netz zuerst (kurzer Timeout), Fallback auf Cache.
  *    Jede erfolgreiche Antwort aktualisiert den Cache -> die App funktioniert
  *    komplett offline mit dem letzten bekannten Stand.
@@ -30,6 +31,7 @@ const PAGE_CACHE = 'fb-pages-' + VERSION;
 
 const PRECACHE = [
   '/',
+  '/app',
   '/gruppe',
   '/admin',
   '/manifest.webmanifest',
@@ -134,7 +136,12 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       networkFirst(request, PAGE_CACHE, 5000).catch(async () => {
         const cache = await caches.open(PAGE_CACHE);
-        return (await cache.match('/')) || Response.error();
+        // Offline zählt die App-Shell; die Landing ist nur der Fallback davon.
+        return (
+          (await cache.match('/app')) ||
+          (await cache.match('/')) ||
+          Response.error()
+        );
       })
     );
     return;

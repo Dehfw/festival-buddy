@@ -22,7 +22,7 @@ export default function JoinPage({
   useEffect(() => {
     const normalized = normalizeInviteCode(decodeURIComponent(code));
     if (normalized.length === 8) savePendingInvite(normalized);
-    router.replace('/');
+    router.replace('/app');
   }, [code, router]);
 
   return (
