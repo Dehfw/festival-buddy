@@ -46,10 +46,10 @@ export default function ImpressumPage() {
             <p className="mt-2">
               E-Mail:{' '}
               <a
-                href="mailto:da.schiminski@gmail.com"
+                href="mailto:moin@festivalbuddy.app"
                 className="text-blood underline"
               >
-                da.schiminski@gmail.com
+                moin@festivalbuddy.app
               </a>
             </p>
           </section>
