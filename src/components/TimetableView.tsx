@@ -35,6 +35,42 @@ const ZOOMS: Record<
   detail: { pxPerMin: 1.05, colW: 128, avatar: 18, maxAvatars: 4, showTimes: true, stackedMinH: 54 },
 };
 
+/** Position eines Slots bei Zeitüberschneidungen: Spur + Spuranzahl im Cluster */
+type SlotLane = { lane: number; lanes: number };
+
+/**
+ * Überlappen sich zwei Slots einer Bühne zeitlich, werden sie nebeneinander
+ * in "Spuren" gelegt statt übereinander gezeichnet. Klassisches Kalender-
+ * Layout: nach Startzeit sortieren, jeden Slot gierig in die erste freie
+ * Spur legen; alle Slots eines zusammenhängenden Überlappungs-Clusters
+ * teilen sich die Spaltenbreite durch die Spuranzahl des Clusters.
+ */
+function computeLanes(slots: Slot[]): Map<string, SlotLane> {
+  const sorted = [...slots].sort(
+    (a, b) =>
+      toMinutes(a.start) - toMinutes(b.start) || toMinutes(b.end) - toMinutes(a.end)
+  );
+  const layout = new Map<string, SlotLane>();
+  let cluster: { id: string; lane: number }[] = [];
+  let laneEnds: number[] = [];
+  const flush = () => {
+    for (const s of cluster) layout.set(s.id, { lane: s.lane, lanes: laneEnds.length });
+    cluster = [];
+    laneEnds = [];
+  };
+  for (const slot of sorted) {
+    const start = toMinutes(slot.start);
+    // Berührt der Slot keinen laufenden mehr, ist der Cluster abgeschlossen
+    if (laneEnds.length > 0 && laneEnds.every((end) => end <= start)) flush();
+    let lane = laneEnds.findIndex((end) => end <= start);
+    if (lane === -1) lane = laneEnds.length;
+    laneEnds[lane] = toMinutes(slot.end);
+    cluster.push({ id: slot.id, lane });
+  }
+  flush();
+  return layout;
+}
+
 /**
  * Hauptansicht 1: Timetable-Grid.
  * Y-Achse = Zeit, X-Achse = Bühnen, Tabs für die Festivaltage.
@@ -62,6 +98,21 @@ export function TimetableView({
     () => (data ? data.timetable.slots.filter((s) => s.dayId === dayId) : []),
     [data, dayId]
   );
+
+  // Spur-Zuordnung pro Bühne, damit zeitgleiche Slots nebeneinander liegen
+  const slotLanes = useMemo(() => {
+    const byStage = new Map<string, Slot[]>();
+    for (const slot of daySlots) {
+      const list = byStage.get(slot.stageId);
+      if (list) list.push(slot);
+      else byStage.set(slot.stageId, [slot]);
+    }
+    const layout = new Map<string, SlotLane>();
+    for (const stageSlots of byStage.values()) {
+      computeLanes(stageSlots).forEach((v, id) => layout.set(id, v));
+    }
+    return layout;
+  }, [daySlots]);
 
   const [startMin, endMin] = useMemo(() => {
     if (daySlots.length === 0) return [600, 1500];
@@ -203,11 +254,17 @@ export function TimetableView({
                       attendees.length === 0 || height >= z.stackedMinH + lineH
                         ? 'line-clamp-2'
                         : 'line-clamp-1';
+                    // Bei Überschneidungen teilen sich die Slots die Spaltenbreite
+                    const { lane, lanes } = slotLanes.get(slot.id) ?? { lane: 0, lanes: 1 };
+                    const laneBox = {
+                      left: `calc(${(lane / lanes) * 100}% + 2px)`,
+                      width: `calc(${100 / lanes}% - 4px)`,
+                    };
                     return (
                       <Fragment key={slot.id}>
                       <button
                         onClick={() => onSlotTap(slot)}
-                        className={`absolute inset-x-0.5 overflow-hidden rounded-md border text-left transition active:scale-[0.98] ${
+                        className={`absolute overflow-hidden rounded-md border text-left transition active:scale-[0.98] ${
                           iGo
                             ? 'border-blood bg-blood/15'
                             : iAmInterested
@@ -217,6 +274,7 @@ export function TimetableView({
                         style={{
                           top,
                           height,
+                          ...laneBox,
                           borderLeftWidth: 3,
                           borderLeftColor: stage.color,
                         }}
@@ -284,8 +342,8 @@ export function TimetableView({
                           würde overflow-hidden den Schein abschneiden */}
                       {hot && (
                         <FireFrame
-                          className="inset-x-0.5 z-10 rounded-md"
-                          style={{ top, height }}
+                          className="z-10 rounded-md"
+                          style={{ top, height, ...laneBox }}
                         />
                       )}
                       </Fragment>
