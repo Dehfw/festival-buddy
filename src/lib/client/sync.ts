@@ -98,6 +98,22 @@ export function clearCachedData(groupId: string) {
   localStorage.removeItem(DATA_KEY_PREFIX + groupId);
 }
 
+/**
+ * Alle Gruppen-Snapshots entfernen (Logout/Session-Ende): private
+ * Gruppendaten dürfen die Session nicht überleben. Die Offline-Queue
+ * (fb.queue.v2:<userId>) bleibt bewusst liegen – sie ist pro Nutzer
+ * isoliert und wird erst unter dessen eigener Session wieder gesendet.
+ */
+export function clearAllCachedData() {
+  const keys: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith(DATA_KEY_PREFIX)) keys.push(key);
+  }
+  for (const key of keys) localStorage.removeItem(key);
+  localStorage.removeItem(LEGACY_DATA_KEY);
+}
+
 /** Cache aus der Ein-Gruppen-Ära wegräumen (Payload-Form hat sich geändert) */
 export function cleanupLegacyCache() {
   localStorage.removeItem(LEGACY_DATA_KEY);

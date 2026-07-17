@@ -104,3 +104,35 @@ einer Version gestempelt und unter `/sw.js` ausgeliefert
 Meldet sich ein neuer Worker, bietet `UpdatePrompt` (global im
 Root-Layout) einen „Neu laden"-Hinweis an. Voraussetzung für Service
 Worker **und** Passkeys: Auslieferung über HTTPS (oder localhost).
+
+### Sicherheitsgrenze des Daten-Caches
+
+`/api/data` enthält geschützte Gruppendaten und ist serverseitig mit
+`Cache-Control: no-store` markiert. Der Service Worker cached die
+Antwort **bewusst trotzdem** (`fb-data-<version>`) – das ist die
+dokumentierte Offline-Funktion. Dafür ist der Cache strikt an die
+Session gebunden:
+
+- **Logout, Session-Ende (401) und Nutzerwechsel** löschen alle
+  privaten Daten: die localStorage-Snapshots (`fb.data.v2:*`) und alle
+  `fb-data-*`-Caches (auch die älterer SW-Versionen). Die Bereinigung
+  läuft doppelt (`src/lib/client/swCache.ts`): per
+  `{type:'CLEAR_DATA_CACHE'}`-Message an den aktiven SW (mit
+  Bestätigung über einen MessagePort; ein Epoch-Zähler verwirft dabei
+  Antworten, die beim Logout noch unterwegs waren) **und** direkt über
+  `caches.delete()` aus dem Fenster (wirkt auch ohne Controller und
+  bei wartendem SW).
+- **Fehlgeschlagene Bereinigung** wird nicht still ignoriert: Ein
+  Merker (`fb.cachePurge.v1`) bleibt stehen und die Löschung wird beim
+  nächsten App-Start bzw. Login **vor** dem ersten Datenabruf
+  nachgeholt – eine neue Session übernimmt den privaten Cache der
+  vorherigen nie.
+- Ein serverseitiges 401/403 wird nie durch den Cache in ein
+  scheinbares 200 verwandelt: Der Cache-Fallback greift nur bei
+  Netzfehler/Timeout, echte Fehlerantworten werden durchgereicht und
+  nicht gespeichert.
+- Öffentliche Ressourcen (App-Shell, statische Assets) bleiben von der
+  Bereinigung unberührt – nur `fb-data-*` ist privat.
+- Die **Offline-Queue** (`fb.queue.v2:<userId>`) bleibt beim Logout
+  bewusst liegen: Sie ist pro Nutzer isoliert und wird erst unter der
+  eigenen Session desselben Nutzers wieder gesendet.

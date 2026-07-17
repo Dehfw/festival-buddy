@@ -17,6 +17,16 @@
  *  - Schreibzugriffe (POST) laufen NICHT über den SW – die App hat dafür
  *    eine eigene Offline-Warteschlange, die synct, sobald Netz da ist.
  *
+ * Sicherheitsgrenze (privater Daten-Cache):
+ *  - /api/data enthält geschützte Gruppendaten und ist serverseitig mit
+ *    no-store markiert. Der SW cached die Antwort BEWUSST trotzdem – das
+ *    ist die dokumentierte Offline-Funktion. Dafür gilt der Cache nur
+ *    innerhalb der Session: Beim Logout/Nutzerwechsel schickt die App
+ *    {type:'CLEAR_DATA_CACHE'} -> der SW löscht alle fb-data-*-Caches
+ *    (auch die älterer SW-Versionen) und bestätigt über den mitgesendeten
+ *    MessagePort. Antworten, die beim Löschen noch unterwegs waren,
+ *    werden über einen Epoch-Zähler verworfen statt erneut gecached.
+ *
  * Update-Ablauf:
  *  - Beim Install wird NICHT sofort skipWaiting() gerufen: der neue SW
  *    bleibt "waiting", bis der Nutzer im UI-Hinweis "Neu laden" tippt.
@@ -26,8 +36,31 @@
 
 const VERSION = '__SW_VERSION__';
 const STATIC_CACHE = 'fb-static-' + VERSION;
-const DATA_CACHE = 'fb-data-' + VERSION;
+const DATA_CACHE_PREFIX = 'fb-data-';
+const DATA_CACHE = DATA_CACHE_PREFIX + VERSION;
 const PAGE_CACHE = 'fb-pages-' + VERSION;
+
+// Zähler für Bereinigungen des privaten Daten-Caches: networkFirst()
+// merkt sich den Stand vor dem fetch und schreibt die Antwort nur in den
+// Cache, wenn zwischenzeitlich kein CLEAR_DATA_CACHE lief. So kann eine
+// beim Logout noch laufende Anfrage den frisch geleerten Cache nicht
+// wieder mit privaten Daten befüllen. (SW-Neustart setzt den Zähler
+// zurück – dann gibt es aber auch keine laufenden Anfragen mehr.)
+let dataCacheEpoch = 0;
+
+/** Alle privaten Daten-Caches löschen – auch die älterer SW-Versionen. */
+function clearDataCaches() {
+  dataCacheEpoch++;
+  return caches
+    .keys()
+    .then((keys) =>
+      Promise.all(
+        keys
+          .filter((k) => k.startsWith(DATA_CACHE_PREFIX))
+          .map((k) => caches.delete(k))
+      )
+    );
+}
 
 const PRECACHE = [
   '/',
@@ -64,10 +97,25 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Vom UI ausgelöst ("Neu laden"-Hinweis): wartenden SW sofort aktivieren.
+// Vom UI ausgelöst:
+//  - SKIP_WAITING ("Neu laden"-Hinweis): wartenden SW sofort aktivieren.
+//  - CLEAR_DATA_CACHE (Logout/Nutzerwechsel): private Daten-Caches löschen
+//    und dem Absender Erfolg/Fehler über den MessagePort bestätigen –
+//    der Logout darf sich nicht auf eine stille Bereinigung verlassen.
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  const msg = event.data;
+  if (!msg) return;
+  if (msg.type === 'SKIP_WAITING') {
     self.skipWaiting();
+    return;
+  }
+  if (msg.type === 'CLEAR_DATA_CACHE') {
+    const port = event.ports && event.ports[0];
+    const clearing = clearDataCaches().then(
+      () => port && port.postMessage({ ok: true }),
+      () => port && port.postMessage({ ok: false })
+    );
+    if (event.waitUntil) event.waitUntil(clearing);
   }
 });
 
@@ -90,9 +138,17 @@ function fetchWithTimeout(request, ms) {
 /** Netz zuerst, bei Fehler/Timeout aus dem Cache */
 async function networkFirst(request, cacheName, timeoutMs) {
   const cache = await caches.open(cacheName);
+  // Stand der Daten-Cache-Bereinigung VOR dem fetch festhalten: Trifft die
+  // Antwort erst nach einem CLEAR_DATA_CACHE ein (Logout während laufender
+  // Anfrage), gehört sie zur beendeten Session und wird nicht gespeichert.
+  const epoch = dataCacheEpoch;
   try {
     const response = await fetchWithTimeout(request, timeoutMs);
-    if (response && response.ok) {
+    if (
+      response &&
+      response.ok &&
+      (cacheName !== DATA_CACHE || epoch === dataCacheEpoch)
+    ) {
       cache.put(request, response.clone());
     }
     return response;

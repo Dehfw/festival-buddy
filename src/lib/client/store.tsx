@@ -12,6 +12,7 @@ import type { DataPayload, GroupSummary, SelectionStatus, User } from '../types'
 import {
   applyMutation,
   cleanupLegacyCache,
+  clearAllCachedData,
   clearCachedData,
   fetchData,
   flushQueue,
@@ -29,6 +30,7 @@ import {
   sendOrEnqueue,
   type Mutation,
 } from './sync';
+import { ensurePrivateCachesPurged, purgePrivateCaches } from './swCache';
 
 /** Alle paar Sekunden neue Daten holen (Anforderung: Live-Sync der Gruppe) */
 const POLL_MS = 7000;
@@ -91,10 +93,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch('/api/me', { cache: 'no-store' });
       if (res.status === 401 || res.status === 403) {
+        const hadUser = loadUser() !== null;
         saveUser(null);
         setUser(null);
         saveGroups(null);
         setGroups(null);
+        if (hadUser) {
+          // Session serverseitig beendet -> private Daten der Session räumen
+          // (Snapshots + SW-Daten-Cache), bevor jemand anderes übernimmt.
+          clearAllCachedData();
+          void purgePrivateCaches();
+        }
         return;
       }
       if (res.ok) {
@@ -137,8 +146,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } else if (result.kind === 'offline') {
       setOnline(navigator.onLine ?? false);
     } else if (result.kind === 'unauthorized') {
+      const hadUser = loadUser() !== null;
       saveUser(null);
       setUser(null);
+      if (hadUser) {
+        // Session abgelaufen/beendet: gecachte Gruppendaten gehören zur
+        // alten Session und dürfen offline nicht mehr abrufbar sein.
+        clearAllCachedData();
+        void purgePrivateCaches();
+      }
     } else if (result.kind === 'forbidden') {
       // Aus der Gruppe entfernt oder Gruppe gelöscht
       clearCachedData(groupId);
@@ -170,8 +186,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (cached) setData(cached);
     }
     setReady(true);
-    void refresh();
-    void refreshMe();
+    // Eine beim letzten Logout fehlgeschlagene Cache-Bereinigung nachholen,
+    // BEVOR der erste Datenabruf den SW-Daten-Cache wieder anfasst – sonst
+    // könnte diese Session private Daten der vorherigen übernehmen.
+    void ensurePrivateCachesPurged().then(() => {
+      void refresh();
+      void refreshMe();
+    });
 
     const interval = setInterval(() => void refresh(), POLL_MS);
     const onOnline = () => void refresh();
@@ -210,8 +231,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     (nextUser: User) => {
       saveUser(nextUser);
       setUser(nextUser);
-      // Gruppenliste nachladen (frisch registriert = leer -> GroupGate)
-      void refreshMe().then(() => refresh());
+      // Nutzerwechsel: eine evtl. hängengebliebene Bereinigung des
+      // Vorgänger-Caches nachholen, bevor der erste Datenabruf läuft.
+      // Danach Gruppenliste nachladen (frisch registriert = leer -> GroupGate)
+      void ensurePrivateCachesPurged()
+        .then(() => refreshMe())
+        .then(() => refresh());
     },
     [refreshMe, refresh]
   );
@@ -225,6 +250,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     activeRef.current = null;
     setActiveGroupIdState(null);
     setData(null);
+    // Private Gruppendaten dürfen den Logout nicht überleben: alle
+    // localStorage-Snapshots (fb.data.v2:*) und die /api/data-Antworten
+    // im Service-Worker-Cache (fb-data-*) löschen. Schlägt die
+    // SW-Bereinigung fehl, bleibt ein Merker stehen und sie wird vor dem
+    // nächsten Datenabruf nachgeholt – nie still übernommen.
+    clearAllCachedData();
+    void purgePrivateCaches();
     // Noch nicht gesyncte Mutationen bleiben in der Nutzer-Queue
     // (fb.queue.v2:<userId>) liegen und werden erst gesendet, wenn sich
     // derselbe Nutzer wieder anmeldet – nie unter einer fremden Session.
