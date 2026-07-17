@@ -19,11 +19,16 @@
  *     Controller (Erstbesuch, harter Reload) und unabhängig davon, ob
  *     gerade ein alter SW ohne CLEAR-Handler aktiv oder ein neuer am
  *     Warten ist.
- *  3. Schlägt die Löschung fehl, bleibt ein Merker in localStorage stehen;
- *     ensurePrivateCachesPurged() holt die Bereinigung beim nächsten
- *     Start bzw. vor dem ersten Datenabruf eines (neuen) Nutzers nach –
- *     eine nachfolgende Session übernimmt den privaten Cache also nie
- *     stillschweigend.
+ *  3. Der Merker in localStorage wird erst entfernt, wenn die Bereinigung
+ *     NACHWEISLICH vollständig war: direkte Löschung erfolgreich UND der
+ *     SW hat den Epoch-Bump bestätigt (bzw. es gibt keinen Controller,
+ *     der eine noch laufende Antwort cachen könnte). Alles andere ->
+ *     Ergebnis false, der Merker bleibt stehen.
+ *  4. ensurePrivateCachesPurged() liefert den Bereinigungsstatus; der
+ *     AppProvider blockiert damit JEDEN Datenabruf, solange die
+ *     Bereinigung nicht bestätigt ist (fail-closed) – eine nachfolgende
+ *     Session kann den privaten Cache der vorherigen also weder
+ *     stillschweigend übernehmen noch per Offline-Fallback abrufen.
  */
 
 /** Muss zu DATA_CACHE_PREFIX in src/sw.template.js passen. */
@@ -106,37 +111,48 @@ function isPurgePending(): boolean {
 
 /**
  * Private SW-Daten-Caches löschen (Logout, 401, Nutzerwechsel). Setzt
- * zuerst den Merker und entfernt ihn erst nach bestätigter Löschung –
- * schlägt sie fehl, wird sie vor dem nächsten Datenabruf nachgeholt
- * (siehe ensurePrivateCachesPurged) statt still ignoriert.
+ * zuerst den Merker und entfernt ihn NUR, wenn die Bereinigung bestätigt
+ * ist: direkte Löschung erfolgreich UND SW-Bestätigung des Epoch-Bumps
+ * (bzw. kein Controller vorhanden). Liefert false, solange das nicht der
+ * Fall ist – der Aufrufer darf dann keinen Datenabruf starten, der auf
+ * den alten SW-Cache zurückfallen könnte (siehe AppProvider).
  */
 export async function purgePrivateCaches(): Promise<boolean> {
   markPurgePending();
   // SW zuerst anstoßen (Epoch-Zähler stoppt laufende Cache-Writes), die
   // direkte Löschung ist die maßgebliche Bereinigung.
-  const swClear = requestSwClear().catch((err: unknown) => err);
+  const swClear = requestSwClear().catch((err: unknown) =>
+    err instanceof Error ? err : new Error(String(err))
+  );
+  let deleted = false;
   try {
     await deleteDataCaches();
+    deleted = true;
   } catch (err) {
     console.error('Private Daten-Caches konnten nicht gelöscht werden:', err);
-    return false;
   }
   const swErr = await swClear;
   if (swErr !== undefined) {
-    // Direkte Löschung hat gegriffen, nur die SW-Bestätigung fehlt
-    // (z. B. alte SW-Version ohne CLEAR-Handler) – protokollieren.
+    // Ohne SW-Bestätigung ist der Epoch-Bump nicht garantiert: Eine beim
+    // Logout noch laufende /api/data-Antwort könnte den soeben geleerten
+    // Cache wieder mit privaten Daten befüllen. Der Merker bleibt stehen,
+    // die Bereinigung wird vor dem nächsten Datenabruf wiederholt.
     console.warn('SW-Cache-Bereinigung ohne Bestätigung:', swErr);
   }
+  if (!deleted || swErr !== undefined) return false;
   clearPurgePending();
   return true;
 }
 
 /**
  * Eine zuvor fehlgeschlagene Bereinigung nachholen. Beim App-Start und
- * beim Login VOR dem ersten Datenabruf aufrufen, damit keine neue Session
- * den privaten Cache der vorherigen übernimmt.
+ * beim Login VOR dem ersten Datenabruf aufrufen. Liefert true, wenn kein
+ * privater Cache einer Vorsession (mehr) aussteht; liefert false, solange
+ * die Bereinigung nicht bestätigt ist – dann darf KEIN /api/data-Abruf
+ * starten (fail-closed), sonst könnte die neue Session per SW-Fallback
+ * die Daten der vorherigen erhalten.
  */
-export async function ensurePrivateCachesPurged(): Promise<void> {
-  if (!isPurgePending()) return;
-  await purgePrivateCaches();
+export async function ensurePrivateCachesPurged(): Promise<boolean> {
+  if (!isPurgePending()) return true;
+  return purgePrivateCaches();
 }

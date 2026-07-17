@@ -42,6 +42,14 @@ const POLL_MS = 7000;
  * zurück, das online-Event startet sofort einen neuen Versuch.
  */
 const POLL_BACKOFF_MAX_MS = 60_000;
+/**
+ * Backoff für die Wiederholung einer fehlgeschlagenen Bereinigung der
+ * privaten SW-Caches (swCache.ts): Solange sie nicht bestätigt ist,
+ * bleiben Datenabrufe blockiert (fail-closed) und die Bereinigung wird
+ * in wachsenden Abständen erneut versucht.
+ */
+const PURGE_RETRY_BASE_MS = 5_000;
+const PURGE_RETRY_MAX_MS = 60_000;
 
 interface AppState {
   ready: boolean;
@@ -52,6 +60,13 @@ interface AppState {
   data: DataPayload | null;
   online: boolean;
   pending: number;
+  /**
+   * true = private SW-Caches einer Vorsession konnten noch nicht
+   * nachweislich bereinigt werden. Sicherheitsstopp: Es startet kein
+   * Datenabruf, der auf den alten Cache zurückfallen könnte; die
+   * Bereinigung wird automatisch mit Backoff wiederholt.
+   */
+  purgeBlocked: boolean;
   /** Nach erfolgreichem Passkey-Login/-Registrierung übernehmen */
   loginAs: (user: User) => void;
   logout: () => void;
@@ -84,6 +99,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<DataPayload | null>(null);
   const [online, setOnline] = useState(true);
   const [pending, setPending] = useState(0);
+  const [purgeBlocked, setPurgeBlocked] = useState(false);
   const dataRef = useRef<DataPayload | null>(null);
   dataRef.current = data;
   const activeRef = useRef<string | null>(null);
@@ -101,12 +117,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /**
+   * Sicherheitsgate vor jedem Datenabruf: Steht noch eine Bereinigung
+   * der privaten SW-Caches einer Vorsession aus, wird sie hier nachgeholt.
+   * Nur bei bestätigter Bereinigung (true) darf ein Request starten, der
+   * auf den alten Cache zurückfallen könnte – sonst bleibt die Session
+   * blockiert (purgeBlocked, fail-closed) statt fremde Daten zu riskieren.
+   */
+  const ensurePurged = useCallback(async (): Promise<boolean> => {
+    const purged = await ensurePrivateCachesPurged();
+    setPurgeBlocked(!purged);
+    return purged;
+  }, []);
+
+  /**
+   * Private Caches der beendeten Session räumen (Logout, 401). Misserfolg
+   * schaltet sofort in den Sicherheitsstopp; das Gate (ensurePurged) hält
+   * ihn aufrecht, bis die Bereinigung bestätigt nachgeholt wurde.
+   */
+  const purgeSessionCaches = useCallback(() => {
+    void purgePrivateCaches().then((purged) => setPurgeBlocked(!purged));
+  }, []);
+
+  /**
    * Session + Gruppenliste prüfen. Sagt der Server 401, fliegt der lokale
    * Nutzer raus und die NameGate übernimmt. Offline bleibt der lokale
    * Stand gültig. Validiert auch die aktive Gruppe (rausgeflogen/gelöscht
    * -> auf die erste verbliebene Gruppe wechseln).
    */
   const refreshMe = useCallback(async () => {
+    // Solange private Caches einer Vorsession nicht bereinigt sind, bleibt
+    // die Session blockiert – auch kein Session-/Gruppenlisten-Refresh.
+    if (!(await ensurePurged())) return;
     try {
       const res = await fetch('/api/me', { cache: 'no-store' });
       if (res.status === 401 || res.status === 403) {
@@ -119,7 +160,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           // Session serverseitig beendet -> private Daten der Session räumen
           // (Snapshots + SW-Daten-Cache), bevor jemand anderes übernimmt.
           clearAllCachedData();
-          void purgePrivateCaches();
+          purgeSessionCaches();
         }
         return;
       }
@@ -144,10 +185,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // kein Netz – lokaler Nutzer/Gruppenstand bleibt
     }
-  }, []);
+  }, [ensurePurged, purgeSessionCaches]);
 
   /** Eigentlicher Refresh-Durchlauf – nur über refresh() starten. */
   const doRefresh = useCallback(async () => {
+    // Sicherheitsgate: KEIN /api/data-Request, solange private Caches
+    // einer Vorsession nicht nachweislich bereinigt sind – der SW könnte
+    // sonst im Offline-/Fehlerfall die alte Antwort als 200 ausliefern.
+    if (!(await ensurePurged())) return;
     await flushQueue();
     const groupId = activeRef.current;
     // Ohne aktive Gruppe oder angemeldeten Nutzer gibt es nichts zu
@@ -178,7 +223,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         // Session abgelaufen/beendet: gecachte Gruppendaten gehören zur
         // alten Session und dürfen offline nicht mehr abrufbar sein.
         clearAllCachedData();
-        void purgePrivateCaches();
+        purgeSessionCaches();
       }
     } else if (result.kind === 'forbidden') {
       // Aus der Gruppe entfernt oder Gruppe gelöscht
@@ -187,7 +232,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await refreshMe();
     }
     syncPending();
-  }, [refreshMe, syncPending]);
+  }, [ensurePurged, purgeSessionCaches, refreshMe, syncPending]);
 
   /**
    * Read-Refresh mit In-Flight-Sperre: Pro Provider läuft höchstens ein
@@ -296,10 +341,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Eine beim letzten Logout fehlgeschlagene Cache-Bereinigung nachholen,
     // BEVOR der erste Datenabruf den SW-Daten-Cache wieder anfasst – sonst
     // könnte diese Session private Daten der vorherigen übernehmen.
-    void ensurePrivateCachesPurged().then(() => {
-      pollNow();
-      void refreshMe();
-    });
+    // Fail-closed: Erst eine BESTÄTIGTE Bereinigung gibt Polling und
+    // Session-Refresh frei; solange sie fehlschlägt, bleibt purgeBlocked
+    // aktiv (kein Datenabruf, siehe ensurePurged-Gate) und die Bereinigung
+    // wird mit begrenztem exponentiellem Backoff erneut versucht.
+    let purgeRetryTimer: ReturnType<typeof setTimeout> | null = null;
+    let purgeAttempts = 0;
+    const startOncePurged = () => {
+      void ensurePurged().then((purged) => {
+        if (stopped) return;
+        if (purged) {
+          purgeAttempts = 0;
+          pollNow();
+          void refreshMe();
+          return;
+        }
+        purgeAttempts += 1;
+        const delay = Math.min(
+          PURGE_RETRY_MAX_MS,
+          PURGE_RETRY_BASE_MS * 2 ** Math.min(purgeAttempts - 1, 5)
+        );
+        purgeRetryTimer = setTimeout(startOncePurged, delay);
+      });
+    };
+    startOncePurged();
 
     const onOnline = () => {
       // Netz zurück: genau ein sofortiger Sync-Versuch (flusht auch
@@ -326,11 +391,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       stopped = true;
       clearTimer();
+      if (purgeRetryTimer !== null) clearTimeout(purgeRetryTimer);
       window.removeEventListener('online', onOnline);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('storage', onStorage);
     };
-  }, [refresh, refreshMe, syncPending]);
+  }, [ensurePurged, refresh, refreshMe, syncPending]);
 
   // Service-Worker-Registrierung + Update-Hinweis: siehe <UpdatePrompt />
   // (global im Root-Layout gemountet, damit es auf allen Seiten greift).
@@ -349,13 +415,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       saveUser(nextUser);
       setUser(nextUser);
       // Nutzerwechsel: eine evtl. hängengebliebene Bereinigung des
-      // Vorgänger-Caches nachholen, bevor der erste Datenabruf läuft.
-      // Danach Gruppenliste nachladen (frisch registriert = leer -> GroupGate)
-      void ensurePrivateCachesPurged()
-        .then(() => refreshMe())
-        .then(() => refresh());
+      // Vorgänger-Caches nachholen, BEVOR der erste Datenabruf läuft.
+      // Ohne bestätigte Bereinigung startet kein Abruf (fail-closed,
+      // purgeBlocked); der Backoff-Retry im Provider-Effekt holt sie nach
+      // und gibt die Abrufe dann frei. Sonst: Gruppenliste nachladen
+      // (frisch registriert = leer -> GroupGate).
+      void ensurePurged().then((purged) => {
+        if (!purged) return;
+        void refreshMe().then(() => refresh());
+      });
     },
-    [refreshMe, refresh]
+    [ensurePurged, refreshMe, refresh]
   );
 
   const setUserColor = useCallback(
@@ -392,18 +462,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setData(null);
     // Private Gruppendaten dürfen den Logout nicht überleben: alle
     // localStorage-Snapshots (fb.data.v2:*) und die /api/data-Antworten
-    // im Service-Worker-Cache (fb-data-*) löschen. Schlägt die
-    // SW-Bereinigung fehl, bleibt ein Merker stehen und sie wird vor dem
-    // nächsten Datenabruf nachgeholt – nie still übernommen.
+    // im Service-Worker-Cache (fb-data-*) löschen. Ohne bestätigte
+    // Bereinigung bleibt der Merker stehen und JEDER weitere Datenabruf
+    // ist blockiert (purgeBlocked), bis sie nachgeholt wurde – eine
+    // nachfolgende Session übernimmt den Cache nie.
     clearAllCachedData();
-    void purgePrivateCaches();
+    purgeSessionCaches();
     // Noch nicht gesyncte Mutationen bleiben in der Nutzer-Queue
     // (fb.queue.v2:<userId>) liegen und werden erst gesendet, wenn sich
     // derselbe Nutzer wieder anmeldet – nie unter einer fremden Session.
     syncPending();
     // Session-Cookie serverseitig löschen; der Passkey bleibt auf dem Gerät
     void fetch('/api/logout', { method: 'POST' }).catch(() => {});
-  }, [syncPending]);
+  }, [purgeSessionCaches, syncPending]);
 
   const setActiveGroup = useCallback(
     (groupId: string) => {
@@ -477,6 +548,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         data,
         online,
         pending,
+        purgeBlocked,
         loginAs,
         logout,
         refreshMe,

@@ -144,11 +144,18 @@ Session gebunden:
   Antworten, die beim Logout noch unterwegs waren) **und** direkt über
   `caches.delete()` aus dem Fenster (wirkt auch ohne Controller und
   bei wartendem SW).
-- **Fehlgeschlagene Bereinigung** wird nicht still ignoriert: Ein
-  Merker (`fb.cachePurge.v1`) bleibt stehen und die Löschung wird beim
-  nächsten App-Start bzw. Login **vor** dem ersten Datenabruf
-  nachgeholt – eine neue Session übernimmt den privaten Cache der
-  vorherigen nie.
+- **Bestätigte Bereinigung als Voraussetzung (fail-closed):** Der
+  Merker (`fb.cachePurge.v1`) wird erst entfernt, wenn die Bereinigung
+  nachweislich vollständig war – direkte Löschung erfolgreich **und**
+  SW-Bestätigung des Epoch-Bumps (bzw. kein Controller vorhanden, der
+  eine noch laufende Antwort cachen könnte). Solange das nicht der Fall
+  ist, startet der `AppProvider` **keinen** Datenabruf, der auf den
+  alten SW-Cache zurückfallen könnte: `purgeBlocked` schaltet die App
+  in einen sichtbaren Sicherheitsstopp (statt Login/Datenansicht), die
+  Bereinigung wird automatisch mit begrenztem exponentiellem Backoff
+  (5 s → max. 60 s) wiederholt und erst eine bestätigte Löschung gibt
+  Polling und Session-Refresh wieder frei – eine neue Session übernimmt
+  den privaten Cache der vorherigen nie, auch nicht im Fehlerfall.
 - Ein serverseitiges 401/403 wird nie durch den Cache in ein
   scheinbares 200 verwandelt: Der Cache-Fallback greift nur bei
   Netzfehler/Timeout, echte Fehlerantworten werden durchgereicht und
