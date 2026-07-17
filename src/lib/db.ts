@@ -98,10 +98,15 @@ function getPool(): Pool {
 /* Schema & Migration                                                  */
 /* ------------------------------------------------------------------ */
 
-/** Existiert die Kern-Tabelle schon? (billiger Steady-State-Check) */
+/**
+ * Existiert das Schema schon vollständig? (billiger Steady-State-Check)
+ * Muss immer auf das NEUESTE Schema-Objekt zeigen: Fehlt es, läuft der
+ * komplette – idempotente – Block unten erneut und zieht auch
+ * Bestandsdatenbanken auf den aktuellen Stand.
+ */
 async function schemaAlreadyExists(client: PoolClient): Promise<boolean> {
   const res = await client.query<{ t: string | null }>(
-    "SELECT to_regclass('public.festivals') AS t"
+    "SELECT to_regclass('public.processed_mutations') AS t"
   );
   return res.rows[0]?.t != null;
 }
@@ -210,6 +215,19 @@ async function createSchema(): Promise<void> {
       );
       ALTER TABLE blueprints ADD COLUMN IF NOT EXISTS festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}';
       CREATE SEQUENCE IF NOT EXISTS db_rev START 1;
+      -- Idempotenz-Backstop für Offline-Mutationen: bereits verarbeitete
+      -- Client-Mutation-IDs (clientMutationId) pro Nutzer. Doppelt
+      -- gesendete Mutationen (parallele Tabs ohne Web Locks, nicht
+      -- atomare localStorage-Lease) werden so als No-op bestätigt statt
+      -- erneut angewendet – ein verspätetes Duplikat kann keinen
+      -- neueren Zustand mehr überschreiben. Einträge sind kurzlebig und
+      -- werden nach 24 h opportunistisch aufgeräumt.
+      CREATE TABLE IF NOT EXISTS processed_mutations (
+        user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        mutation_id  TEXT NOT NULL,
+        processed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (user_id, mutation_id)
+      );
 
       -- Primärschlüssel der Bestandstabellen um festival_id erweitern
       -- (Slot-IDs "tag-buehne-band" sind nur pro Festival eindeutig).
@@ -1039,19 +1057,64 @@ export async function updateCredentialCounter(
 /* ------------------------------------------------------------------ */
 
 /**
+ * Client-Mutation-ID innerhalb der laufenden Transaktion beanspruchen.
+ * false = ID wurde bereits verarbeitet (Duplikat aus einem parallelen
+ * Tab) – der Aufrufer bestätigt dann als Erfolg, OHNE den evtl. schon
+ * neueren Zustand anzufassen. Der Unique-Index serialisiert auch zwei
+ * GLEICHZEITIGE Duplikate: Der zweite Insert wartet auf den Commit des
+ * ersten und geht danach leer aus.
+ */
+async function claimMutation(
+  client: PoolClient,
+  userId: string,
+  mutationId: string
+): Promise<boolean> {
+  const res = await client.query(
+    `INSERT INTO processed_mutations (user_id, mutation_id) VALUES ($1, $2)
+     ON CONFLICT DO NOTHING`,
+    [userId, mutationId]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+/**
+ * Alte Idempotenz-Einträge gelegentlich aufräumen (Tabelle klein
+ * halten). Duplikate treffen binnen Sekunden bis Minuten nach dem
+ * Original ein (paralleles Flushen bzw. Reconciliation) – 24 h
+ * Aufbewahrung sind also mehr als großzügig. Best effort: Fehler hier
+ * dürfen die eigentliche Mutation nie scheitern lassen.
+ */
+async function pruneProcessedMutations(): Promise<void> {
+  if (Math.random() >= 1 / 16) return;
+  await getPool()
+    .query(`DELETE FROM processed_mutations WHERE processed_at < now() - interval '24 hours'`)
+    .catch(() => {});
+}
+
+/**
  * Band-Teilnahme setzen ('going'/'interested') oder entfernen (null).
  * Rückgabe false, wenn der Nutzer nicht existiert (FK-Verletzung).
+ * mutationId (clientMutationId des Offline-Clients): bereits
+ * verarbeitete IDs werden als Erfolg bestätigt, ohne erneut zu
+ * schreiben (Idempotenz gegen Doppelversand aus parallelen Tabs).
  */
 export async function setSelection(
   userId: string,
   festivalId: string,
   slotId: string,
-  status: SelectionStatus | null
+  status: SelectionStatus | null,
+  mutationId?: string | null
 ): Promise<boolean> {
   await ensureSchema();
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
+    if (mutationId && !(await claimMutation(client, userId, mutationId))) {
+      // Duplikat: Genau diese Mutation wurde schon angewendet – ein evtl.
+      // inzwischen neuerer Stand darf nicht überschrieben werden.
+      await client.query('ROLLBACK');
+      return true;
+    }
     if (status) {
       await client.query(
         `INSERT INTO selections (user_id, festival_id, slot_id, status) VALUES ($1, $2, $3, $4)
@@ -1071,6 +1134,7 @@ export async function setSelection(
     }
     await client.query('COMMIT');
     await bumpRev();
+    await pruneProcessedMutations();
     return true;
   } catch (err) {
     await client.query('ROLLBACK');
@@ -1083,36 +1147,61 @@ export async function setSelection(
 
 export type PositionResult = 'ok' | 'not-attending';
 
-/** Position setzen (nur wenn bei der Band eingetragen) oder entfernen. */
+/**
+ * Position setzen (nur wenn bei der Band eingetragen) oder entfernen.
+ * mutationId wie bei setSelection(): Claim und Anwendung laufen in EINER
+ * Transaktion, ein Duplikat wird als Erfolg bestätigt, ohne zu schreiben.
+ */
 export async function setPosition(
   userId: string,
   festivalId: string,
   slotId: string,
   x: number | null,
-  y: number | null
+  y: number | null,
+  mutationId?: string | null
 ): Promise<PositionResult> {
-  if (x === null || y === null) {
-    await query(
-      'DELETE FROM positions WHERE user_id = $1 AND festival_id = $2 AND slot_id = $3',
-      [userId, festivalId, slotId]
-    );
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    if (mutationId && !(await claimMutation(client, userId, mutationId))) {
+      await client.query('ROLLBACK');
+      return 'ok'; // Duplikat: bereits verarbeitet
+    }
+    if (x === null || y === null) {
+      await client.query(
+        'DELETE FROM positions WHERE user_id = $1 AND festival_id = $2 AND slot_id = $3',
+        [userId, festivalId, slotId]
+      );
+    } else {
+      const res = await client.query(
+        `INSERT INTO positions (user_id, festival_id, slot_id, x, y)
+         SELECT $1, $2, $3, $4, $5
+         WHERE EXISTS (
+           SELECT 1 FROM selections
+            WHERE user_id = $1 AND festival_id = $2 AND slot_id = $3
+         )
+         ON CONFLICT (user_id, festival_id, slot_id)
+         DO UPDATE SET x = EXCLUDED.x, y = EXCLUDED.y, updated_at = now()`,
+        [userId, festivalId, slotId, x, y]
+      );
+      if (res.rowCount === 0) {
+        // Nicht angewendet -> auch den Claim zurücknehmen, die Mutation
+        // gilt nicht als verarbeitet.
+        await client.query('ROLLBACK');
+        return 'not-attending';
+      }
+    }
+    await client.query('COMMIT');
     await bumpRev();
+    await pruneProcessedMutations();
     return 'ok';
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
   }
-  const res = await query(
-    `INSERT INTO positions (user_id, festival_id, slot_id, x, y)
-     SELECT $1, $2, $3, $4, $5
-     WHERE EXISTS (
-       SELECT 1 FROM selections
-        WHERE user_id = $1 AND festival_id = $2 AND slot_id = $3
-     )
-     ON CONFLICT (user_id, festival_id, slot_id)
-     DO UPDATE SET x = EXCLUDED.x, y = EXCLUDED.y, updated_at = now()`,
-    [userId, festivalId, slotId, x, y]
-  );
-  if (res.rowCount === 0) return 'not-attending';
-  await bumpRev();
-  return 'ok';
 }
 
 /* ------------------------------------------------------------------ */

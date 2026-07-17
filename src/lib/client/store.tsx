@@ -23,6 +23,7 @@ import {
   loadQueue,
   loadUser,
   migrateLegacyQueue,
+  reconcileQueue,
   saveActiveGroup,
   saveCachedData,
   saveGroups,
@@ -382,8 +383,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     // Queue-Änderungen anderer Tabs (Einreihen/Flush) sofort in der
     // Pending-Anzeige spiegeln – alle Tabs zeigen denselben Sync-Zustand.
+    // Vorher eigene offene Einträge abgleichen: Hat der Write eines
+    // anderen Tabs (Fallback ohne Web Locks) einen davon überschrieben,
+    // reiht reconcileQueue() ihn wieder ein und flusht ihn nach.
     const onStorage = (e: StorageEvent) => {
-      if (e.key === null || isQueueStorageKey(e.key)) syncPending();
+      if (e.key === null || isQueueStorageKey(e.key)) {
+        syncPending();
+        void reconcileQueue().finally(syncPending);
+      }
     };
     window.addEventListener('online', onOnline);
     document.addEventListener('visibilitychange', onVisibilityChange);

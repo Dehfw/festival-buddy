@@ -54,10 +54,13 @@ laufen durch `sendOrEnqueue()`:
 1. Mutation kommt **immer zuerst in die Warteschlange** (localStorage,
    `fb.queue.v2:<userId>` – eine Queue pro Nutzer) und wird sofort
    optimistisch auf den lokalen Snapshot angewendet – die UI reagiert
-   ohne Wartezeit. Jeder Eintrag erhält dabei eine **eindeutige
-   Mutation-ID**; bestätigte Einträge werden später nur anhand genau
-   dieser ID entfernt, nie positionsbasiert (Alt-Einträge ohne ID über
-   ihre vollständigen Feldwerte).
+   ohne Wartezeit. Jeder Eintrag erhält dabei eine **eindeutige,
+   reload-stabile Mutation-ID** und eine Erstellungszeit `at`;
+   bestätigte Einträge werden später nur anhand genau dieser ID
+   entfernt, nie positionsbasiert (Alt-Einträge ohne ID über ihre
+   vollständigen Feldwerte). Die ID geht als `clientMutationId` mit an
+   den Server, der bereits verarbeitete IDs als No-op bestätigt (siehe
+   Multi-Tab-Koordination).
 2. Dann wird die Queue **FIFO geflusht**. Eine Mutation verlässt die
    Queue erst, wenn der Server sie bestätigt hat – so kann ein
    parallel laufender Poll den optimistischen Zustand nie
@@ -91,26 +94,71 @@ Nutzer-Queues verteilt.
 
 Alle Tabs eines Browserprofils teilen sich dieselbe
 localStorage-Queue. Damit parallele Tabs keine Mutationen doppelt
-senden, sich beim Read-Modify-Write keine Einträge überschreiben und
-eine ältere, verspätete Anfrage keine neuere Benutzeraktion beim
-Server überschreiben kann, gilt:
+wirksam senden, sich beim Read-Modify-Write keine Einträge
+überschreiben und eine ältere, verspätete Anfrage keine neuere
+Benutzeraktion beim Server überschreiben kann, arbeiten drei Ebenen
+zusammen – jede mit einer klar definierten Garantie:
+
+**1. Web-Locks-Pfad (Standard, alle aktuellen Browser) – atomar:**
 
 - **Ein Flush-Writer browserweit:** `flushQueue()` läuft unter einem
   Web Lock (`fb.queue.flush`) – weitere Tabs warten, bis der aktive
   Writer fertig ist, und übernehmen dann die restliche Queue. Der
   Browser gibt das Lock beim Schließen/Absturz eines Tabs automatisch
-  frei. Alle Requests laufen so strikt nacheinander in
-  Queue-Reihenfolge (FIFO).
-- **Fallback ohne Web Locks:** eine localStorage-Lease
-  (`fb.queue.lock.v1`) mit 15 s Ablaufzeit. Ist sie vergeben,
-  überspringt der Tab den Flush (der nächste Poll versucht es erneut);
-  der aktive Writer verlängert sie laufend, ein abgestürzter Tab
-  hinterlässt also nie eine permanente Sperre.
+  frei. Alle Requests laufen strikt nacheinander in Queue-Reihenfolge
+  (FIFO nach Erstellungszeit `at`).
 - **Queue-Writes unter kurzem Lock:** Einreihen und Entfernen laufen
   unter einem zweiten Web Lock (`fb.queue.write`), damit
   gleichzeitiges Einreihen aus zwei Tabs keine Einträge verliert.
-- **Konsistente Anzeige:** Über das `storage`-Event spiegeln alle Tabs
-  Queue-Änderungen anderer Tabs sofort in ihrer Pending-Anzeige.
+- **Garantie:** höchstens ein aktiver POST pro Mutation, kein
+  Enqueue-Verlust, definierte Reihenfolge – rein clientseitig.
+
+**2. Fallback ohne Web Locks – best effort, aber abgesichert:**
+localStorage kennt kein Compare-and-Swap, eine rennfreie Sperre ist
+dort prinzipiell unmöglich. Der Fallback minimiert deshalb nur die
+Fenster und verlässt sich für die Korrektheit auf Ebene 3:
+
+- **Gehärtete Flush-Lease** (`fb.queue.lock.v1`, 15 s Ablaufzeit):
+  Schreiben + doppeltes Zurücklesen mit kurzer, gejitterter Setzzeit –
+  bei nahezu gleichzeitigem Erwerb gewinnt praktisch immer nur der
+  zuletzt schreibende Tab. Ist die Lease vergeben, überspringt der Tab
+  den Flush; der aktive Writer verlängert sie laufend, eine
+  abgelaufene Lease (Tab-Absturz) kann nach spätestens 15 s
+  übernommen werden.
+- **Einreihen per ID-Merge:** Statt blindem Überschreiben wird die
+  Union aus frisch gelesener Queue und eigenem Eintrag geschrieben
+  (dedupliziert über die Mutation-ID, stabil sortiert nach `at`).
+- **Reconciliation eigener Einträge:** Jeder Tab merkt sich seine noch
+  offenen Mutationen. Überschreibt ein konkurrierender Write einen
+  davon doch, reiht ihn das `storage`-Event bzw. der nächste Flush
+  wieder ein – außer die Erledigt-Liste (`fb.queue.done.v1`, vom
+  Flush-Writer geführt) kennt die ID bereits als bestätigt/abgelehnt,
+  oder es existiert inzwischen eine **neuere** Mutation fürs selbe
+  Ziel (dann bleibt die neueste Benutzerabsicht maßgeblich).
+- **Garantie:** kein dauerhafter Enqueue-Verlust; Doppel-POSTs sind
+  selten, aber möglich – sie sind durch Ebene 3 wirkungslos.
+
+**3. Serverseitige Idempotenz (Backstop, gilt für beide Pfade):**
+Jede Mutation geht mit ihrer eindeutigen, reload-stabilen ID als
+`clientMutationId` an `/api/selection` bzw. `/api/position`. Der
+Server beansprucht die ID in **derselben Transaktion** wie die
+Anwendung der Mutation (Tabelle `processed_mutations`, Unique-Index
+pro Nutzer + ID, Aufbewahrung 24 h). Eine bereits verarbeitete ID wird
+als Erfolg bestätigt, **ohne** erneut zu schreiben – auch zwei
+gleichzeitige Duplikate serialisiert der Unique-Index. Ein doppelter
+oder verspäteter Versand derselben Mutation kann damit nie einen
+neueren Zustand überschreiben. Alt-Clients ohne `clientMutationId`
+werden unverändert (ohne Idempotenz-Schutz) verarbeitet.
+
+**Konsistente Anzeige:** Über das `storage`-Event spiegeln alle Tabs
+Queue-Änderungen anderer Tabs sofort in ihrer Pending-Anzeige und
+stoßen dabei die Reconciliation (Ebene 2) an.
+
+**Bewusste Restgrenze des Fallbacks:** Schließt ein Tab ohne Web Locks
+sich, WÄHREND genau in diesem Moment ein konkurrierender Write seinen
+frisch eingereihten Eintrag überschreibt, kann niemand mehr
+reconcilen – dieses Fenster ist praktisch vernachlässigbar und betrifft
+nur Browser ohne Web-Locks-API.
 
 ## PWA & Service Worker
 

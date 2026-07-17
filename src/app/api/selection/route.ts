@@ -39,6 +39,14 @@ export async function POST(req: Request) {
   if (typeof slotId !== 'string' || status === undefined) {
     return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 });
   }
+  // Idempotenz-Schlüssel des Offline-Clients (parallele Tabs können
+  // dieselbe Mutation doppelt senden): bereits verarbeitete IDs werden
+  // unten als No-op bestätigt. Fehlt bei Alt-Clients -> normal anwenden.
+  const rawMutationId: unknown = body?.clientMutationId;
+  const mutationId =
+    typeof rawMutationId === 'string' && rawMutationId.length > 0 && rawMutationId.length <= 128
+      ? rawMutationId
+      : null;
 
   const groupId =
     typeof body?.group === 'string' && body.group
@@ -56,7 +64,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unbekannter Slot' }, { status: 404 });
   }
 
-  const ok = await setSelection(userId, ctx.festivalId, slotId, status);
+  const ok = await setSelection(userId, ctx.festivalId, slotId, status, mutationId);
   if (!ok) {
     return NextResponse.json({ error: 'Unbekannter Nutzer' }, { status: 404 });
   }
