@@ -13,6 +13,10 @@ import type { DataPayload, GroupSummary, SelectionStatus, User } from '../types'
  *    gesynct.
  *  - Nach jedem Server-Fetch werden noch offene Mutationen erneut auf den
  *    Snapshot angewendet, damit die UI nicht "zurückspringt".
+ *  - Mehrere Tabs teilen sich dieselbe Queue: Browserweit flusht immer
+ *    nur ein Tab (Web Locks, Fallback: localStorage-Lease), Queue-Writes
+ *    laufen unter einem kurzen Lock und bestätigte Mutationen werden
+ *    anhand ihrer eindeutigen ID entfernt – nie positionsbasiert.
  */
 
 const DATA_KEY_PREFIX = 'fb.data.v2:'; // v2: Payload enthält jetzt `group`
@@ -34,6 +38,8 @@ const PENDING_INVITE_KEY = 'fb.pendingInvite';
 export type Mutation =
   | {
       op: 'selection';
+      /** Eindeutige Mutation-ID; fehlt nur bei Alt-Einträgen früherer Versionen */
+      id?: string;
       group: string;
       userId: string;
       slotId: string;
@@ -41,6 +47,8 @@ export type Mutation =
     }
   | {
       op: 'position';
+      /** Eindeutige Mutation-ID; fehlt nur bei Alt-Einträgen früherer Versionen */
+      id?: string;
       group: string;
       userId: string;
       slotId: string;
@@ -51,6 +59,7 @@ export type Mutation =
 /** Queue-Einträge älterer App-Versionen */
 type LegacyMutation = {
   op: 'selection' | 'position';
+  id?: string;
   userId: string;
   slotId: string;
   group?: string;
@@ -148,14 +157,19 @@ function parseQueue(raw: string | null): Mutation[] {
     .filter((m) => m.op === 'selection' || m.op === 'position')
     .map((m): Mutation => {
       const group = typeof m.group === 'string' ? m.group : '';
+      // Alt-Einträge ohne ID bleiben ohne ID (werden über ihre Feldwerte
+      // identifiziert) – eine bei jedem Parse neu erfundene ID wäre nicht
+      // stabil und würde die Bestätigung anhand der ID unmöglich machen.
+      const id = typeof m.id === 'string' && m.id ? m.id : undefined;
       if (m.op === 'selection') {
         // Alt-Einträge (attending: boolean) auf status umschreiben
         const status =
           m.status !== undefined ? m.status : m.attending ? 'going' : null;
-        return { op: 'selection', group, userId: m.userId, slotId: m.slotId, status: status ?? null };
+        return { op: 'selection', id, group, userId: m.userId, slotId: m.slotId, status: status ?? null };
       }
       return {
         op: 'position',
+        id,
         group,
         userId: m.userId,
         slotId: m.slotId,
@@ -163,6 +177,21 @@ function parseQueue(raw: string | null): Mutation[] {
         y: m.y ?? null,
       };
     });
+}
+
+/**
+ * Eindeutige Mutation-ID: Bestätigte Einträge werden anhand dieser ID aus
+ * der Queue entfernt – nie positionsbasiert, denn ein anderer Tab kann die
+ * Queue seit dem Lesen bereits verändert haben.
+ */
+function newMutationId(): string {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
+      return crypto.randomUUID();
+  } catch {
+    // kein Secure Context o. Ä. -> Fallback unten
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 /**
@@ -313,6 +342,128 @@ async function post(m: Mutation): Promise<PostResult> {
   }
 }
 
+/*
+ * Browserweite Koordination (parallele Tabs):
+ * Alle Tabs eines Profils teilen sich dieselbe localStorage-Queue, die
+ * tablokale flushing-Variable wirkt aber nur innerhalb eines Tabs. Ohne
+ * weitere Sperre könnten zwei Tabs dieselbe Mutation doppelt senden,
+ * sich beim Read-Modify-Write der Queue gegenseitig Einträge
+ * überschreiben und eine ältere, verspätete Anfrage könnte eine neuere
+ * Benutzeraktion beim Server überschreiben. Deshalb:
+ *  - Flush-Lock: browserweit höchstens ein aktiver Queue-Writer, alle
+ *    Requests laufen strikt nacheinander in Queue-Reihenfolge (FIFO).
+ *  - Write-Lock: kurzes Lock um jedes Read-Modify-Write der Queue
+ *    (Einreihen, Entfernen), damit konkurrierende Tabs keine Einträge
+ *    verlieren.
+ * Web Locks gibt der Browser beim Schließen/Absturz eines Tabs
+ * automatisch frei. Für Browser ohne Web Locks dient eine
+ * localStorage-Lease mit Ablaufzeit als Fallback – ein abgestürzter Tab
+ * hinterlässt also nie eine permanente Sperre.
+ */
+const FLUSH_LOCK = 'fb.queue.flush';
+const WRITE_LOCK = 'fb.queue.write';
+const FLUSH_LEASE_KEY = 'fb.queue.lock.v1';
+const FLUSH_LEASE_MS = 15_000;
+/** Identität dieses Tabs für die Fallback-Lease */
+const TAB_ID = newMutationId();
+
+type FlushLease = { owner: string; expires: number };
+
+function webLocks(): LockManager | null {
+  if (typeof navigator === 'undefined') return null;
+  const locks = navigator.locks;
+  return locks && typeof locks.request === 'function' ? locks : null;
+}
+
+/** Kurzes browserweites Lock um ein Read-Modify-Write der Queue. */
+async function withQueueWrite<T>(fn: () => T): Promise<T> {
+  const locks = webLocks();
+  if (locks) return locks.request(WRITE_LOCK, async () => fn());
+  // Ohne Web Locks direkt ausführen: Innerhalb des Tabs ist das
+  // Read-Modify-Write synchron; das verbleibende Cross-Tab-Fenster ist
+  // minimal und wird durch den Single-Flush-Writer zusätzlich begrenzt.
+  return fn();
+}
+
+function readFlushLease(): FlushLease | null {
+  return safeParse<FlushLease>(localStorage.getItem(FLUSH_LEASE_KEY));
+}
+
+function writeFlushLease() {
+  localStorage.setItem(
+    FLUSH_LEASE_KEY,
+    JSON.stringify({ owner: TAB_ID, expires: Date.now() + FLUSH_LEASE_MS })
+  );
+}
+
+function acquireFlushLease(): boolean {
+  const current = readFlushLease();
+  if (current && current.owner !== TAB_ID && current.expires > Date.now()) return false;
+  writeFlushLease();
+  // Zurücklesen: Haben zwei Tabs gleichzeitig geschrieben, gewinnt der
+  // zuletzt gespeicherte Eintrag – nur dieser Tab darf flushen.
+  return readFlushLease()?.owner === TAB_ID;
+}
+
+function releaseFlushLease() {
+  if (readFlushLease()?.owner === TAB_ID) localStorage.removeItem(FLUSH_LEASE_KEY);
+}
+
+/**
+ * Browserweit exklusiver Flush. Mit Web Locks warten weitere Tabs, bis
+ * der aktive Writer fertig ist, und übernehmen dann die restliche Queue.
+ * Der Fallback nutzt eine localStorage-Lease: Ist sie vergeben,
+ * überspringt der Tab den Flush – der nächste Poll bzw. das nächste
+ * online-Event versucht es erneut; stürzt der Halter ab, läuft die Lease
+ * spätestens nach 15 s aus und ein anderer Tab kann übernehmen.
+ */
+async function withFlushLock(fn: () => Promise<number>): Promise<number> {
+  const locks = webLocks();
+  if (locks) return locks.request(FLUSH_LOCK, () => fn());
+  if (!acquireFlushLease()) return 0;
+  // Lease während eines langen Flushs regelmäßig verlängern, damit sie
+  // nicht mitten in der Abarbeitung abläuft.
+  const renew = setInterval(() => {
+    if (readFlushLease()?.owner === TAB_ID) writeFlushLease();
+  }, Math.floor(FLUSH_LEASE_MS / 3));
+  try {
+    return await fn();
+  } finally {
+    clearInterval(renew);
+    releaseFlushLease();
+  }
+}
+
+/**
+ * Identität einer Mutation: bevorzugt über die eindeutige ID; Alt-Einträge
+ * ohne ID werden über ihre vollständigen Feldwerte verglichen.
+ */
+function isSameMutation(a: Mutation, b: Mutation): boolean {
+  if (a.id !== undefined || b.id !== undefined) return a.id === b.id;
+  if (a.group !== b.group || a.userId !== b.userId || a.slotId !== b.slotId) return false;
+  if (a.op === 'selection' && b.op === 'selection') return a.status === b.status;
+  if (a.op === 'position' && b.op === 'position') return a.x === b.x && a.y === b.y;
+  return false;
+}
+
+/**
+ * Genau diese (bestätigte bzw. abgelehnte) Mutation aus der frisch
+ * gelesenen Queue entfernen – nicht blind das erste Element: Ein anderer
+ * Tab kann seit dem Lesen bereits weitere Einträge angehängt haben.
+ */
+function removeFromQueueFor(userId: string, m: Mutation) {
+  const queue = loadQueueFor(userId);
+  const idx = queue.findIndex((q) => isSameMutation(q, m));
+  if (idx === -1) return;
+  queue.splice(idx, 1);
+  saveQueueFor(userId, queue);
+}
+
+/** Gehört dieser localStorage-Key zur Offline-Queue? (für storage-Events) */
+export function isQueueStorageKey(key: string | null): boolean {
+  return key !== null && (key.startsWith(QUEUE_KEY_PREFIX) || key === LEGACY_QUEUE_KEY);
+}
+
 /**
  * Mutation ausführen: IMMER erst in die Warteschlange, dann sofort
  * flushen. Eine Mutation verlässt die Queue erst, wenn der Server sie
@@ -321,13 +472,20 @@ async function post(m: Mutation): Promise<PostResult> {
  * Gibt true zurück, wenn die Queue danach leer ist (alles gesynct).
  */
 export async function sendOrEnqueue(m: Mutation): Promise<boolean> {
+  // Eindeutige ID vergeben: Nur anhand dieser ID wird der Eintrag nach
+  // der Server-Bestätigung wieder entfernt.
+  const entry: Mutation = { ...m, id: m.id ?? newMutationId() };
   // Immer in die Queue des Nutzers, der die Mutation ausgelöst hat –
-  // niemals in eine fremde.
-  const queue = loadQueueFor(m.userId);
-  queue.push(m);
-  saveQueueFor(m.userId, queue);
+  // niemals in eine fremde. Das Read-Modify-Write läuft unter dem
+  // Write-Lock, damit ein parallel einreihender Tab nicht überschrieben
+  // wird.
+  await withQueueWrite(() => {
+    const queue = loadQueueFor(entry.userId);
+    queue.push(entry);
+    saveQueueFor(entry.userId, queue);
+  });
   await flushQueue();
-  return loadQueueFor(m.userId).length === 0;
+  return loadQueueFor(entry.userId).length === 0;
 }
 
 // Backoff nach temporären Serverfehlern: Vor Ablauf der Wartezeit startet
@@ -350,13 +508,15 @@ function scheduleRetry(retryAfterMs: number | null) {
   retryFailures++;
 }
 
-// Nur ein Flush gleichzeitig – vermeidet Doppel-POSTs von Poll + Tap
+// Nur ein Flush gleichzeitig pro Tab (Poll + Tap); browserweit sorgt
+// zusätzlich withFlushLock dafür, dass höchstens ein Tab die geteilte
+// Queue abarbeitet – keine Doppel-POSTs, keine vertauschte Reihenfolge.
 let flushing: Promise<number> | null = null;
 
 /** Warteschlange abarbeiten (FIFO). Bricht ab, sobald das Netz weg ist. */
 export function flushQueue(): Promise<number> {
   if (flushing) return flushing;
-  flushing = doFlush().finally(() => {
+  flushing = withFlushLock(doFlush).finally(() => {
     flushing = null;
   });
   return flushing;
@@ -393,13 +553,14 @@ async function doFlush(): Promise<number> {
       // Dauerhaft abgelehnt (z. B. 400/403/404): Eintrag verwerfen,
       // damit er die Queue nicht ewig blockiert. Der nächste Poll holt
       // den Server-Stand, die UI zeigt wieder die bestätigte Wahrheit.
-      saveQueueFor(owner, loadQueueFor(owner).slice(1));
+      await withQueueWrite(() => removeFromQueueFor(owner, m));
       continue;
     }
-    // Vom Server bestätigt -> aus der Queue nehmen, Backoff zurücksetzen
+    // Vom Server bestätigt -> genau diese Mutation (per ID) aus der
+    // frisch gelesenen Queue nehmen, Backoff zurücksetzen
     retryFailures = 0;
     retryNotBefore = 0;
-    saveQueueFor(owner, loadQueueFor(owner).slice(1));
+    await withQueueWrite(() => removeFromQueueFor(owner, m));
     flushed++;
   }
   return flushed;

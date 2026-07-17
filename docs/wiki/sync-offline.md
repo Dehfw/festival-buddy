@@ -32,7 +32,10 @@ laufen durch `sendOrEnqueue()`:
 1. Mutation kommt **immer zuerst in die Warteschlange** (localStorage,
    `fb.queue.v2:<userId>` – eine Queue pro Nutzer) und wird sofort
    optimistisch auf den lokalen Snapshot angewendet – die UI reagiert
-   ohne Wartezeit.
+   ohne Wartezeit. Jeder Eintrag erhält dabei eine **eindeutige
+   Mutation-ID**; bestätigte Einträge werden später nur anhand genau
+   dieser ID entfernt, nie positionsbasiert (Alt-Einträge ohne ID über
+   ihre vollständigen Feldwerte).
 2. Dann wird die Queue **FIFO geflusht**. Eine Mutation verlässt die
    Queue erst, wenn der Server sie bestätigt hat – so kann ein
    parallel laufender Poll den optimistischen Zustand nie
@@ -61,6 +64,31 @@ erst gesendet, wenn sich **derselbe** Nutzer wieder anmeldet – nie
 unter der Session eines anderen. Einträge der alten globalen Queue
 (`fb.queue.v1`) werden beim Start anhand ihrer `userId` auf die
 Nutzer-Queues verteilt.
+
+### Multi-Tab-Koordination
+
+Alle Tabs eines Browserprofils teilen sich dieselbe
+localStorage-Queue. Damit parallele Tabs keine Mutationen doppelt
+senden, sich beim Read-Modify-Write keine Einträge überschreiben und
+eine ältere, verspätete Anfrage keine neuere Benutzeraktion beim
+Server überschreiben kann, gilt:
+
+- **Ein Flush-Writer browserweit:** `flushQueue()` läuft unter einem
+  Web Lock (`fb.queue.flush`) – weitere Tabs warten, bis der aktive
+  Writer fertig ist, und übernehmen dann die restliche Queue. Der
+  Browser gibt das Lock beim Schließen/Absturz eines Tabs automatisch
+  frei. Alle Requests laufen so strikt nacheinander in
+  Queue-Reihenfolge (FIFO).
+- **Fallback ohne Web Locks:** eine localStorage-Lease
+  (`fb.queue.lock.v1`) mit 15 s Ablaufzeit. Ist sie vergeben,
+  überspringt der Tab den Flush (der nächste Poll versucht es erneut);
+  der aktive Writer verlängert sie laufend, ein abgestürzter Tab
+  hinterlässt also nie eine permanente Sperre.
+- **Queue-Writes unter kurzem Lock:** Einreihen und Entfernen laufen
+  unter einem zweiten Web Lock (`fb.queue.write`), damit
+  gleichzeitiges Einreihen aus zwei Tabs keine Einträge verliert.
+- **Konsistente Anzeige:** Über das `storage`-Event spiegeln alle Tabs
+  Queue-Änderungen anderer Tabs sofort in ihrer Pending-Anzeige.
 
 ## PWA & Service Worker
 

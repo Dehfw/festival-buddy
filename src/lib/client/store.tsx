@@ -15,6 +15,7 @@ import {
   clearCachedData,
   fetchData,
   flushQueue,
+  isQueueStorageKey,
   loadActiveGroup,
   loadCachedData,
   loadGroups,
@@ -177,14 +178,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const onVisible = () => {
       if (document.visibilityState === 'visible') void refresh();
     };
+    // Queue-Änderungen anderer Tabs (Einreihen/Flush) sofort in der
+    // Pending-Anzeige spiegeln – alle Tabs zeigen denselben Sync-Zustand.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === null || isQueueStorageKey(e.key)) syncPending();
+    };
     window.addEventListener('online', onOnline);
     document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('storage', onStorage);
     return () => {
       clearInterval(interval);
       window.removeEventListener('online', onOnline);
       document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('storage', onStorage);
     };
-  }, [refresh, refreshMe]);
+  }, [refresh, refreshMe, syncPending]);
 
   // Service-Worker-Registrierung + Update-Hinweis: siehe <UpdatePrompt />
   // (global im Root-Layout gemountet, damit es auf allen Seiten greift).
