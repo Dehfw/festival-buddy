@@ -45,6 +45,8 @@ interface AppState {
   logout: () => void;
   /** Nutzer + Gruppenliste vom Server neu laden (/api/me) */
   refreshMe: () => Promise<void>;
+  /** Eigene Icon-/Avatar-Farbe ändern; false = fehlgeschlagen (z. B. offline) */
+  setUserColor: (color: string) => Promise<boolean>;
   /** Nach Erstellen/Beitreten: Gruppe übernehmen und aktiv schalten */
   adoptGroup: (group: GroupSummary) => void;
   setActiveGroup: (groupId: string) => void;
@@ -203,6 +205,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [refreshMe, refresh]
   );
 
+  const setUserColor = useCallback(
+    async (color: string): Promise<boolean> => {
+      try {
+        const res = await fetch('/api/me', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ color }),
+        });
+        if (!res.ok) return false;
+        const { user: serverUser } = (await res.json()) as { user: User };
+        saveUser(serverUser);
+        setUser(serverUser);
+        // Frische Daten holen, damit die eigene Farbe auch in der
+        // Mitgliederliste (data.users) der Gruppe aktualisiert wird.
+        await refresh();
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [refresh]
+  );
+
   const logout = useCallback(() => {
     saveUser(null);
     setUser(null);
@@ -291,6 +316,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         loginAs,
         logout,
         refreshMe,
+        setUserColor,
         adoptGroup,
         setActiveGroup,
         setSelection,
