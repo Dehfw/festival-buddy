@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
+import { useModalDialog } from '@/lib/client/useModalDialog';
 import {
   normalizeInviteCode,
   type FestivalSummary,
@@ -31,6 +32,20 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
   const [busy, setBusy] = useState<'create' | 'join' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [missingOpen, setMissingOpen] = useState(false);
+  const dialogRef = useRef<HTMLElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const titleId = useId();
+
+  // Nur die Overlay-Variante (mit onClose) ist ein modaler Dialog: Fokus
+  // auf den Titel, Focus Trap, Escape schließt, Seite darunter inert,
+  // Fokus zurück zum "+ Gruppe"-Button. Die Full-Page-Variante für Neue
+  // ohne Gruppe bleibt eine normale Seite.
+  useModalDialog({
+    onClose: () => onClose?.(),
+    dialogRef,
+    initialFocusRef: titleRef,
+    enabled: !!onClose,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -103,6 +118,10 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
 
   return (
     <main
+      ref={dialogRef}
+      role={onClose ? 'dialog' : undefined}
+      aria-modal={onClose ? true : undefined}
+      aria-labelledby={onClose ? titleId : undefined}
       className={`defekt-grid flex min-h-dvh flex-col items-center overflow-y-auto px-6 py-10 ${
         onClose ? 'fixed inset-0 z-50 bg-black/95' : ''
       }`}
@@ -111,7 +130,12 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
         <div className="mb-8 text-center">
           {onClose ? (
             <div className="flex items-center justify-between">
-              <h1 className="font-metal text-xl font-black uppercase">
+              <h1
+                ref={titleRef}
+                id={titleId}
+                tabIndex={-1}
+                className="font-metal text-xl font-black uppercase outline-none"
+              >
                 Weitere Gruppe
               </h1>
               <button
@@ -134,7 +158,10 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
         </div>
 
         {error && (
-          <p className="mb-4 rounded-xl border border-blood/40 bg-blood/10 px-4 py-3 text-sm text-blood">
+          <p
+            role="alert"
+            className="mb-4 rounded-xl border border-blood/40 bg-blood/10 px-4 py-3 text-sm text-blood"
+          >
             {error}
           </p>
         )}
