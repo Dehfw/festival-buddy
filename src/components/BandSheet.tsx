@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
+import { useModalDialog } from '@/lib/client/useModalDialog';
 import {
   DEFAULT_HOT_THRESHOLD,
   formatAgo,
@@ -30,6 +31,9 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
   const { data, user, setSelection, setPosition } = useApp();
   const [mapMode, setMapMode] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const titleId = useId();
 
   // onClose in einer Ref halten, damit die Effekte unten nicht bei jedem
   // Render neu registriert werden (onClose kommt als Inline-Arrow rein).
@@ -56,9 +60,22 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
     };
   }, []);
 
+  // Sheet gilt als gerendert, sobald die Slot-Daten vorhanden sind.
+  const rendered = !!(data && data.timetable.stages.some((s) => s.id === slot.stageId));
+
+  // Modales Dialog-Verhalten: Fokus in das Sheet (auf den Bandtitel),
+  // Focus Trap, Escape schließt, Hintergrund inert, Fokus zurück zum
+  // auslösenden Slot. Der Backdrop bleibt für Pointer klickbar.
+  useModalDialog({
+    onClose,
+    dialogRef: sheetRef,
+    containerRef: overlayRef,
+    initialFocusRef: titleRef,
+    enabled: rendered,
+  });
+
   // Swipe-down zum Schließen: Sheet folgt dem Finger, ab genug Weg oder
   // Geschwindigkeit wird geschlossen, sonst schnappt es zurück.
-  const rendered = !!(data && data.timetable.stages.some((s) => s.id === slot.stageId));
   useEffect(() => {
     const el = sheetRef.current;
     if (!el) return;
@@ -189,14 +206,19 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
   if (!data || !stage || !day) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <button
-        aria-label="Schließen"
+    <div ref={overlayRef} className="fixed inset-0 z-50 flex items-end justify-center">
+      {/* Backdrop: reines Pointer-Ziel – Tastatur schließt per Escape,
+          Screenreader über den sichtbaren Schließen-Button im Sheet. */}
+      <div
+        aria-hidden="true"
         className="absolute inset-0 bg-black/70"
         onClick={onClose}
       />
       <div
         ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className="relative max-h-[88dvh] w-full max-w-lg touch-pan-y overflow-y-auto overscroll-contain rounded-t-2xl border-t border-x border-rivet bg-steel px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl"
       >
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-rivet" />
@@ -211,8 +233,23 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
           <span className="text-xs text-ash">
             {day.longLabel} · {formatTime(slot.start)}–{formatTime(slot.end)} Uhr
           </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Schließen"
+            className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-rivet bg-steel-2 text-sm text-ash transition active:scale-[0.97]"
+          >
+            ✕
+          </button>
         </div>
-        <h2 className="font-metal text-2xl font-black leading-tight">{slot.band}</h2>
+        <h2
+          ref={titleRef}
+          id={titleId}
+          tabIndex={-1}
+          className="font-metal text-2xl font-black leading-tight outline-none"
+        >
+          {slot.band}
+        </h2>
         {!slot.confirmed && (
           <p className="mt-1 text-[11px] text-ash/70">
             Slot unbestätigt – Zeiten können sich ändern
