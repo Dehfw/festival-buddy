@@ -8,6 +8,7 @@ import { GroupAvatar } from '@/components/GroupAvatar';
 import { GroupGate } from '@/components/GroupGate';
 import { resizeImage } from '@/lib/client/image';
 import { AppProvider, useApp } from '@/lib/client/store';
+import { USER_COLORS } from '@/lib/ids';
 import { formatInviteCode, isGroupAdmin } from '@/lib/types';
 
 /**
@@ -27,6 +28,7 @@ function GroupPageInner() {
     setActiveGroup,
     refresh,
     refreshMe,
+    setUserColor,
     logout,
   } = useApp();
   const router = useRouter();
@@ -222,6 +224,20 @@ function GroupPageInner() {
   const switchTo = (id: string) => {
     setActiveGroup(id);
     router.push('/app');
+  };
+
+  const changeColor = async (color: string) => {
+    if (busy || color === user.color) return;
+    setBusy(true);
+    try {
+      flash(
+        (await setUserColor(color))
+          ? 'Icon-Farbe geändert'
+          : 'Farbe konnte nicht gespeichert werden – braucht Netz'
+      );
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -542,6 +558,45 @@ function GroupPageInner() {
         Konto
         <span className="h-px flex-1 bg-rivet" />
       </div>
+      {/* Eigene Icon-Farbe */}
+      <div className="mb-3 rounded-xl border border-rivet bg-steel p-3.5">
+        <div className="flex items-center gap-2.5">
+          <Avatar user={user} size={40} ring />
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-bold text-bone">Deine Icon-Farbe</div>
+            <div className="text-[11px] text-ash">
+              So erscheint dein Avatar bei den anderen
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-10 gap-2">
+          {USER_COLORS.map((c) => {
+            const active = c === user.color;
+            return (
+              <button
+                key={c}
+                onClick={() => changeColor(c)}
+                disabled={busy}
+                className="relative aspect-square rounded-full transition active:scale-90 disabled:opacity-50"
+                style={{
+                  backgroundColor: c,
+                  boxShadow: active ? '0 0 0 2px #e7e7ee' : '0 0 0 1.5px #0b0b0f',
+                }}
+                title={active ? 'Aktuelle Farbe' : 'Diese Farbe wählen'}
+                aria-label={`Icon-Farbe ${c}`}
+                aria-pressed={active}
+              >
+                {active && (
+                  <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-black/85">
+                    ✓
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <button
         onClick={doLogout}
         className="flex w-full items-center gap-2.5 rounded-xl border border-rivet bg-steel px-3 py-2.5 text-left"

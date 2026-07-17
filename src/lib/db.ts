@@ -900,6 +900,21 @@ export async function getUserById(id: string): Promise<User | null> {
 }
 
 /**
+ * Icon-/Avatar-Farbe eines Nutzers ändern. Bumpt die Revision, damit die
+ * neue Farbe bei den Mitgliedern (deren Avatare) beim nächsten Poll ankommt.
+ * Gibt null zurück, wenn es den Nutzer nicht (mehr) gibt.
+ */
+export async function updateUserColor(id: string, color: string): Promise<User | null> {
+  const res = await query<UserRow>(
+    'UPDATE users SET color = $2 WHERE id = $1 RETURNING id, name, color, created_at',
+    [id, color]
+  );
+  if (!res.rows[0]) return null;
+  await bumpRev();
+  return toUser(res.rows[0]);
+}
+
+/**
  * Bestandsnutzer ohne Passkey mit diesem Namen (case-insensitiv) – darf
  * bei der Registrierung übernommen werden, damit Alt-Accounts aus der
  * Nur-Name-Ära ihre Auswahlen behalten. Sobald ein Passkey dran hängt,
