@@ -8,9 +8,31 @@ gesamte Client-Logik steckt in **`src/lib/client/sync.ts`**
 
 ## Polling
 
-Der Client pollt `GET /api/data?group=<aktive Gruppe>` alle **7
-Sekunden** (`POLL_MS`), zusätzlich sofort beim Start, beim
-Sichtbarwerden des Tabs und beim `online`-Event. Der Payload
+Der Client pollt `GET /api/data?group=<aktive Gruppe>` im sichtbaren
+Tab alle **7 Sekunden** (`POLL_MS`), zusätzlich sofort beim Start, beim
+Sichtbarwerden des Tabs und beim `online`-Event. Der Poll-Loop ist eine
+`setTimeout`-Kette (kein `setInterval`): Der nächste Lauf wird erst
+nach Abschluss des vorherigen geplant, und `refresh()` trägt eine
+In-Flight-Sperre – pro Tab läuft höchstens ein Read-Refresh, parallele
+Auslöser (Timer, Events, Gruppenwechsel) teilen sich höchstens einen
+eingereihten Folgelauf. Damit gilt:
+
+- **Ausgeblendete Tabs pollen nicht:** Wechselt der Tab auf `hidden`,
+  stoppt der Read-Timer – ein Hintergrund-Tab bzw. eine Hintergrund-PWA
+  erzeugt keine periodischen Requests mehr (vorher ≈ 8,6/min pro Tab,
+  jetzt 0). Beim Sichtbarwerden gibt es genau einen sofortigen Refresh,
+  danach beginnt ein frischer Poll-Zyklus. Das `online`-Event stößt
+  auch im verdeckten Tab einen einmaligen Sync-Versuch an, damit
+  ausstehende Mutationen nicht aufs Sichtbarwerden warten.
+- **Backoff im Funkloch:** Ist der Server nicht erreichbar
+  (Netzfehler/5xx), wächst der Abstand zwischen den Leseversuchen
+  exponentiell mit Jitter (7 s → … → max. 60 s), statt weiter im
+  7-Sekunden-Takt anzuklopfen; der erste erfolgreiche Read kehrt zum
+  normalen Intervall zurück, der lokale Datenstand bleibt nutzbar.
+- **Kein Read ohne Kontext:** Ohne angemeldeten Nutzer oder aktive
+  Gruppe wird kein `/api/data`-Request gestartet.
+
+Der Payload
 (`DataPayload` in `src/lib/types.ts`) enthält alles für die aktive
 Gruppe: Timetable des Gruppen-Festivals, Mitglieder, Teilnahmen,
 Positionen, Blueprints, Gruppen-Info und den Revisionszähler `rev`.

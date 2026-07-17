@@ -34,6 +34,14 @@ import { ensurePrivateCachesPurged, purgePrivateCaches } from './swCache';
 
 /** Alle paar Sekunden neue Daten holen (Anforderung: Live-Sync der Gruppe) */
 const POLL_MS = 7000;
+/**
+ * Obergrenze für den Lese-Backoff: Ist der Server nicht erreichbar,
+ * wächst der Abstand zwischen den Poll-Versuchen exponentiell (mit
+ * Jitter) bis zu dieser Grenze, statt weiter alle 7 Sekunden ins
+ * Funkloch zu funken. Der erste erfolgreiche Read kehrt zu POLL_MS
+ * zurück, das online-Event startet sofort einen neuen Versuch.
+ */
+const POLL_BACKOFF_MAX_MS = 60_000;
 
 interface AppState {
   ready: boolean;
@@ -78,6 +86,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   dataRef.current = data;
   const activeRef = useRef<string | null>(null);
   activeRef.current = activeGroupId;
+  // In-Flight-Sperre fürs Read-Polling: pro Provider läuft höchstens
+  // ein Refresh gleichzeitig; parallele Auslöser teilen sich höchstens
+  // EINEN eingereihten Folgelauf (siehe refresh()).
+  const refreshInFlightRef = useRef<Promise<void> | null>(null);
+  const refreshQueuedRef = useRef<Promise<void> | null>(null);
+  /** Aufeinanderfolgende Offline-Reads – steuert den Poll-Backoff */
+  const pollFailuresRef = useRef(0);
 
   const syncPending = useCallback(() => {
     setPending(loadQueue().length);
@@ -129,14 +144,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const refresh = useCallback(async () => {
+  /** Eigentlicher Refresh-Durchlauf – nur über refresh() starten. */
+  const doRefresh = useCallback(async () => {
     await flushQueue();
     const groupId = activeRef.current;
-    if (!groupId) {
+    // Ohne aktive Gruppe oder angemeldeten Nutzer gibt es nichts zu
+    // lesen – kein /api/data-Request (der Queue-Flush oben ist ohne
+    // Besitzer ohnehin ein No-op).
+    if (!groupId || !loadUser()) {
       syncPending();
       return;
     }
     const result = await fetchData(groupId);
+    // Nur echte Netz-/Serverausfälle zählen für den Poll-Backoff; jede
+    // Server-Antwort (auch 401/403) setzt ihn zurück.
+    pollFailuresRef.current =
+      result.kind === 'offline' ? pollFailuresRef.current + 1 : 0;
     if (result.kind === 'ok') {
       // Zwischenzeitlicher Gruppenwechsel? Dann Ergebnis verwerfen.
       if (activeRef.current === groupId) {
@@ -164,6 +187,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     syncPending();
   }, [refreshMe, syncPending]);
 
+  /**
+   * Read-Refresh mit In-Flight-Sperre: Pro Provider läuft höchstens ein
+   * Durchlauf gleichzeitig – ein langsamer /api/data-Request kann sich
+   * nie mit dem nächsten überlappen. Weitere Aufrufer während eines
+   * laufenden Durchlaufs (Poll-Timer, online-/visibilitychange-Event,
+   * Gruppenwechsel) teilen sich genau EINEN eingereihten Folgelauf, der
+   * erst nach Abschluss startet und dann den aktuellen Zustand (aktive
+   * Gruppe!) liest – kein Request-Burst, kein verlorener Gruppenwechsel.
+   */
+  const refresh = useCallback((): Promise<void> => {
+    const start = (): Promise<void> => {
+      const run = doRefresh().finally(() => {
+        refreshInFlightRef.current = null;
+      });
+      refreshInFlightRef.current = run;
+      return run;
+    };
+    // Es wartet bereits ein Folgelauf? Dann teilen wir uns den.
+    const queued = refreshQueuedRef.current;
+    if (queued) return queued;
+    const inFlight = refreshInFlightRef.current;
+    if (!inFlight) return start();
+    const next = inFlight
+      .catch(() => {
+        // Fehler des laufenden Durchlaufs gehören dessen Aufrufern
+      })
+      .then(() => {
+        refreshQueuedRef.current = null;
+        return start();
+      });
+    refreshQueuedRef.current = next;
+    return next;
+  }, [doRefresh]);
+
   // Initial: lokalen Stand sofort anzeigen, dann Netz versuchen; Poll-Loop.
   useEffect(() => {
     cleanupLegacyCache();
@@ -186,18 +243,75 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (cached) setData(cached);
     }
     setReady(true);
+
+    // Poll-Loop als setTimeout-Kette statt setInterval: Der nächste
+    // Lauf wird erst NACH Abschluss des vorherigen geplant (keine
+    // überlappenden Reads bei langsamen Antworten), im ausgeblendeten
+    // Tab pausiert das Read-Polling komplett (Akku/Funk/Serverlast)
+    // und bei nicht erreichbarem Server wächst der Abstand mit
+    // begrenztem Backoff. Die Offline-Queue verliert dadurch nichts:
+    // Geflusht wird weiterhin bei jedem Poll, beim online-Event (auch
+    // verdeckt) und beim Sichtbarwerden.
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const clearTimer = () => {
+      if (timer !== null) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    };
+    const nextDelayMs = () => {
+      const failures = pollFailuresRef.current;
+      if (failures === 0) return POLL_MS;
+      // Begrenzter exponentieller Backoff mit Jitter (50–100 %), damit
+      // nach einem Ausfall nicht alle Clients im Gleichtakt anklopfen.
+      const capped = Math.min(POLL_BACKOFF_MAX_MS, POLL_MS * 2 ** Math.min(failures, 5));
+      return capped * (0.5 + Math.random() * 0.5);
+    };
+    const schedule = () => {
+      // Ausgeblendet oder unmounted? Dann keinen neuen Read-Poll
+      // planen – visibilitychange/online starten die Kette später neu.
+      if (stopped || document.visibilityState === 'hidden') return;
+      clearTimer();
+      timer = setTimeout(() => {
+        timer = null;
+        pollNow();
+      }, nextDelayMs());
+    };
+    // Genau EIN sofortiger Refresh (In-Flight-Sperre in refresh());
+    // der nächste Poll wird erst nach dessen Abschluss geplant – ein
+    // alter Timer kann keinen Doppel-Request erzeugen.
+    const pollNow = () => {
+      clearTimer();
+      void refresh()
+        .catch(() => {
+          // Netzfehler meldet refresh() über den Online-Status
+        })
+        .finally(schedule);
+    };
+
     // Eine beim letzten Logout fehlgeschlagene Cache-Bereinigung nachholen,
     // BEVOR der erste Datenabruf den SW-Daten-Cache wieder anfasst – sonst
     // könnte diese Session private Daten der vorherigen übernehmen.
     void ensurePrivateCachesPurged().then(() => {
-      void refresh();
+      pollNow();
       void refreshMe();
     });
 
-    const interval = setInterval(() => void refresh(), POLL_MS);
-    const onOnline = () => void refresh();
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') void refresh();
+    const onOnline = () => {
+      // Netz zurück: genau ein sofortiger Sync-Versuch (flusht auch
+      // die Offline-Queue) – bewusst auch im ausgeblendeten Tab, damit
+      // ausstehende Mutationen nicht aufs Sichtbarwerden warten müssen.
+      // Regelmäßig weitergepollt wird nur sichtbar (schedule prüft das).
+      pollNow();
+    };
+    const onVisibilityChange = () => {
+      // Verdeckt läuft kein Read-Polling; beim Sichtbarwerden gibt es
+      // genau einen sofortigen Refresh und erst nach dessen Abschluss
+      // wieder einen regulären Poll-Zyklus.
+      if (document.visibilityState === 'visible') pollNow();
+      else clearTimer();
     };
     // Queue-Änderungen anderer Tabs (Einreihen/Flush) sofort in der
     // Pending-Anzeige spiegeln – alle Tabs zeigen denselben Sync-Zustand.
@@ -205,12 +319,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (e.key === null || isQueueStorageKey(e.key)) syncPending();
     };
     window.addEventListener('online', onOnline);
-    document.addEventListener('visibilitychange', onVisible);
+    document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('storage', onStorage);
     return () => {
-      clearInterval(interval);
+      stopped = true;
+      clearTimer();
       window.removeEventListener('online', onOnline);
-      document.removeEventListener('visibilitychange', onVisible);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('storage', onStorage);
     };
   }, [refresh, refreshMe, syncPending]);
