@@ -11,17 +11,23 @@ export const dynamic = 'force-dynamic';
  * weg und zeigt den Passkey-Login. Die Gruppenliste steuert das Gate
  * (keine Gruppe -> GroupGate) und den Gruppen-Switcher.
  */
+function noStore(body: unknown, init?: { status?: number }): NextResponse {
+  const res = NextResponse.json(body, init);
+  res.headers.set('Cache-Control', 'no-store');
+  return res;
+}
+
 export async function GET(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
-    return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
+    return noStore({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
   const user = await getUserById(userId);
   if (!user) {
-    return NextResponse.json({ error: 'Nutzer existiert nicht mehr' }, { status: 401 });
+    return noStore({ error: 'Nutzer existiert nicht mehr' }, { status: 401 });
   }
   const groups = await getGroupsForUser(userId);
-  return NextResponse.json({ user, groups });
+  return noStore({ user, groups });
 }
 
 /**
@@ -30,9 +36,9 @@ export async function GET(req: Request) {
  * abgelehnt, damit die Avatare überall gut lesbar bleiben.
  */
 export async function PATCH(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
-    return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
+    return noStore({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
   const body = await req.json().catch(() => null);
   const color = typeof body?.color === 'string' ? body.color : '';
@@ -41,7 +47,7 @@ export async function PATCH(req: Request) {
   }
   const user = await updateUserColor(userId, color);
   if (!user) {
-    return NextResponse.json({ error: 'Nutzer existiert nicht mehr' }, { status: 401 });
+    return noStore({ error: 'Nutzer existiert nicht mehr' }, { status: 401 });
   }
-  return NextResponse.json({ user });
+  return noStore({ user });
 }

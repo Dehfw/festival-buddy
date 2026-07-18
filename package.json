@@ -10,7 +10,8 @@
     "lint": "next lint",
     "scrape": "node scripts/scrape-wacken.mjs",
     "import": "node scripts/import-lineup.mjs",
-    "import:db": "node scripts/import-festival.mjs"
+    "import:db": "node scripts/import-festival.mjs",
+    "test": "tsx tests/run.ts"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.3.0",
@@ -27,6 +28,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "tailwindcss": "^4.1.10",
+    "tsx": "^4.23.1",
     "typescript": "^5.8.0"
   }
 }

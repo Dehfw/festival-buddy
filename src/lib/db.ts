@@ -202,6 +202,18 @@ async function createSchema(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
       CREATE INDEX IF NOT EXISTS webauthn_credentials_user_idx ON webauthn_credentials (user_id);
+      -- Server-seitige Sessions: der Cookie enthält nur die Session-ID,
+      -- Gültigkeit/Revocation leben hier (Logout muss serverseitig wirken,
+      -- nicht nur den Cookie löschen können).
+      CREATE TABLE IF NOT EXISTS sessions (
+        id           TEXT PRIMARY KEY,
+        user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+        last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        expires_at   TIMESTAMPTZ NOT NULL,
+        revoked_at   TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions (user_id);
       CREATE TABLE IF NOT EXISTS blueprints (
         festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}',
         stage_id    TEXT NOT NULL,
@@ -669,6 +681,18 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
+    // Serialize concurrent leaves on this group: without this lock, two
+    // simultaneous departures can each read the membership table before the
+    // other's DELETE is visible, so neither promotes an owner nor deletes the
+    // group, leaving it ownerless/memberless (see #37).
+    const groupRow = await client.query('SELECT id FROM groups WHERE id = $1 FOR UPDATE', [
+      groupId,
+    ]);
+    if (groupRow.rowCount === 0) {
+      // Group was already removed by a concurrent leave; nothing to do.
+      await client.query('COMMIT');
+      return;
+    }
     await client.query(
       'DELETE FROM group_members WHERE group_id = $1 AND user_id = $2',
       [groupId, userId]
@@ -1032,6 +1056,91 @@ export async function updateCredentialCounter(
     credentialId,
     counter,
   ]);
+}
+
+/* ------------------------------------------------------------------ */
+/* Sessions                                                            */
+/* ------------------------------------------------------------------ */
+
+export interface SessionSummary {
+  id: string;
+  createdAt: string;
+  lastSeenAt: string;
+  expiresAt: string;
+}
+
+/**
+ * Neue Server-Session anlegen; die zurückgegebene ID landet signiert im
+ * Cookie, aber Gültigkeit/Revocation entscheidet allein diese Tabelle.
+ * Räumt bei der Gelegenheit abgelaufene/revokte Sessions desselben Nutzers
+ * weg, damit die Tabelle nicht unbegrenzt wächst.
+ */
+export async function createSession(userId: string, maxAgeSeconds: number): Promise<string> {
+  const id = randomBytes(32).toString('base64url');
+  const client = await getPool().connect();
+  try {
+    await ensureSchema();
+    await client.query(
+      `INSERT INTO sessions (id, user_id, expires_at)
+       VALUES ($1, $2, now() + ($3 || ' seconds')::interval)`,
+      [id, userId, maxAgeSeconds]
+    );
+    await client.query(
+      `DELETE FROM sessions
+        WHERE user_id = $1
+          AND (revoked_at IS NOT NULL OR expires_at < now() - interval '1 day')`,
+      [userId]
+    );
+  } finally {
+    client.release();
+  }
+  return id;
+}
+
+/**
+ * Session als aktiv bestätigen und "zuletzt gesehen" auffrischen. Geprüft
+ * werden Revocation, absolute Ablaufzeit *und* Inaktivitäts-Timeout –
+ * die Signatur des Cookies allein entscheidet nicht mehr über Gültigkeit,
+ * sodass Logout (revokeSession) einen kopierten Token sofort entwertet.
+ */
+export async function touchSession(
+  sessionId: string,
+  userId: string,
+  idleMaxAgeSeconds: number
+): Promise<boolean> {
+  const res = await query(
+    `UPDATE sessions SET last_seen_at = now()
+      WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL
+        AND expires_at > now()
+        AND last_seen_at > now() - ($3 || ' seconds')::interval`,
+    [sessionId, userId, idleMaxAgeSeconds]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+/** Session gezielt widerrufen (Logout oder "andere Sitzung beenden"). */
+export async function revokeSession(sessionId: string, userId: string): Promise<boolean> {
+  const res = await query(
+    'UPDATE sessions SET revoked_at = now() WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL',
+    [sessionId, userId]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+/** Aktive Sessions eines Nutzers (Grundlage für eine "Sitzungen verwalten"-Ansicht). */
+export async function listActiveSessions(userId: string): Promise<SessionSummary[]> {
+  const res = await query<{ id: string; created_at: Date; last_seen_at: Date; expires_at: Date }>(
+    `SELECT id, created_at, last_seen_at, expires_at FROM sessions
+      WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > now()
+      ORDER BY last_seen_at DESC`,
+    [userId]
+  );
+  return res.rows.map((r) => ({
+    id: r.id,
+    createdAt: new Date(r.created_at).toISOString(),
+    lastSeenAt: new Date(r.last_seen_at).toISOString(),
+    expiresAt: new Date(r.expires_at).toISOString(),
+  }));
 }
 
 /* ------------------------------------------------------------------ */
