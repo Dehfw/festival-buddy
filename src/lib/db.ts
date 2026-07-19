@@ -669,6 +669,17 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
+    // Lock the group row first so concurrent leaveGroup calls on the same
+    // group serialize instead of each computing "remaining members" from a
+    // stale, pre-delete snapshot (which could leave the group both
+    // memberless and ownerless).
+    const locked = await client.query('SELECT id FROM groups WHERE id = $1 FOR UPDATE', [
+      groupId,
+    ]);
+    if (locked.rowCount === 0) {
+      await client.query('COMMIT');
+      return;
+    }
     await client.query(
       'DELETE FROM group_members WHERE group_id = $1 AND user_id = $2',
       [groupId, userId]
@@ -682,10 +693,13 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
     } else if (!remaining.rows.some((r) => r.role === 'owner')) {
       const successor =
         remaining.rows.find((r) => r.role === 'admin') ?? remaining.rows[0];
-      await client.query(
+      const promoted = await client.query(
         `UPDATE group_members SET role = 'owner' WHERE group_id = $1 AND user_id = $2`,
         [groupId, successor.user_id]
       );
+      if ((promoted.rowCount ?? 0) === 0) {
+        throw new Error(`Owner-Nachfolge fehlgeschlagen für Gruppe ${groupId}`);
+      }
     }
     await client.query('COMMIT');
     await bumpRev();
