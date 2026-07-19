@@ -10,10 +10,10 @@ import {
   getCookie,
   getRpConfig,
   openToken,
-  sealToken,
   SESSION_COOKIE,
   SESSION_MAX_AGE_S,
   setAuthCookie,
+  startSession,
 } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -77,13 +77,9 @@ export async function POST(req: Request) {
   await updateCredentialCounter(stored.credential.id, newCounter);
 
   const res = NextResponse.json({ user: stored.user });
-  setAuthCookie(
-    res,
-    rp,
-    SESSION_COOKIE,
-    sealToken({ uid: stored.user.id }, SESSION_MAX_AGE_S),
-    { maxAge: SESSION_MAX_AGE_S }
-  );
+  setAuthCookie(res, rp, SESSION_COOKIE, await startSession(stored.user.id), {
+    maxAge: SESSION_MAX_AGE_S,
+  });
   clearAuthCookie(res, rp, AUTH_CHALLENGE_COOKIE, '/api/webauthn');
   return res;
 }

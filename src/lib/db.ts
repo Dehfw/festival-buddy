@@ -202,6 +202,18 @@ async function createSchema(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
       CREATE INDEX IF NOT EXISTS webauthn_credentials_user_idx ON webauthn_credentials (user_id);
+      -- Serverseitige Sitzungen: das Session-Cookie trägt nur noch eine
+      -- Sitzungs-ID (sid); ohne einen passenden, nicht widerrufenen Eintrag
+      -- hier ist ein Token wertlos, auch wenn seine Signatur noch stimmt und
+      -- die 180-Tage-Ablauffrist im Token selbst noch nicht erreicht ist.
+      CREATE TABLE IF NOT EXISTS sessions (
+        id           TEXT PRIMARY KEY,
+        user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+        last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        revoked_at   TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions (user_id);
       CREATE TABLE IF NOT EXISTS blueprints (
         festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}',
         stage_id    TEXT NOT NULL,
@@ -695,6 +707,41 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
   } finally {
     client.release();
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Sitzungen (Session-Widerruf, siehe lib/auth.ts)                     */
+/* ------------------------------------------------------------------ */
+
+/** Sitzungen ohne Aktivität länger als dies gelten als abgelaufen. */
+const SESSION_IDLE_TIMEOUT_S = 30 * 24 * 60 * 60;
+
+export async function createSession(sid: string, userId: string): Promise<void> {
+  await query('INSERT INTO sessions (id, user_id) VALUES ($1, $2)', [sid, userId]);
+}
+
+/**
+ * Prüft eine Sitzungs-ID gegen die Server-Wahrheit: existiert, gehört zum
+ * angegebenen Nutzer, wurde nicht widerrufen (Logout) und war innerhalb des
+ * Idle-Timeouts aktiv. Bei Erfolg wird last_seen_at aktualisiert.
+ */
+export async function touchSession(sid: string, userId: string): Promise<boolean> {
+  const threshold = new Date(Date.now() - SESSION_IDLE_TIMEOUT_S * 1000);
+  const res = await query(
+    `UPDATE sessions SET last_seen_at = now()
+      WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL AND last_seen_at > $3
+      RETURNING 1`,
+    [sid, userId, threshold]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+/** Sitzung widerrufen (Logout). Idempotent. */
+export async function revokeSession(sid: string): Promise<void> {
+  await query(
+    'UPDATE sessions SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL',
+    [sid]
+  );
 }
 
 /** Mitglied entfernen (Admin-Check macht die Route; Owner ist tabu). */

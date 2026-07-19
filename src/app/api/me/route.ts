@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
  * (keine Gruppe -> GroupGate) und den Gruppen-Switcher.
  */
 export async function GET(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
@@ -30,7 +30,7 @@ export async function GET(req: Request) {
  * abgelehnt, damit die Avatare überall gut lesbar bleiben.
  */
 export async function PATCH(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
