@@ -6,6 +6,7 @@ import { useApp } from '@/lib/client/store';
 import {
   browserSupportsWebAuthn,
   browserSupportsWebAuthnAutofill,
+  describeWebAuthnError,
   isWebAuthnAbort,
   loginWithPasskey,
   registerWithPasskey,
@@ -62,7 +63,8 @@ export function NameGate() {
       const user = await registerWithPasskey(name.trim());
       loginAs(user);
     } catch (err) {
-      if (!isWebAuthnAbort(err)) setError((err as Error).message);
+      const msg = describeWebAuthnError(err);
+      if (msg) setError(msg);
     } finally {
       if (mounted.current) setBusy(false);
     }
@@ -76,7 +78,8 @@ export function NameGate() {
       const user = await loginWithPasskey();
       loginAs(user);
     } catch (err) {
-      if (!isWebAuthnAbort(err)) setError((err as Error).message);
+      const msg = describeWebAuthnError(err);
+      if (msg) setError(msg);
     } finally {
       if (mounted.current) setBusy(false);
     }

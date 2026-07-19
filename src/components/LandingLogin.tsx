@@ -8,6 +8,7 @@ import type { User } from '@/lib/types';
 import {
   browserSupportsWebAuthn,
   browserSupportsWebAuthnAutofill,
+  describeWebAuthnError,
   isWebAuthnAbort,
   loginWithPasskey,
   registerWithPasskey,
@@ -93,7 +94,8 @@ export function LandingLogin() {
       const user = await registerWithPasskey(name.trim());
       enter(user);
     } catch (err) {
-      if (!isWebAuthnAbort(err)) setError((err as Error).message);
+      const msg = describeWebAuthnError(err);
+      if (msg) setError(msg);
       if (mounted.current) setBusy(false);
     }
   };
@@ -106,7 +108,8 @@ export function LandingLogin() {
       const user = await loginWithPasskey();
       enter(user);
     } catch (err) {
-      if (!isWebAuthnAbort(err)) setError((err as Error).message);
+      const msg = describeWebAuthnError(err);
+      if (msg) setError(msg);
       if (mounted.current) setBusy(false);
     }
   };
