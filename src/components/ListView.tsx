@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import {
   DEFAULT_HOT_THRESHOLD,
@@ -19,6 +19,7 @@ import { FireFrame } from './FireFrame';
  */
 export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
   const { data, user } = useApp();
+  const [query, setQuery] = useState('');
 
   const grouped = useMemo(() => {
     if (!data) return [];
@@ -26,22 +27,32 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
     for (const sel of data.selections) {
       counts.set(sel.slotId, (counts.get(sel.slotId) ?? 0) + 1);
     }
+    const q = query.trim().toLowerCase();
     return data.timetable.days
       .map((day) => ({
         day,
         slots: data.timetable.slots
-          .filter((s) => s.dayId === day.id && (counts.get(s.id) ?? 0) > 0)
+          .filter(
+            (s) =>
+              s.dayId === day.id &&
+              (counts.get(s.id) ?? 0) > 0 &&
+              (q === '' || s.band.toLowerCase().includes(q))
+          )
           .sort((a, b) => toMinutes(a.start) - toMinutes(b.start)),
       }))
       .filter((g) => g.slots.length > 0);
-  }, [data]);
+  }, [data, query]);
 
   if (!data) return null;
+
+  // Gibt es überhaupt eingetragene Bands? (unabhängig vom Suchfilter)
+  const hasAnyBands = data.selections.length > 0;
 
   const attendeesOf = (slotId: string) =>
     splitAttendees(data.users, data.selections, slotId);
 
-  if (grouped.length === 0) {
+  // Noch gar keine Band eingetragen: Onboarding-Hinweis ohne Suchfeld
+  if (!hasAnyBands) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-8 text-center">
         <div className="text-4xl">🤘</div>
@@ -54,9 +65,48 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
   }
 
   return (
-    <div className="h-full overflow-y-auto px-4 pb-6 scrollbar-thin">
-      <div className="mx-auto w-full max-w-2xl">
-      {grouped.map(({ day, slots }) => (
+    <div className="flex h-full flex-col">
+      {/* Suchschlitz: filtert die Liste live nach Bandnamen */}
+      <div className="shrink-0 px-4 pt-3 pb-1">
+        <div className="mx-auto w-full max-w-2xl">
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ash">
+              🔍
+            </span>
+            <input
+              type="text"
+              inputMode="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Band suchen …"
+              aria-label="Band suchen"
+              className="w-full rounded-xl border border-rivet bg-steel py-2.5 pl-9 pr-9 text-sm text-bone placeholder:text-ash focus:border-blood/60 focus:outline-none"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label="Suche zurücksetzen"
+                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-ash transition active:scale-95 hover:text-bone"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 scrollbar-thin">
+        <div className="mx-auto w-full max-w-2xl">
+        {grouped.length === 0 && (
+          <div className="flex flex-col items-center justify-center px-8 py-16 text-center">
+            <div className="text-3xl">🔎</div>
+            <p className="mt-3 text-sm text-ash">
+              Keine Band gefunden für „{query.trim()}“.
+            </p>
+          </div>
+        )}
+        {grouped.map(({ day, slots }) => (
         <section key={day.id} className="mt-5">
           <h2 className="font-metal mb-2 text-sm font-black uppercase tracking-wider text-ash">
             {day.longLabel}{' '}
@@ -134,6 +184,7 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
           </ul>
         </section>
       ))}
+        </div>
       </div>
     </div>
   );
