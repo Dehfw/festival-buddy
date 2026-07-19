@@ -7,11 +7,11 @@ import { createUserWithCredential } from '@/lib/db';
 import { colorForName } from '@/lib/ids';
 import {
   clearAuthCookie,
+  createUserSession,
   getCookie,
   getRpConfig,
   openToken,
   REG_CHALLENGE_COOKIE,
-  sealToken,
   SESSION_COOKIE,
   SESSION_MAX_AGE_S,
   setAuthCookie,
@@ -87,8 +87,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const res = NextResponse.json({ user });
-  setAuthCookie(res, rp, SESSION_COOKIE, sealToken({ uid: user.id }, SESSION_MAX_AGE_S), {
+  const res = NextResponse.json({ user }, { headers: { 'Cache-Control': 'no-store' } });
+  setAuthCookie(res, rp, SESSION_COOKIE, await createUserSession(user.id), {
     maxAge: SESSION_MAX_AGE_S,
   });
   clearAuthCookie(res, rp, REG_CHALLENGE_COOKIE, '/api/webauthn');

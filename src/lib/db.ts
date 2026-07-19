@@ -202,6 +202,19 @@ async function createSchema(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
       CREATE INDEX IF NOT EXISTS webauthn_credentials_user_idx ON webauthn_credentials (user_id);
+      -- Server-seitige Sessions: erlaubt echten Logout-Widerruf und
+      -- erzwungene Inaktivitäts-/Absolut-Timeouts (self-contained Tokens
+      -- allein können nicht widerrufen werden). Gespeichert wird nur der
+      -- Hash der Session-ID, nie der Rohwert aus dem Cookie.
+      CREATE TABLE IF NOT EXISTS user_sessions (
+        id           TEXT PRIMARY KEY,
+        user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+        last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        expires_at   TIMESTAMPTZ NOT NULL,
+        revoked_at   TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS user_sessions_user_idx ON user_sessions (user_id);
       CREATE TABLE IF NOT EXISTS blueprints (
         festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}',
         stage_id    TEXT NOT NULL,
@@ -663,12 +676,21 @@ export async function updateGroup(groupId: string, patch: GroupPatch): Promise<b
  * Gruppe verlassen. Verlässt der letzte Owner die Gruppe, rückt der
  * dienstälteste Admin nach (sonst das dienstälteste Mitglied); das letzte
  * Mitglied nimmt die Gruppe mit (löschen).
+ *
+ * `SELECT ... FOR UPDATE` auf die Gruppenzeile serialisiert konkurrierende
+ * leaveGroup()-Aufrufe für dieselbe Gruppe: Verlassen die letzten beiden
+ * Mitglieder gleichzeitig, wartet die zweite Transaktion, bis die erste
+ * committet hat, und sieht danach den bereits bereinigten Stand statt der
+ * (unter READ COMMITTED sonst unsichtbaren) noch-nicht-committeten
+ * Löschung. Ohne diese Sperre kann sonst eine ownerlose, aber nicht
+ * gelöschte Gruppe entstehen.
  */
 export async function leaveGroup(groupId: string, userId: string): Promise<void> {
   await ensureSchema();
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
+    await client.query('SELECT 1 FROM groups WHERE id = $1 FOR UPDATE', [groupId]);
     await client.query(
       'DELETE FROM group_members WHERE group_id = $1 AND user_id = $2',
       [groupId, userId]
@@ -1032,6 +1054,61 @@ export async function updateCredentialCounter(
     credentialId,
     counter,
   ]);
+}
+
+/* ------------------------------------------------------------------ */
+/* Sessions (Server-seitiger Widerruf & Timeouts)                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Neue Session-Zeile anlegen (Hash der Session-ID als Key). Räumt
+ * beiläufig abgelaufene/widerrufene Alt-Sessions desselben Nutzers auf,
+ * damit die Tabelle nicht unbegrenzt wächst.
+ */
+export async function insertUserSession(
+  sessionIdHash: string,
+  userId: string,
+  maxAgeSeconds: number
+): Promise<void> {
+  await query(
+    `DELETE FROM user_sessions
+      WHERE user_id = $1 AND (revoked_at IS NOT NULL OR expires_at < now() - interval '1 day')`,
+    [userId]
+  );
+  await query(
+    `INSERT INTO user_sessions (id, user_id, expires_at)
+     VALUES ($1, $2, now() + make_interval(secs => $3::double precision))`,
+    [sessionIdHash, userId, maxAgeSeconds]
+  );
+}
+
+/**
+ * Session gültig? (nicht widerrufen, absolute Gültigkeit nicht
+ * überschritten, letzte Aktivität nicht länger als idleTimeoutSeconds
+ * her) – und im selben Zug last_seen_at fortschreiben. true = gültig.
+ */
+export async function touchUserSession(
+  sessionIdHash: string,
+  idleTimeoutSeconds: number
+): Promise<boolean> {
+  const res = await query(
+    `UPDATE user_sessions
+        SET last_seen_at = now()
+      WHERE id = $1
+        AND revoked_at IS NULL
+        AND expires_at > now()
+        AND last_seen_at > now() - make_interval(secs => $2::double precision)`,
+    [sessionIdHash, idleTimeoutSeconds]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+/** Session widerrufen (Logout). Unbekannte/bereits widerrufene IDs sind kein Fehler. */
+export async function revokeUserSession(sessionIdHash: string): Promise<void> {
+  await query(
+    'UPDATE user_sessions SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL',
+    [sessionIdHash]
+  );
 }
 
 /* ------------------------------------------------------------------ */
