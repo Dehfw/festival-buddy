@@ -202,6 +202,18 @@ async function createSchema(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
       CREATE INDEX IF NOT EXISTS webauthn_credentials_user_idx ON webauthn_credentials (user_id);
+      -- Sessions: serverseitig widerrufbar, damit Logout ein kopiertes
+      -- Token nicht weiter gültig lässt (statt rein clientseitigem Cookie-
+      -- Löschen bei einem selbstsignierten, zustandslosen Token).
+      CREATE TABLE IF NOT EXISTS sessions (
+        id           TEXT PRIMARY KEY,
+        user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+        last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        expires_at   TIMESTAMPTZ NOT NULL,
+        revoked_at   TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions (user_id);
       CREATE TABLE IF NOT EXISTS blueprints (
         festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}',
         stage_id    TEXT NOT NULL,
@@ -1032,6 +1044,48 @@ export async function updateCredentialCounter(
     credentialId,
     counter,
   ]);
+}
+
+/* ------------------------------------------------------------------ */
+/* Sessions                                                            */
+/* ------------------------------------------------------------------ */
+
+/** Neue serverseitige Session anlegen; die zurückgegebene ID kommt ins Cookie. */
+export async function createSession(userId: string, maxAgeSeconds: number): Promise<string> {
+  const id = randomBytes(24).toString('base64url');
+  await query(
+    `INSERT INTO sessions (id, user_id, expires_at)
+     VALUES ($1, $2, now() + $3 * interval '1 second')`,
+    [id, userId, maxAgeSeconds]
+  );
+  return id;
+}
+
+/**
+ * Session als noch aktiv bestätigen (nicht widerrufen, absolute Lebenszeit
+ * nicht überschritten, innerhalb des Inaktivitäts-Fensters) und dabei
+ * gleich verlängern ("sliding" last_seen_at). Gibt bei jedem Fehlschlag
+ * null zurück, ohne den Grund zu verraten.
+ */
+export async function touchSession(
+  sessionId: string,
+  inactivityTimeoutSeconds: number
+): Promise<string | null> {
+  const res = await query<{ user_id: string }>(
+    `UPDATE sessions SET last_seen_at = now()
+      WHERE id = $1
+        AND revoked_at IS NULL
+        AND expires_at > now()
+        AND last_seen_at > now() - $2 * interval '1 second'
+      RETURNING user_id`,
+    [sessionId, inactivityTimeoutSeconds]
+  );
+  return res.rows[0]?.user_id ?? null;
+}
+
+/** Einzelne Session widerrufen (Logout: nur das aktuelle Gerät/Cookie). */
+export async function revokeSession(sessionId: string): Promise<void> {
+  await query('UPDATE sessions SET revoked_at = now() WHERE id = $1', [sessionId]);
 }
 
 /* ------------------------------------------------------------------ */

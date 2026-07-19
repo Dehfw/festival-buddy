@@ -1,21 +1,28 @@
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import type { NextResponse } from 'next/server';
+import { touchSession } from './db';
 
 /**
  * Leichtgewichtige Auth-Schicht für den Passkey-Login:
  *  - HMAC-signierte Tokens (Challenge-Cookies + Session-Cookie), kein
- *    externer IdP, keine Session-Tabelle.
+ *    externer IdP.
  *  - Der Signatur-Schlüssel kommt aus AUTH_SECRET; ohne die Variable wird
  *    er deterministisch aus der DATABASE_URL abgeleitet, damit alle
  *    Serverless-Instanzen denselben Schlüssel benutzen.
+ *  - Das Session-Cookie referenziert zusätzlich eine Zeile in der
+ *    `sessions`-Tabelle (sid); Logout widerruft die Zeile serverseitig,
+ *    statt sich auf ein rein clientseitiges Cookie-Löschen zu verlassen –
+ *    ein kopiertes Token bliebe sonst bis zum Ablauf gültig.
  */
 
 export const SESSION_COOKIE = 'fb_session';
 export const REG_CHALLENGE_COOKIE = 'fb_wa_reg';
 export const AUTH_CHALLENGE_COOKIE = 'fb_wa_auth';
 
-/** Session lang genug für die ganze Festival-Saison */
-export const SESSION_MAX_AGE_S = 180 * 24 * 60 * 60;
+/** Absolute Obergrenze einer Session, auch bei durchgehender Aktivität */
+export const SESSION_MAX_AGE_S = 30 * 24 * 60 * 60;
+/** Ohne Aktivität läuft die Session vorher ab (sliding window) */
+export const SESSION_INACTIVITY_TIMEOUT_S = 7 * 24 * 60 * 60;
 /** Challenge muss innerhalb weniger Minuten beantwortet werden */
 export const CHALLENGE_MAX_AGE_S = 5 * 60;
 
@@ -78,10 +85,23 @@ export function getCookie(req: Request, name: string): string | null {
   return null;
 }
 
-/** Nutzer-ID aus dem Session-Cookie; null wenn nicht (mehr) eingeloggt */
-export function readSessionUserId(req: Request): string | null {
-  const data = openToken<{ uid: string }>(getCookie(req, SESSION_COOKIE));
-  return typeof data?.uid === 'string' ? data.uid : null;
+/**
+ * Nutzer-ID aus dem Session-Cookie; null wenn nicht (mehr) eingeloggt.
+ * Prüft zusätzlich zur Signatur/Ablauf des Tokens die zugehörige
+ * `sessions`-Zeile (widerrufen? Inaktivitäts-Fenster überschritten?),
+ * damit ein Logout auch kopierte Tokens sofort ungültig macht.
+ */
+export async function readSessionUserId(req: Request): Promise<string | null> {
+  const data = openToken<{ uid: string; sid: string }>(getCookie(req, SESSION_COOKIE));
+  if (typeof data?.uid !== 'string' || typeof data.sid !== 'string') return null;
+  const userId = await touchSession(data.sid, SESSION_INACTIVITY_TIMEOUT_S);
+  return userId === data.uid ? userId : null;
+}
+
+/** Session-ID aus dem Cookie lesen, ohne die DB anzufassen (für Logout). */
+export function readSessionId(req: Request): string | null {
+  const data = openToken<{ sid: string }>(getCookie(req, SESSION_COOKIE));
+  return typeof data?.sid === 'string' ? data.sid : null;
 }
 
 export interface RpConfig {
