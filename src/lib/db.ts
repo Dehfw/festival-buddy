@@ -669,6 +669,20 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
+    // Gruppen-Row sperren, bevor Mitgliederliste gelesen/verändert wird:
+    // serialisiert parallele leaveGroup()-Aufrufe für dieselbe Gruppe, damit
+    // die "wer bleibt übrig"-Entscheidung unten immer auf dem tatsächlich
+    // committeten Stand basiert. Ohne diesen Lock konnten zwei gleichzeitig
+    // aussteigende Mitglieder sich unter READ COMMITTED gegenseitig noch als
+    // "vorhanden" sehen und die Gruppe owner- und mitgliederlos zurücklassen.
+    const group = await client.query('SELECT 1 FROM groups WHERE id = $1 FOR UPDATE', [
+      groupId,
+    ]);
+    if (group.rowCount === 0) {
+      // Gruppe wurde bereits von einem anderen Leave aufgelöst - nichts zu tun.
+      await client.query('COMMIT');
+      return;
+    }
     await client.query(
       'DELETE FROM group_members WHERE group_id = $1 AND user_id = $2',
       [groupId, userId]
@@ -682,10 +696,15 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
     } else if (!remaining.rows.some((r) => r.role === 'owner')) {
       const successor =
         remaining.rows.find((r) => r.role === 'admin') ?? remaining.rows[0];
-      await client.query(
+      const promoted = await client.query(
         `UPDATE group_members SET role = 'owner' WHERE group_id = $1 AND user_id = $2`,
         [groupId, successor.user_id]
       );
+      if ((promoted.rowCount ?? 0) === 0) {
+        throw new Error(
+          `leaveGroup: Owner-Nachfolge fehlgeschlagen (group=${groupId}, user=${successor.user_id})`
+        );
+      }
     }
     await client.query('COMMIT');
     await bumpRev();
