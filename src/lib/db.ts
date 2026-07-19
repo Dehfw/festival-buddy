@@ -663,12 +663,20 @@ export async function updateGroup(groupId: string, patch: GroupPatch): Promise<b
  * Gruppe verlassen. Verlässt der letzte Owner die Gruppe, rückt der
  * dienstälteste Admin nach (sonst das dienstälteste Mitglied); das letzte
  * Mitglied nimmt die Gruppe mit (löschen).
+ *
+ * pg_advisory_xact_lock serialisiert gleichzeitige leaveGroup-Aufrufe für
+ * dieselbe Gruppe: unter READ COMMITTED sähe sonst jede Transaktion die
+ * DELETEs der anderen noch nicht committeten Transaktion nicht und beide
+ * kämen zum Schluss "es bleibt noch wer übrig" – die Gruppe würde mit null
+ * Mitgliedern und ohne Owner überleben (#37). Der Lock ist pro Gruppe
+ * scoped, andere Gruppen bleiben uneingeschränkt parallel.
  */
 export async function leaveGroup(groupId: string, userId: string): Promise<void> {
   await ensureSchema();
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [groupId]);
     await client.query(
       'DELETE FROM group_members WHERE group_id = $1 AND user_id = $2',
       [groupId, userId]
