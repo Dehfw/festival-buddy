@@ -669,6 +669,20 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
+    // Zeilensperre auf die Gruppe selbst: Serialisiert alle gleichzeitigen
+    // leaveGroup()-Aufrufe für dieselbe Gruppe, damit die anschließende
+    // "wer bleibt übrig"-Entscheidung nie auf einem Snapshot trifft, der die
+    // noch nicht committete Löschung einer parallelen Transaktion verpasst
+    // (sonst: die letzten zwei Mitglieder verlassen gleichzeitig -> beide
+    // sehen sich gegenseitig noch als "verbleibend" -> ownerlose Gruppe
+    // bleibt zurück, obwohl group_members am Ende leer ist).
+    const locked = await client.query('SELECT id FROM groups WHERE id = $1 FOR UPDATE', [
+      groupId,
+    ]);
+    if (locked.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return;
+    }
     await client.query(
       'DELETE FROM group_members WHERE group_id = $1 AND user_id = $2',
       [groupId, userId]
@@ -682,10 +696,13 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
     } else if (!remaining.rows.some((r) => r.role === 'owner')) {
       const successor =
         remaining.rows.find((r) => r.role === 'admin') ?? remaining.rows[0];
-      await client.query(
+      const promoted = await client.query(
         `UPDATE group_members SET role = 'owner' WHERE group_id = $1 AND user_id = $2`,
         [groupId, successor.user_id]
       );
+      if (promoted.rowCount === 0) {
+        throw new Error(`leaveGroup: Owner-Nachfolge fehlgeschlagen (group=${groupId})`);
+      }
     }
     await client.query('COMMIT');
     await bumpRev();
