@@ -202,6 +202,20 @@ async function createSchema(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
       CREATE INDEX IF NOT EXISTS webauthn_credentials_user_idx ON webauthn_credentials (user_id);
+      -- Server-seitige Session-Widerrufsliste: Das fb_session-Cookie trägt
+      -- nur noch eine sid, alle sicherheitsrelevanten Prüfungen (Ablauf,
+      -- Widerruf, Inaktivität) laufen gegen diese Tabelle. Löst das
+      -- "kopiertes Cookie überlebt Logout"-Problem der rein clientseitigen
+      -- HMAC-Tokens.
+      CREATE TABLE IF NOT EXISTS sessions (
+        id           TEXT PRIMARY KEY,
+        user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+        last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        expires_at   TIMESTAMPTZ NOT NULL,
+        revoked_at   TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions (user_id);
       CREATE TABLE IF NOT EXISTS blueprints (
         festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}',
         stage_id    TEXT NOT NULL,
@@ -1031,6 +1045,54 @@ export async function updateCredentialCounter(
   await query('UPDATE webauthn_credentials SET counter = $2 WHERE id = $1', [
     credentialId,
     counter,
+  ]);
+}
+
+/* ------------------------------------------------------------------ */
+/* Sessions                                                            */
+/* ------------------------------------------------------------------ */
+
+/** Neue Session für einen frisch eingeloggten Nutzer anlegen. */
+export async function createSession(
+  userId: string,
+  maxAgeSeconds: number
+): Promise<{ id: string; expiresAt: Date }> {
+  const id = randomUUID();
+  const res = await query<{ expires_at: Date }>(
+    `INSERT INTO sessions (id, user_id, expires_at)
+     VALUES ($1, $2, now() + $3 * interval '1 second')
+     RETURNING expires_at`,
+    [id, userId, maxAgeSeconds]
+  );
+  return { id, expiresAt: res.rows[0].expires_at };
+}
+
+/**
+ * Session gegen Widerruf, Ablauf und Inaktivität prüfen und – falls gültig –
+ * `last_seen_at` in einem Zug fortschreiben. Gibt die user_id zurück, sonst
+ * null (abgelaufen/widerrufen/unbekannt); der Aufrufer behandelt das wie ein
+ * ungültiges Cookie (401).
+ */
+export async function touchSession(
+  sessionId: string,
+  inactivityTimeoutSeconds: number
+): Promise<string | null> {
+  const res = await query<{ user_id: string }>(
+    `UPDATE sessions SET last_seen_at = now()
+      WHERE id = $1
+        AND revoked_at IS NULL
+        AND expires_at > now()
+        AND last_seen_at > now() - $2 * interval '1 second'
+      RETURNING user_id`,
+    [sessionId, inactivityTimeoutSeconds]
+  );
+  return res.rows[0]?.user_id ?? null;
+}
+
+/** Session sofort ungültig machen (Logout) – wirkt auch auf kopierte Cookies. */
+export async function revokeSession(sessionId: string): Promise<void> {
+  await query('UPDATE sessions SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL', [
+    sessionId,
   ]);
 }
 

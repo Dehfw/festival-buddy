@@ -3,12 +3,13 @@ import {
   verifyAuthenticationResponse,
   type AuthenticationResponseJSON,
 } from '@simplewebauthn/server';
-import { getCredentialWithUser, updateCredentialCounter } from '@/lib/db';
+import { createSession, getCredentialWithUser, updateCredentialCounter } from '@/lib/db';
 import {
   AUTH_CHALLENGE_COOKIE,
   clearAuthCookie,
   getCookie,
   getRpConfig,
+  noStore,
   openToken,
   sealToken,
   SESSION_COOKIE,
@@ -75,15 +76,12 @@ export async function POST(req: Request) {
   }
 
   await updateCredentialCounter(stored.credential.id, newCounter);
+  const session = await createSession(stored.user.id, SESSION_MAX_AGE_S);
 
   const res = NextResponse.json({ user: stored.user });
-  setAuthCookie(
-    res,
-    rp,
-    SESSION_COOKIE,
-    sealToken({ uid: stored.user.id }, SESSION_MAX_AGE_S),
-    { maxAge: SESSION_MAX_AGE_S }
-  );
+  setAuthCookie(res, rp, SESSION_COOKIE, sealToken({ sid: session.id }, SESSION_MAX_AGE_S), {
+    maxAge: SESSION_MAX_AGE_S,
+  });
   clearAuthCookie(res, rp, AUTH_CHALLENGE_COOKIE, '/api/webauthn');
-  return res;
+  return noStore(res);
 }

@@ -1,10 +1,16 @@
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import type { NextResponse } from 'next/server';
+import { touchSession } from './db';
 
 /**
  * Leichtgewichtige Auth-Schicht für den Passkey-Login:
- *  - HMAC-signierte Tokens (Challenge-Cookies + Session-Cookie), kein
- *    externer IdP, keine Session-Tabelle.
+ *  - HMAC-signierte, ablaufende Tokens für die kurzlebigen
+ *    WebAuthn-Challenge-Cookies.
+ *  - Das Session-Cookie (`fb_session`) trägt dagegen nur eine sid; die
+ *    eigentliche Gültigkeit (Ablauf, Widerruf, Inaktivität) steht in der
+ *    `sessions`-Tabelle (src/lib/db.ts), damit Logout kopierte Cookies
+ *    sofort und serverseitig entwertet – ein reines HMAC-Token könnte das
+ *    nie leisten, weil es sich selbst nicht widerrufen kann.
  *  - Der Signatur-Schlüssel kommt aus AUTH_SECRET; ohne die Variable wird
  *    er deterministisch aus der DATABASE_URL abgeleitet, damit alle
  *    Serverless-Instanzen denselben Schlüssel benutzen.
@@ -14,8 +20,10 @@ export const SESSION_COOKIE = 'fb_session';
 export const REG_CHALLENGE_COOKIE = 'fb_wa_reg';
 export const AUTH_CHALLENGE_COOKIE = 'fb_wa_auth';
 
-/** Session lang genug für die ganze Festival-Saison */
+/** Session lang genug für die ganze Festival-Saison, sofern aktiv genutzt */
 export const SESSION_MAX_AGE_S = 180 * 24 * 60 * 60;
+/** Ohne jede Aktivität gilt eine Session nach 30 Tagen als abgelaufen */
+export const SESSION_INACTIVITY_TIMEOUT_S = 30 * 24 * 60 * 60;
 /** Challenge muss innerhalb weniger Minuten beantwortet werden */
 export const CHALLENGE_MAX_AGE_S = 5 * 60;
 
@@ -78,10 +86,24 @@ export function getCookie(req: Request, name: string): string | null {
   return null;
 }
 
-/** Nutzer-ID aus dem Session-Cookie; null wenn nicht (mehr) eingeloggt */
-export function readSessionUserId(req: Request): string | null {
-  const data = openToken<{ uid: string }>(getCookie(req, SESSION_COOKIE));
-  return typeof data?.uid === 'string' ? data.uid : null;
+/**
+ * Nutzer-ID aus dem Session-Cookie; null wenn nicht (mehr) eingeloggt.
+ * Prüft neben Signatur/Ablauf des Cookies auch Widerruf und Inaktivität
+ * gegen die `sessions`-Tabelle und schreibt bei Gültigkeit last_seen_at
+ * fort – ein widerrufenes (z. B. ausgeloggtes) oder inaktives Cookie ist
+ * damit sofort serverseitig ungültig, unabhängig davon, wie lange sein
+ * HMAC-Signaturablauf noch liefe.
+ */
+export async function readSessionUserId(req: Request): Promise<string | null> {
+  const data = openToken<{ sid: string }>(getCookie(req, SESSION_COOKIE));
+  if (typeof data?.sid !== 'string') return null;
+  return touchSession(data.sid, SESSION_INACTIVITY_TIMEOUT_S);
+}
+
+/** `Cache-Control: no-store` auf Antworten mit Auth-Status/-Cookies setzen. */
+export function noStore(res: NextResponse): NextResponse {
+  res.headers.set('Cache-Control', 'no-store');
+  return res;
 }
 
 export interface RpConfig {

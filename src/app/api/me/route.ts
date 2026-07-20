@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readSessionUserId } from '@/lib/auth';
+import { noStore, readSessionUserId } from '@/lib/auth';
 import { getGroupsForUser, getUserById, updateUserColor } from '@/lib/db';
 import { USER_COLORS } from '@/lib/ids';
 
@@ -12,16 +12,16 @@ export const dynamic = 'force-dynamic';
  * (keine Gruppe -> GroupGate) und den Gruppen-Switcher.
  */
 export async function GET(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
-    return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
+    return noStore(NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 }));
   }
   const user = await getUserById(userId);
   if (!user) {
-    return NextResponse.json({ error: 'Nutzer existiert nicht mehr' }, { status: 401 });
+    return noStore(NextResponse.json({ error: 'Nutzer existiert nicht mehr' }, { status: 401 }));
   }
   const groups = await getGroupsForUser(userId);
-  return NextResponse.json({ user, groups });
+  return noStore(NextResponse.json({ user, groups }));
 }
 
 /**
@@ -30,7 +30,7 @@ export async function GET(req: Request) {
  * abgelehnt, damit die Avatare überall gut lesbar bleiben.
  */
 export async function PATCH(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
