@@ -15,7 +15,7 @@ async function checkMemberAction(
   groupId: string,
   targetUserId: string
 ): Promise<NextResponse | null> {
-  const sessionUserId = readSessionUserId(req);
+  const sessionUserId = await readSessionUserId(req);
   if (!sessionUserId) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }

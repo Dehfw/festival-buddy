@@ -1,5 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import type { NextResponse } from 'next/server';
+import { touchSession } from './db';
 
 /**
  * Leichtgewichtige Auth-Schicht für den Passkey-Login:
@@ -78,10 +79,23 @@ export function getCookie(req: Request, name: string): string | null {
   return null;
 }
 
+/**
+ * Session aus dem Cookie lesen und serverseitig gegen Widerruf, Ablauf und
+ * Inaktivität prüfen (siehe #36 – Signatur und exp allein reichen nicht,
+ * weil ein vor dem Logout kopiertes Token sonst weiter akzeptiert würde).
+ * null, wenn nicht (mehr) eingeloggt.
+ */
+export async function readSession(req: Request): Promise<{ uid: string; sid: string } | null> {
+  const data = openToken<{ uid: string; sid: string }>(getCookie(req, SESSION_COOKIE));
+  if (typeof data?.uid !== 'string' || typeof data.sid !== 'string') return null;
+  const valid = await touchSession(data.sid, data.uid);
+  return valid ? { uid: data.uid, sid: data.sid } : null;
+}
+
 /** Nutzer-ID aus dem Session-Cookie; null wenn nicht (mehr) eingeloggt */
-export function readSessionUserId(req: Request): string | null {
-  const data = openToken<{ uid: string }>(getCookie(req, SESSION_COOKIE));
-  return typeof data?.uid === 'string' ? data.uid : null;
+export async function readSessionUserId(req: Request): Promise<string | null> {
+  const session = await readSession(req);
+  return session?.uid ?? null;
 }
 
 export interface RpConfig {

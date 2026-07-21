@@ -12,16 +12,25 @@ export const dynamic = 'force-dynamic';
  * (keine Gruppe -> GroupGate) und den Gruppen-Switcher.
  */
 export async function GET(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
-    return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
+    return NextResponse.json(
+      { error: 'Nicht eingeloggt' },
+      { status: 401, headers: { 'Cache-Control': 'no-store' } }
+    );
   }
   const user = await getUserById(userId);
   if (!user) {
-    return NextResponse.json({ error: 'Nutzer existiert nicht mehr' }, { status: 401 });
+    return NextResponse.json(
+      { error: 'Nutzer existiert nicht mehr' },
+      { status: 401, headers: { 'Cache-Control': 'no-store' } }
+    );
   }
   const groups = await getGroupsForUser(userId);
-  return NextResponse.json({ user, groups });
+  return NextResponse.json(
+    { user, groups },
+    { headers: { 'Cache-Control': 'no-store' } }
+  );
 }
 
 /**
@@ -30,7 +39,7 @@ export async function GET(req: Request) {
  * abgelehnt, damit die Avatare überall gut lesbar bleiben.
  */
 export async function PATCH(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }

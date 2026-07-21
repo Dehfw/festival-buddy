@@ -202,6 +202,18 @@ async function createSchema(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
       CREATE INDEX IF NOT EXISTS webauthn_credentials_user_idx ON webauthn_credentials (user_id);
+      -- Server-seitige Sessions: erst damit lässt sich ein Token nach
+      -- Logout oder bei Inaktivität wirklich sperren (siehe #36) statt nur
+      -- das Cookie clientseitig zu löschen.
+      CREATE TABLE IF NOT EXISTS sessions (
+        id           TEXT PRIMARY KEY,
+        user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+        last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        expires_at   TIMESTAMPTZ NOT NULL,
+        revoked_at   TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions (user_id);
       CREATE TABLE IF NOT EXISTS blueprints (
         festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}',
         stage_id    TEXT NOT NULL,
@@ -669,6 +681,12 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
+    // Leave-Vorgänge derselben Gruppe serialisieren: ohne diesen Lock sehen
+    // zwei parallele Transaktionen unter READ COMMITTED die jeweils andere
+    // Löschung nicht und können beide "ich bin das letzte Mitglied" bzw.
+    // "kein Owner mehr da" berechnen -> Gruppe bleibt doppelt bearbeitet
+    // bzw. ownerlos zurück (#37). xact-scoped: löst sich bei COMMIT/ROLLBACK.
+    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [groupId]);
     await client.query(
       'DELETE FROM group_members WHERE group_id = $1 AND user_id = $2',
       [groupId, userId]
@@ -1032,6 +1050,87 @@ export async function updateCredentialCounter(
     credentialId,
     counter,
   ]);
+}
+
+/* ------------------------------------------------------------------ */
+/* Sessions                                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Inaktivitäts-Timeout, serverseitig durchgesetzt (siehe #36): eine Session
+ * ohne Zugriff innerhalb dieser Frist gilt als abgelaufen, unabhängig von der
+ * absoluten Cookie-Laufzeit (SESSION_MAX_AGE_S).
+ */
+const SESSION_IDLE_TIMEOUT_S =
+  Number(process.env.SESSION_IDLE_TIMEOUT_S) || 30 * 24 * 60 * 60;
+
+export interface SessionSummary {
+  id: string;
+  createdAt: string;
+  lastSeenAt: string;
+  current: boolean;
+}
+
+/** Neue Server-Session anlegen; die ID wandert signiert ins Session-Cookie. */
+export async function createSession(userId: string, maxAgeSeconds: number): Promise<string> {
+  await ensureSchema();
+  const id = randomUUID();
+  await query(
+    `INSERT INTO sessions (id, user_id, expires_at)
+     VALUES ($1, $2, now() + $3 * interval '1 second')`,
+    [id, userId, maxAgeSeconds]
+  );
+  return id;
+}
+
+/**
+ * Session gegen Widerruf, Ablauf und Inaktivität prüfen. Bei Erfolg wird
+ * last_seen_at aufgefrischt; ein vorher gültiges, aber kopiertes Token
+ * bleibt so nach Logout oder Ablauf der Inaktivitätsfrist serverseitig
+ * gesperrt, selbst wenn Signatur und Ablaufdatum des Tokens noch passen.
+ */
+export async function touchSession(sessionId: string, userId: string): Promise<boolean> {
+  await ensureSchema();
+  const res = await query(
+    `UPDATE sessions
+        SET last_seen_at = now()
+      WHERE id = $1
+        AND user_id = $2
+        AND revoked_at IS NULL
+        AND expires_at > now()
+        AND last_seen_at > now() - $3 * interval '1 second'
+      RETURNING id`,
+    [sessionId, userId, SESSION_IDLE_TIMEOUT_S]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+/** Session widerrufen – nur wenn sie dem angegebenen Nutzer gehört. */
+export async function revokeSessionForUser(userId: string, sessionId: string): Promise<void> {
+  await query(
+    `UPDATE sessions SET revoked_at = now()
+      WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL`,
+    [sessionId, userId]
+  );
+}
+
+/** Aktive Sessions eines Nutzers auflisten (für "Wo bin ich angemeldet?"). */
+export async function listSessionsForUser(
+  userId: string,
+  currentSessionId: string
+): Promise<SessionSummary[]> {
+  const res = await query<{ id: string; created_at: string; last_seen_at: string }>(
+    `SELECT id, created_at, last_seen_at FROM sessions
+      WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > now()
+      ORDER BY last_seen_at DESC`,
+    [userId]
+  );
+  return res.rows.map((r) => ({
+    id: r.id,
+    createdAt: r.created_at,
+    lastSeenAt: r.last_seen_at,
+    current: r.id === currentSessionId,
+  }));
 }
 
 /* ------------------------------------------------------------------ */
