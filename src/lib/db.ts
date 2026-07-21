@@ -202,6 +202,20 @@ async function createSchema(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
       CREATE INDEX IF NOT EXISTS webauthn_credentials_user_idx ON webauthn_credentials (user_id);
+      -- Serverseitige Sitzungen: das Session-Cookie trägt nur noch einen
+      -- opaken Identifier, dessen Hash hier steht. Das erlaubt echten
+      -- Widerruf bei Logout und ein serverseitig erzwungenes
+      -- Inaktivitäts-Timeout (#36) statt eines rein selbstenthaltenen,
+      -- bis zum Ablauf nicht widerrufbaren Tokens.
+      CREATE TABLE IF NOT EXISTS sessions (
+        id           TEXT PRIMARY KEY,
+        user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+        last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        expires_at   TIMESTAMPTZ NOT NULL,
+        revoked_at   TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions (user_id);
       CREATE TABLE IF NOT EXISTS blueprints (
         festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}',
         stage_id    TEXT NOT NULL,
@@ -669,6 +683,12 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
+    // Gruppenzeile sperren, bevor die Mitgliedschaft gelöscht wird: das
+    // serialisiert konkurrierende Leave-Aufrufe für dieselbe Gruppe, damit
+    // die Owner-Nachfolge/-Löschung weiter unten nie auf einem Snapshot
+    // entscheidet, der die noch nicht committete Löschung einer parallelen
+    // Leave-Transaktion nicht sieht (#37).
+    await client.query('SELECT id FROM groups WHERE id = $1 FOR UPDATE', [groupId]);
     await client.query(
       'DELETE FROM group_members WHERE group_id = $1 AND user_id = $2',
       [groupId, userId]
@@ -682,10 +702,18 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
     } else if (!remaining.rows.some((r) => r.role === 'owner')) {
       const successor =
         remaining.rows.find((r) => r.role === 'admin') ?? remaining.rows[0];
-      await client.query(
+      const promoted = await client.query(
         `UPDATE group_members SET role = 'owner' WHERE group_id = $1 AND user_id = $2`,
         [groupId, successor.user_id]
       );
+      // Sicherheitsnetz: mit dem Gruppenlock oben sollte das nie
+      // passieren, aber ein still committeter Leave-Vorgang ohne Owner
+      // ist schlimmer als ein Fehler, der die Transaktion zurückrollt.
+      if ((promoted.rowCount ?? 0) === 0) {
+        throw new Error(
+          `leaveGroup: Owner-Nachfolge für Gruppe ${groupId} betraf 0 Zeilen`
+        );
+      }
     }
     await client.query('COMMIT');
     await bumpRev();
@@ -1031,6 +1059,62 @@ export async function updateCredentialCounter(
   await query('UPDATE webauthn_credentials SET counter = $2 WHERE id = $1', [
     credentialId,
     counter,
+  ]);
+}
+
+/* ------------------------------------------------------------------ */
+/* Sessions                                                            */
+/* ------------------------------------------------------------------ */
+
+/** Serverseitigen Sitzungsdatensatz anlegen; sessionIdHash ist bereits gehasht (nie der Rohwert). */
+export async function createSession(
+  sessionIdHash: string,
+  userId: string,
+  maxAgeSeconds: number
+): Promise<void> {
+  await query(
+    `INSERT INTO sessions (id, user_id, expires_at)
+     VALUES ($1, $2, now() + $3 * interval '1 second')`,
+    [sessionIdHash, userId, maxAgeSeconds]
+  );
+}
+
+/**
+ * Sitzung anhand des gehashten Identifiers prüfen: muss existieren, darf
+ * nicht widerrufen oder abgelaufen sein und muss innerhalb des
+ * Inaktivitäts-Timeouts zuletzt gesehen worden sein. Bei Erfolg wird
+ * last_seen_at nachgeführt (throttled auf alle 5 Minuten, um nicht bei
+ * jedem Request zu schreiben).
+ */
+export async function touchSession(
+  sessionIdHash: string,
+  idleTimeoutSeconds: number
+): Promise<{ userId: string } | null> {
+  const res = await query<{ user_id: string }>(
+    `SELECT user_id FROM sessions
+      WHERE id = $1
+        AND revoked_at IS NULL
+        AND expires_at > now()
+        AND last_seen_at > now() - $2 * interval '1 second'`,
+    [sessionIdHash, idleTimeoutSeconds]
+  );
+  const row = res.rows[0];
+  if (!row) return null;
+  query(
+    `UPDATE sessions SET last_seen_at = now()
+      WHERE id = $1 AND last_seen_at < now() - interval '5 minutes'`,
+    [sessionIdHash]
+  ).catch(() => {
+    // Best effort: ein verpasstes Nachführen von last_seen_at verkürzt im
+    // schlimmsten Fall nur das Idle-Fenster, gefährdet aber keine Prüfung.
+  });
+  return { userId: row.user_id };
+}
+
+/** Sitzung widerrufen (Logout); idempotent, no-op wenn unbekannt oder schon widerrufen. */
+export async function revokeSession(sessionIdHash: string): Promise<void> {
+  await query('UPDATE sessions SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL', [
+    sessionIdHash,
   ]);
 }
 

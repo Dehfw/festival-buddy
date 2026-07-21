@@ -1,10 +1,17 @@
-import { createHash, createHmac, timingSafeEqual } from 'crypto';
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import type { NextResponse } from 'next/server';
+import { revokeSession, touchSession } from './db';
 
 /**
  * Leichtgewichtige Auth-Schicht für den Passkey-Login:
- *  - HMAC-signierte Tokens (Challenge-Cookies + Session-Cookie), kein
- *    externer IdP, keine Session-Tabelle.
+ *  - HMAC-signierte Tokens (Challenge-Cookies + Session-Cookie).
+ *  - Das Session-Cookie trägt nur einen opaken, zufälligen Session-
+ *    Identifier (sid); die eigentliche Sitzung (Nutzer, Ablauf, Widerruf)
+ *    lebt serverseitig in der `sessions`-Tabelle (siehe db.ts), damit
+ *    Logout und Inaktivitäts-Timeout auch bereits kopierte Cookie-
+ *    Versionen entwerten (#36). Die Challenge-Cookies und das Admin-
+ *    Cookie bleiben dagegen weiterhin rein selbstenthaltene, kurzlebige
+ *    HMAC-Tokens.
  *  - Der Signatur-Schlüssel kommt aus AUTH_SECRET; ohne die Variable wird
  *    er deterministisch aus der DATABASE_URL abgeleitet, damit alle
  *    Serverless-Instanzen denselben Schlüssel benutzen.
@@ -14,8 +21,15 @@ export const SESSION_COOKIE = 'fb_session';
 export const REG_CHALLENGE_COOKIE = 'fb_wa_reg';
 export const AUTH_CHALLENGE_COOKIE = 'fb_wa_auth';
 
-/** Session lang genug für die ganze Festival-Saison */
+/** Absolute Höchstlaufzeit: lang genug für die ganze Festival-Saison */
 export const SESSION_MAX_AGE_S = 180 * 24 * 60 * 60;
+/**
+ * Inaktivitäts-Timeout: eine Sitzung ohne jede Aktivität wird serverseitig
+ * abgelehnt, lange bevor die absolute Höchstlaufzeit erreicht ist. Das
+ * begrenzt das Replay-Fenster eines kopierten Tokens auf 30 statt 180 Tage,
+ * ohne aktive Nutzer während der Festivalsaison auszuloggen (#36).
+ */
+export const IDLE_TIMEOUT_S = 30 * 24 * 60 * 60;
 /** Challenge muss innerhalb weniger Minuten beantwortet werden */
 export const CHALLENGE_MAX_AGE_S = 5 * 60;
 
@@ -78,10 +92,35 @@ export function getCookie(req: Request, name: string): string | null {
   return null;
 }
 
-/** Nutzer-ID aus dem Session-Cookie; null wenn nicht (mehr) eingeloggt */
-export function readSessionUserId(req: Request): string | null {
-  const data = openToken<{ uid: string }>(getCookie(req, SESSION_COOKIE));
-  return typeof data?.uid === 'string' ? data.uid : null;
+/** Neuen, kryptografisch zufälligen Session-Identifier erzeugen (roh, fürs Cookie). */
+export function generateSessionId(): string {
+  return b64url(randomBytes(32));
+}
+
+/** Session-Identifier gehasht, wie er in der `sessions`-Tabelle steht – der Rohwert verlässt nie die DB. */
+export function hashSessionId(sessionId: string): string {
+  return createHash('sha256').update(sessionId).digest('hex');
+}
+
+/**
+ * Nutzer-ID aus dem Session-Cookie; null wenn nicht (mehr) eingeloggt.
+ * Prüft neben Signatur/Ablauf des Cookies auch den serverseitigen
+ * Sitzungsdatensatz (Widerruf, Inaktivitäts-Timeout) – ein vor dem Logout
+ * kopiertes Cookie wird dadurch sofort ungültig (#36).
+ */
+export async function readSessionUserId(req: Request): Promise<string | null> {
+  const data = openToken<{ sid: string }>(getCookie(req, SESSION_COOKIE));
+  if (typeof data?.sid !== 'string') return null;
+  const session = await touchSession(hashSessionId(data.sid), IDLE_TIMEOUT_S);
+  return session?.userId ?? null;
+}
+
+/** Aktuelle Sitzung serverseitig widerrufen (Logout); no-op ohne gültiges Cookie. */
+export async function revokeCurrentSession(req: Request): Promise<void> {
+  const data = openToken<{ sid: string }>(getCookie(req, SESSION_COOKIE));
+  if (typeof data?.sid === 'string') {
+    await revokeSession(hashSessionId(data.sid));
+  }
 }
 
 export interface RpConfig {

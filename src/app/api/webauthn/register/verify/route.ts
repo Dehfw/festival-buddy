@@ -3,12 +3,14 @@ import {
   verifyRegistrationResponse,
   type RegistrationResponseJSON,
 } from '@simplewebauthn/server';
-import { createUserWithCredential } from '@/lib/db';
+import { createSession, createUserWithCredential } from '@/lib/db';
 import { colorForName } from '@/lib/ids';
 import {
   clearAuthCookie,
+  generateSessionId,
   getCookie,
   getRpConfig,
+  hashSessionId,
   openToken,
   REG_CHALLENGE_COOKIE,
   sealToken,
@@ -87,8 +89,12 @@ export async function POST(req: Request) {
     );
   }
 
+  const sessionId = generateSessionId();
+  await createSession(hashSessionId(sessionId), user.id, SESSION_MAX_AGE_S);
+
   const res = NextResponse.json({ user });
-  setAuthCookie(res, rp, SESSION_COOKIE, sealToken({ uid: user.id }, SESSION_MAX_AGE_S), {
+  res.headers.set('Cache-Control', 'no-store');
+  setAuthCookie(res, rp, SESSION_COOKIE, sealToken({ sid: sessionId }, SESSION_MAX_AGE_S), {
     maxAge: SESSION_MAX_AGE_S,
   });
   clearAuthCookie(res, rp, REG_CHALLENGE_COOKIE, '/api/webauthn');
