@@ -87,9 +87,22 @@
       0 0 34px 8px rgba(255, 122, 42, 0.3),
       inset 0 0 16px rgba(255, 122, 42, 0.35);
   }
+  /* Doom-Fire-Canvas: ragt über die Karte hinaus wie in globals.css;
+     Überstände passen zu PAD_TOP/PAD_X/PAD_BOTTOM im Skript unten */
+  .fire-frame canvas {
+    position: absolute;
+    top: -24px;
+    left: -12px;
+    width: calc(100% + 24px);
+    height: calc(100% + 33px);
+    pointer-events: none;
+    z-index: 2;
+  }
+
   .hot-tag {
     position: absolute;
     top: -20px; right: 14px;
+    z-index: 3;
     background: linear-gradient(180deg, var(--ember), var(--blood));
     color: #1a0d04;
     font-family: 'Anton', Impact, sans-serif;
@@ -142,7 +155,7 @@
           <div class="dot" style="background:#b5e48c">KI</div>
         </div>
       </div>
-      <div class="slot hot">
+      <div class="slot hot fire-frame">
         <div class="hot-tag">🔥 Hot Slot</div>
         <div class="time">20:45 – 22:00</div>
         <div class="band">Iron Verdict</div>
@@ -234,5 +247,89 @@
 
   <div class="vignette"></div>
 </div>
+<script>
+// Feuerrahmen wie in der App: Doom-Fire-Simulation aus
+// src/lib/client/fireEngine.ts, hier statisch vorsimuliert (70 Frames)
+// und einmal gezeichnet – der Screenshot erwischt so voll entwickelte
+// Flammen, die über den Kartenrand züngeln.
+(function () {
+  const CELL = 3, PAD_TOP = 24, PAD_X = 12, PAD_BOTTOM = 9;
+  const INNER_FADE = 2, INNER_ALPHA = 150, FRAMES = 70;
+  const STOPS = [
+    [0, 0, 0, 0, 0],
+    [40, 70, 10, 0, 28],
+    [90, 175, 30, 0, 170],
+    [140, 230, 85, 10, 235],
+    [190, 255, 155, 20, 255],
+    [230, 255, 215, 70, 255],
+    [255, 255, 255, 210, 255],
+  ];
+  const PALETTE = new Uint8ClampedArray(256 * 4);
+  for (let i = 0; i < 256; i++) {
+    let a = STOPS[0], b = STOPS[STOPS.length - 1];
+    for (let s = 0; s < STOPS.length - 1; s++) {
+      if (i >= STOPS[s][0] && i <= STOPS[s + 1][0]) { a = STOPS[s]; b = STOPS[s + 1]; break; }
+    }
+    const t = (i - a[0]) / Math.max(1, b[0] - a[0]);
+    for (let c = 0; c < 4; c++) PALETTE[i * 4 + c] = a[c + 1] + (b[c + 1] - a[c + 1]) * t;
+  }
+
+  document.querySelectorAll('.fire-frame').forEach((el) => {
+    const canvas = document.createElement('canvas');
+    el.appendChild(canvas);
+    const r = el.getBoundingClientRect();
+    const gw = Math.max(8, Math.round((r.width + PAD_X * 2) / CELL));
+    const gh = Math.max(8, Math.round((r.height + PAD_TOP + PAD_BOTTOM) / CELL));
+    canvas.width = gw;
+    canvas.height = gh;
+    const ctx = canvas.getContext('2d');
+    const heat = new Uint8ClampedArray(gw * gh);
+    const mask = new Uint8ClampedArray(gw * gh);
+    const fuel = [];
+    const x0 = Math.round(PAD_X / CELL), y0 = Math.round(PAD_TOP / CELL);
+    const x1 = gw - 1 - x0, y1 = gh - 1 - Math.round(PAD_BOTTOM / CELL);
+    for (let y = 0; y < gh; y++) {
+      for (let x = 0; x < gw; x++) {
+        const i = y * gw + x;
+        const inner = Math.min(x - x0, x1 - x, y - y0, y1 - y);
+        if (inner === 0) fuel.push(i);
+        let m = 255;
+        if (inner > 0) m = inner >= INNER_FADE ? 0 : Math.round((1 - inner / INNER_FADE) * INNER_ALPHA);
+        const edge = Math.min(x, y, gw - 1 - x, gh - 1 - y);
+        if (edge < 2) m = Math.round((m * (edge + 1)) / 3);
+        mask[i] = m;
+      }
+    }
+    for (let f = 0; f < FRAMES; f++) {
+      const t = f * 33.4;
+      for (const i of fuel) {
+        const x = i % gw, y = (i / gw) | 0;
+        const lick = Math.sin(x * 0.55 + t * 0.004) + Math.sin(x * 0.21 - t * 0.0022 + y * 0.8);
+        heat[i] = 185 + lick * 30 + Math.random() * 55;
+      }
+      for (let y = 1; y < gh; y++) {
+        const row = y * gw;
+        for (let x = 0; x < gw; x++) {
+          const src = row + x, h = heat[src], dstRow = src - gw;
+          if (h === 0) { heat[dstRow] = 0; continue; }
+          let nx = x + ((Math.random() * 3) | 0) - 1;
+          if (nx < 0) nx = 0; else if (nx >= gw) nx = gw - 1;
+          heat[dstRow + (nx - x)] = h - (5 + Math.random() * 32);
+        }
+      }
+    }
+    const img = ctx.createImageData(gw, gh);
+    const d = img.data;
+    for (let i = 0; i < heat.length; i++) {
+      const p = heat[i] << 2, o = i << 2, m = mask[i];
+      d[o] = PALETTE[p];
+      d[o + 1] = PALETTE[p + 1];
+      d[o + 2] = PALETTE[p + 2];
+      d[o + 3] = m === 255 ? PALETTE[p + 3] : (PALETTE[p + 3] * m) >> 8;
+    }
+    ctx.putImageData(img, 0, 0);
+  });
+})();
+</script>
 </body>
 </html>

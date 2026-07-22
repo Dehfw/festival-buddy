@@ -12,7 +12,9 @@ Kratzer-Logo wie im App-Icon).
 | `ad-3-story.png` | 1080×1920 (9:16) | Story-Anzeige: Offline-Modus („Kein Netz? Kein Problem.") |
 
 Die Bandnamen im Timetable-Motiv sind frei erfunden (keine echten Bands,
-keine Rechte-Probleme). Die Story lässt oben/unten Platz für die
+keine Rechte-Probleme). Der brennende Hot Slot entsteht beim Rendern über
+dieselbe Doom-Fire-Simulation wie in der App (`src/lib/client/fireEngine.ts`),
+statisch vorsimuliert – jedes Rendern ergibt daher leicht andere Flammen. Die Story lässt oben/unten Platz für die
 Instagram-UI (Profilzeile, „Link"-Sticker).
 
 ## Neu rendern
