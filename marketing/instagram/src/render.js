@@ -10,6 +10,7 @@ const JOBS = [
   { file: 'ad-1-hero.html', w: 1080, h: 1350 },
   { file: 'ad-2-timetable.html', w: 1080, h: 1080 },
   { file: 'ad-3-story.html', w: 1080, h: 1920 },
+  { file: 'ad-4-app.html', w: 1080, h: 1350 },
 ];
 
 function findChrome() {

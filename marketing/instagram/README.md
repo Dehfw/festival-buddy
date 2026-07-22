@@ -10,6 +10,7 @@ Kratzer-Logo wie im App-Icon).
 | `ad-1-hero.png` | 1080×1350 (4:5) | Feed-Anzeige: „Wer geht zu welcher Band?" |
 | `ad-2-timetable.png` | 1080×1080 (1:1) | Feed-Anzeige: Timetable-Grid mit Crew-Punkten & Hot Slot |
 | `ad-3-story.png` | 1080×1920 (9:16) | Story-Anzeige: Offline-Modus („Kein Netz? Kein Problem.") |
+| `ad-4-app.png` | 1080×1350 (4:5) | Feed-Anzeige: Handy-Mockup wie auf der Landingpage („Unsere Bands"-Liste mit Hot Slot) |
 
 Das Timetable-Motiv zeigt dieselben Bands und Crew-Punkte wie das
 Handy-Mockup der Landingpage (src/components/AppScreenshot.tsx auf
