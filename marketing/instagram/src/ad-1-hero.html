@@ -50,9 +50,16 @@
   .foot {
     position: absolute;
     left: 0; right: 0; bottom: 52px;
-    display: flex; justify-content: center;
+    display: flex; justify-content: center; align-items: center;
   }
   .wordmark .name { font-size: 40px; }
+  .foot .sep { color: var(--ash); font-size: 34px; margin: 0 26px; }
+  .foot .domain {
+    font-family: 'Anton', Impact, sans-serif;
+    font-size: 32px;
+    letter-spacing: 0.08em;
+    color: var(--ember);
+  }
 </style>
 </head>
 <body>
@@ -84,6 +91,8 @@
       </svg>
       <span class="name">Festival <b>Buddy</b></span>
     </div>
+    <span class="sep">·</span>
+    <span class="domain">festivalbuddy.app</span>
   </div>
 
   <div class="vignette"></div>
