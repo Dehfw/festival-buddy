@@ -1,0 +1,103 @@
+/* Festival Buddy – DEFƎKT-Markenwelt: Signal-Orange auf Tiefschwarz */
+@font-face {
+  font-family: 'Anton';
+  src: url('fonts/anton.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+}
+
+:root {
+  --pit: #0a0a0a;
+  --steel: #141414;
+  --steel-2: #1c1c1c;
+  --rivet: #2a2622;
+  --ash: #8a8682;
+  --bone: #f4f1ea;
+  --blood: #ff5a17;
+  --ember: #ff7a2a;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: var(--pit);
+  color: var(--bone);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+}
+
+.font-metal {
+  font-family: Anton, Impact, sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.canvas {
+  position: relative;
+  background:
+    radial-gradient(120% 90% at 50% 30%, #191919 0%, #101010 55%, #0a0a0a 100%);
+  overflow: hidden;
+}
+
+/* Feines Grid-Overlay wie auf defekt.shop */
+.grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(244, 241, 234, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 241, 234, 0.045) 1px, transparent 1px);
+  background-size: 72px 72px;
+  pointer-events: none;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(115% 115% at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+  pointer-events: none;
+}
+
+/* Orange Glut hinter dem Motiv */
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 90, 23, 0.22) 0%, rgba(255, 90, 23, 0.07) 45%, transparent 70%);
+  pointer-events: none;
+}
+
+.badge {
+  display: inline-block;
+  border: 1px solid rgba(255, 90, 23, 0.55);
+  background: rgba(255, 90, 23, 0.07);
+  color: var(--ember);
+  font-family: 'Anton', Impact, sans-serif;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+  text-transform: uppercase;
+}
+
+.cta {
+  display: inline-block;
+  background: linear-gradient(180deg, var(--ember) 0%, var(--blood) 100%);
+  color: #16090313;
+  color: #1a0d04;
+  font-family: 'Anton', Impact, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 14px;
+  box-shadow: 0 0 44px rgba(255, 90, 23, 0.45), 0 10px 34px rgba(0, 0, 0, 0.55);
+}
+
+.accent { color: var(--blood); text-shadow: 0 0 44px rgba(255, 90, 23, 0.55); }
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.wordmark .name {
+  font-family: 'Anton', Impact, sans-serif;
+  letter-spacing: 0.14em;
+  color: var(--bone);
+  text-transform: uppercase;
+}
+.wordmark .name b { color: var(--blood); font-weight: 400; }

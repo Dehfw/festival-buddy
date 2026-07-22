@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="base.css">
+<style>
+  .canvas {
+    width: 1080px; height: 1350px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 80px 80px 170px;
+  }
+  .glow { left: 50%; top: 34%; width: 1300px; height: 1000px; transform: translate(-50%, -50%); }
+
+  /* Riesige, blasse Kratzer als Hintergrund-Wasserzeichen */
+  .claws-bg {
+    position: absolute;
+    right: -180px; top: -90px;
+    opacity: 0.09;
+    transform: rotate(8deg);
+  }
+
+  .badge { font-size: 30px; padding: 18px 34px 15px; margin-bottom: 52px; }
+
+  h1 {
+    font-family: 'Anton', Impact, sans-serif;
+    font-weight: 400;
+    font-size: 128px;
+    line-height: 1.04;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    text-shadow: 0 14px 50px rgba(0, 0, 0, 0.6);
+  }
+
+  .divider {
+    display: flex; align-items: center; gap: 22px;
+    margin: 42px 0 38px;
+    font-family: 'Anton', Impact, sans-serif;
+    font-size: 30px;
+    letter-spacing: 0.34em; text-indent: 0.34em;
+    color: var(--bone);
+    text-transform: uppercase;
+  }
+  .divider .bar { width: 84px; height: 10px; background: var(--blood); border-radius: 3px; box-shadow: 0 0 24px rgba(255,90,23,.6); }
+
+  .body {
+    font-size: 38px;
+    line-height: 1.5;
+    color: #b8b4ae;
+    max-width: 840px;
+  }
+  .body b { color: var(--bone); font-weight: 600; }
+
+  .cta { font-size: 44px; padding: 32px 60px 26px; margin-top: 58px; }
+  .cta-hint { margin-top: 26px; font-size: 30px; color: var(--ash); letter-spacing: 0.06em; }
+  .cta-hint b { color: var(--ember); font-weight: 600; }
+
+  .foot {
+    position: absolute;
+    left: 0; right: 0; bottom: 52px;
+    display: flex; justify-content: center;
+  }
+  .wordmark .name { font-size: 40px; }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="grid-overlay"></div>
+  <div class="glow"></div>
+  <svg class="claws-bg" width="900" height="990" viewBox="30 20 452 500" xmlns="http://www.w3.org/2000/svg">
+    <g fill="#ff5a17">
+      <g transform="translate(88,158) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+      <g transform="translate(202,100) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+      <g transform="translate(316,42) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+    </g>
+  </svg>
+
+  <div class="badge">// Wacken Open Air 2026</div>
+
+  <h1>Wer geht zu<br>welcher <span class="accent">Band?</span></h1>
+
+  <div class="divider"><span>Stramm</span><span class="bar"></span><span>Geplant</span></div>
+
+  <p class="body">Festival Buddy ist der <b>Timetable-Planer für deine Crew</b>: Bands markieren, Hot&nbsp;Slots erkennen – und endlich wissen, wo ihr euch trefft.&nbsp;🤘</p>
+
+  <div class="cta">Jetzt Crew gründen</div>
+  <div class="cta-hint">Kostenlos im Browser · <b>Link in Bio</b></div>
+
+  <div class="foot">
+    <div class="wordmark">
+      <svg width="58" height="64" viewBox="30 20 452 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="claw" x1="0" y1="0" x2="0.25" y2="1">
+            <stop offset="0" stop-color="#ff8a3a"/><stop offset="1" stop-color="#f04e0e"/>
+          </linearGradient>
+        </defs>
+        <g fill="url(#claw)">
+          <g transform="translate(88,158) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+          <g transform="translate(202,100) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+          <g transform="translate(316,42) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+        </g>
+      </svg>
+      <span class="name">Festival <b>Buddy</b></span>
+    </div>
+  </div>
+
+  <div class="vignette"></div>
+</div>
+</body>
+</html>

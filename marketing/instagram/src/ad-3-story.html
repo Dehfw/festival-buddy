@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* Story 1080x1920 – oben/unten Platz für Instagram-UI lassen */
+  .canvas {
+    width: 1080px; height: 1920px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 270px 90px 250px;
+  }
+  .glow { left: 50%; top: 40%; width: 1400px; height: 1200px; transform: translate(-50%, -50%); }
+
+  .claws-bg {
+    position: absolute;
+    right: -220px; top: 120px;
+    opacity: 0.08;
+    transform: rotate(8deg);
+  }
+
+  .badge { font-size: 32px; padding: 20px 38px 16px; margin-bottom: 52px; }
+
+  h1 {
+    font-family: 'Anton', Impact, sans-serif;
+    font-weight: 400;
+    font-size: 132px;
+    line-height: 1.04;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    text-shadow: 0 14px 50px rgba(0, 0, 0, 0.6);
+  }
+
+  .body {
+    margin-top: 48px;
+    font-size: 40px;
+    line-height: 1.5;
+    color: #b8b4ae;
+    max-width: 860px;
+  }
+  .body b { color: var(--bone); font-weight: 600; }
+
+  .features {
+    margin-top: 56px;
+    display: flex; flex-direction: column; gap: 24px;
+    width: 100%;
+    max-width: 820px;
+  }
+  .feature {
+    display: flex; align-items: center; gap: 30px;
+    background: linear-gradient(160deg, #1e1e1e 0%, #141414 100%);
+    border: 1px solid rgba(255, 90, 23, 0.2);
+    border-radius: 20px;
+    padding: 24px 36px;
+    text-align: left;
+  }
+  .feature .icon { font-size: 46px; line-height: 1; }
+  .feature .txt { font-size: 34px; color: var(--bone); }
+  .feature .txt small { display: block; font-size: 27px; color: var(--ash); margin-top: 6px; }
+
+  .cta { font-size: 46px; padding: 34px 66px 28px; margin-top: 66px; }
+  .cta-hint { margin-top: 26px; font-size: 32px; color: var(--ash); letter-spacing: 0.06em; }
+  .cta-hint b { color: var(--ember); font-weight: 600; }
+
+  .foot {
+    position: absolute;
+    left: 0; right: 0; bottom: 140px;
+    display: flex; justify-content: center;
+  }
+  .wordmark .name { font-size: 42px; }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="grid-overlay"></div>
+  <div class="glow"></div>
+  <svg class="claws-bg" width="1100" height="1210" viewBox="30 20 452 500" xmlns="http://www.w3.org/2000/svg">
+    <g fill="#ff5a17">
+      <g transform="translate(88,158) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+      <g transform="translate(202,100) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+      <g transform="translate(316,42) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+    </g>
+  </svg>
+
+  <div class="badge">// Offline-Modus</div>
+
+  <h1>Kein Netz?<br><span class="accent">Kein Problem.</span></h1>
+
+  <p class="body">Wacken-Funkloch? <b>Festival Buddy läuft offline weiter</b> – Timetable, Crew und Treffpunkte bleiben auf dem Handy.</p>
+
+  <div class="features">
+    <div class="feature">
+      <div class="icon">📵</div>
+      <div class="txt">Läuft ohne Empfang<small>Shell &amp; Daten kommen aus dem Cache</small></div>
+    </div>
+    <div class="feature">
+      <div class="icon">📲</div>
+      <div class="txt">App auf dem Homescreen<small>PWA installieren, kein App Store nötig</small></div>
+    </div>
+    <div class="feature">
+      <div class="icon">🔄</div>
+      <div class="txt">Auto-Sync<small>Eintragungen syncen, sobald Netz da ist</small></div>
+    </div>
+  </div>
+
+  <div class="cta">Hol dir den Plan</div>
+  <div class="cta-hint">Kostenlos im Browser · <b>Link in Bio</b></div>
+
+  <div class="foot">
+    <div class="wordmark">
+      <svg width="62" height="68" viewBox="30 20 452 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="claw" x1="0" y1="0" x2="0.25" y2="1">
+            <stop offset="0" stop-color="#ff8a3a"/><stop offset="1" stop-color="#f04e0e"/>
+          </linearGradient>
+        </defs>
+        <g fill="url(#claw)">
+          <g transform="translate(88,158) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+          <g transform="translate(202,100) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+          <g transform="translate(316,42) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+        </g>
+      </svg>
+      <span class="name">Festival <b>Buddy</b></span>
+    </div>
+  </div>
+
+  <div class="vignette"></div>
+</div>
+</body>
+</html>

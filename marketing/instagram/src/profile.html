@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="base.css">
+<style>
+  .canvas { width: 1080px; height: 1080px; }
+  /* Kreis-Crop-Echo: dezenter Ring, liegt sicher im runden Profilbild-Ausschnitt */
+  .ring {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 960px; height: 960px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 3px solid rgba(255, 90, 23, 0.22);
+    box-shadow: inset 0 0 90px rgba(255, 90, 23, 0.08);
+  }
+  .glow { left: 50%; top: 50%; width: 900px; height: 900px; transform: translate(-50%, -50%); }
+  .claws {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 0 60px rgba(255, 90, 23, 0.35));
+  }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="grid-overlay"></div>
+  <div class="glow"></div>
+  <div class="ring"></div>
+  <svg class="claws" width="700" height="700" viewBox="30 20 452 500" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="claw" x1="0" y1="0" x2="0.25" y2="1">
+        <stop offset="0" stop-color="#ff8a3a"/>
+        <stop offset="0.55" stop-color="#ff6a1f"/>
+        <stop offset="1" stop-color="#f04e0e"/>
+      </linearGradient>
+    </defs>
+    <g fill="url(#claw)">
+      <g transform="translate(88,158) rotate(12)">
+        <path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/>
+      </g>
+      <g transform="translate(202,100) rotate(12)">
+        <path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/>
+      </g>
+      <g transform="translate(316,42) rotate(12)">
+        <path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/>
+      </g>
+    </g>
+  </svg>
+  <div class="vignette"></div>
+</div>
+</body>
+</html>

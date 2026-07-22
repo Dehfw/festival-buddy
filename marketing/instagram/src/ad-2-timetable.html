@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="base.css">
+<style>
+  .canvas {
+    width: 1080px; height: 1080px;
+    padding: 72px 72px 150px;
+    display: flex; flex-direction: column;
+  }
+  .glow { left: 78%; top: 12%; width: 900px; height: 700px; transform: translate(-50%, -50%); }
+
+  h1 {
+    font-family: 'Anton', Impact, sans-serif;
+    font-weight: 400;
+    font-size: 104px;
+    line-height: 1.05;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .sub {
+    margin-top: 26px;
+    font-size: 34px;
+    line-height: 1.45;
+    color: #b8b4ae;
+    max-width: 950px;
+  }
+
+  /* Timetable-Mock: dunkle Stahlkarte mit 3 Bühnen-Spalten */
+  .board {
+    margin-top: 40px;
+    flex: 1;
+    background: linear-gradient(160deg, #1c1c1c 0%, #101010 55%, #151515 100%);
+    border: 1px solid rgba(255, 90, 23, 0.22);
+    border-radius: 26px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    padding: 26px 28px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 22px;
+    position: relative;
+  }
+  .stage { display: flex; flex-direction: column; gap: 16px; }
+  .stage-name {
+    font-family: 'Anton', Impact, sans-serif;
+    font-size: 27px;
+    letter-spacing: 0.26em; text-indent: 0.26em;
+    color: var(--ember);
+    text-align: center;
+    text-transform: uppercase;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 90, 23, 0.25);
+  }
+  .slot {
+    position: relative;
+    background: #232323;
+    border: 1px solid #35322e;
+    border-radius: 16px;
+    padding: 16px 18px 15px;
+  }
+  .slot .time { font-size: 20px; color: var(--ash); letter-spacing: 0.08em; }
+  .slot .band {
+    font-family: 'Anton', Impact, sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.05em;
+    margin-top: 3px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .dots { display: flex; margin-top: 10px; }
+  .dot {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 3px solid #232323;
+    margin-right: -10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #101010;
+  }
+  .dot.more { background: #3a3733; color: var(--bone); font-size: 16px; }
+
+  /* Hot Slot: Feuerrahmen wie in der App */
+  .slot.hot {
+    border: 2px solid rgba(255, 165, 55, 0.95);
+    box-shadow:
+      0 0 10px 2px rgba(255, 90, 23, 0.55),
+      0 0 34px 8px rgba(255, 122, 42, 0.3),
+      inset 0 0 16px rgba(255, 122, 42, 0.35);
+  }
+  .hot-tag {
+    position: absolute;
+    top: -20px; right: 14px;
+    background: linear-gradient(180deg, var(--ember), var(--blood));
+    color: #1a0d04;
+    font-family: 'Anton', Impact, sans-serif;
+    font-size: 20px;
+    letter-spacing: 0.12em;
+    padding: 8px 16px 6px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    box-shadow: 0 6px 22px rgba(255, 90, 23, 0.5);
+  }
+
+  .foot {
+    position: absolute;
+    left: 72px; right: 72px; bottom: 44px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .wordmark .name { font-size: 36px; }
+  .linkbio {
+    font-family: 'Anton', Impact, sans-serif;
+    font-size: 30px;
+    letter-spacing: 0.14em;
+    color: var(--ember);
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="grid-overlay"></div>
+  <div class="glow"></div>
+
+  <h1>Eure Crew. <span class="accent">Ein Plan.</span></h1>
+  <p class="sub">Bunte Punkte zeigen, wer wirklich hingeht.</p>
+
+  <div class="board">
+    <div class="stage">
+      <div class="stage-name">Faster</div>
+      <div class="slot">
+        <div class="time">17:30 – 18:15</div>
+        <div class="band">Riffwolf</div>
+        <div class="dots">
+          <div class="dot" style="background:#4cc9f0">DA</div>
+          <div class="dot" style="background:#ffd166">MO</div>
+        </div>
+      </div>
+      <div class="slot">
+        <div class="time">19:00 – 19:45</div>
+        <div class="band">Void Sermon</div>
+        <div class="dots">
+          <div class="dot" style="background:#b5e48c">KI</div>
+        </div>
+      </div>
+      <div class="slot hot">
+        <div class="hot-tag">🔥 Hot Slot</div>
+        <div class="time">20:45 – 22:00</div>
+        <div class="band">Iron Verdict</div>
+        <div class="dots">
+          <div class="dot" style="background:#4cc9f0">DA</div>
+          <div class="dot" style="background:#ffd166">MO</div>
+          <div class="dot" style="background:#b5e48c">KI</div>
+          <div class="dot" style="background:#f48fb1">SA</div>
+          <div class="dot" style="background:#c8b6ff">LX</div>
+          <div class="dot more">+3</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-name">Harder</div>
+      <div class="slot">
+        <div class="time">17:00 – 17:45</div>
+        <div class="band">Oxide</div>
+        <div class="dots">
+          <div class="dot" style="background:#f48fb1">SA</div>
+          <div class="dot" style="background:#c8b6ff">LX</div>
+        </div>
+      </div>
+      <div class="slot">
+        <div class="time">18:30 – 19:15</div>
+        <div class="band">Gravebound</div>
+        <div class="dots">
+          <div class="dot" style="background:#4cc9f0">DA</div>
+          <div class="dot" style="background:#b5e48c">KI</div>
+          <div class="dot" style="background:#ffd166">MO</div>
+        </div>
+      </div>
+      <div class="slot">
+        <div class="time">20:15 – 21:00</div>
+        <div class="band">Blackout Choir</div>
+        <div class="dots">
+          <div class="dot" style="background:#f48fb1">SA</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-name">Louder</div>
+      <div class="slot">
+        <div class="time">17:45 – 18:30</div>
+        <div class="band">Pit Ritual</div>
+        <div class="dots">
+          <div class="dot" style="background:#c8b6ff">LX</div>
+          <div class="dot" style="background:#b5e48c">KI</div>
+        </div>
+      </div>
+      <div class="slot">
+        <div class="time">19:15 – 20:00</div>
+        <div class="band">Ashfall</div>
+        <div class="dots">
+          <div class="dot" style="background:#ffd166">MO</div>
+        </div>
+      </div>
+      <div class="slot">
+        <div class="time">21:00 – 22:00</div>
+        <div class="band">Moshkönig</div>
+        <div class="dots">
+          <div class="dot" style="background:#4cc9f0">DA</div>
+          <div class="dot" style="background:#f48fb1">SA</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="wordmark">
+      <svg width="50" height="56" viewBox="30 20 452 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="claw" x1="0" y1="0" x2="0.25" y2="1">
+            <stop offset="0" stop-color="#ff8a3a"/><stop offset="1" stop-color="#f04e0e"/>
+          </linearGradient>
+        </defs>
+        <g fill="url(#claw)">
+          <g transform="translate(88,158) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+          <g transform="translate(202,100) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+          <g transform="translate(316,42) rotate(12)"><path d="M 12,16 C 8,6 20,-2 30,4 C 56,46 68,122 63,198 C 58,262 44,316 24,356 C 32,264 28,126 12,16 Z"/></g>
+        </g>
+      </svg>
+      <span class="name">Festival <b>Buddy</b></span>
+    </div>
+    <div class="linkbio">Link in Bio ↗</div>
+  </div>
+
+  <div class="vignette"></div>
+</div>
+</body>
+</html>
