@@ -248,9 +248,9 @@ function VeranstalterInner() {
   const stage = state?.timetable.stages.find((s) => s.id === stageId) ?? null;
 
   return (
-    <main className="mx-auto max-w-lg px-4 pb-16 pt-[max(0.75rem,env(safe-area-inset-top))]">
+    <main className="mx-auto max-w-lg px-4 pb-16 pt-[max(0.75rem,env(safe-area-inset-top))] lg:max-w-5xl">
       <div className="flex items-center justify-between">
-        <h1 className="font-metal text-xl font-black uppercase">Veranstalter</h1>
+        <h1 className="font-metal text-xl font-black uppercase lg:text-2xl">Veranstalter</h1>
         <Link href="/app" className="text-sm text-ash underline">
           ← App
         </Link>
@@ -311,7 +311,7 @@ function VeranstalterInner() {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold uppercase ${
+            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold uppercase lg:px-4 lg:py-2 lg:text-sm ${
               t.id === tab
                 ? 'border-blood bg-blood/15 text-bone'
                 : 'border-rivet bg-steel text-ash'
@@ -347,8 +347,9 @@ function VeranstalterInner() {
                 Für den Bühnenplan brauchst du zuerst eine Bühne (Tab „Bühnen“).
               </p>
             ) : (
-              <>
-                <div className="-mx-4 mt-3 flex gap-1.5 overflow-x-auto px-4 pb-1 scrollbar-thin">
+              // Desktop: Karte begrenzen, sonst wird das Quadrat riesig
+              <div className="lg:max-w-2xl">
+                <div className="-mx-4 mt-3 flex gap-1.5 overflow-x-auto px-4 pb-1 scrollbar-thin lg:mx-0 lg:px-0">
                   {state!.timetable.stages.map((s) => (
                     <button
                       key={s.id}
@@ -371,7 +372,7 @@ function VeranstalterInner() {
                     onSave={saveBlueprint}
                   />
                 )}
-              </>
+              </div>
             ))}
         </>
       )}
@@ -418,7 +419,7 @@ function MetaEditor({
   };
 
   return (
-    <form onSubmit={save} className="mt-4 space-y-3">
+    <form onSubmit={save} className="mt-4 space-y-3 lg:max-w-xl">
       <label className="block text-sm text-ash">
         Festival-Name
         <input

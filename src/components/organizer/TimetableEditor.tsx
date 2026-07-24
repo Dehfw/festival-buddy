@@ -248,7 +248,7 @@ export function DaysEditor({ api }: { api: EditorApi }) {
           Slots im Timetable planen.
         </p>
       )}
-      <ul className="space-y-2">
+      <ul className="space-y-2 lg:grid lg:grid-cols-2 lg:items-start lg:gap-2 lg:space-y-0">
         {timetable.days.map((day) => {
           const slotCount = timetable.slots.filter((s) => s.dayId === day.id).length;
           return (
@@ -289,7 +289,7 @@ export function DaysEditor({ api }: { api: EditorApi }) {
         })}
       </ul>
       {adding ? (
-        <div className="mt-2 rounded-xl border border-rivet bg-steel p-3">
+        <div className="mt-2 rounded-xl border border-rivet bg-steel p-3 lg:max-w-xl">
           <DayForm onSubmit={save} onCancel={() => setAdding(false)} busy={busy} />
         </div>
       ) : (
@@ -445,7 +445,7 @@ export function StagesEditor({ api }: { api: EditorApi }) {
           planen und den Bühnenplan bearbeiten.
         </p>
       )}
-      <ul className="space-y-2">
+      <ul className="space-y-2 lg:grid lg:grid-cols-2 lg:items-start lg:gap-2 lg:space-y-0">
         {timetable.stages.map((stage) => {
           const slotCount = timetable.slots.filter((s) => s.stageId === stage.id).length;
           return (
@@ -489,7 +489,7 @@ export function StagesEditor({ api }: { api: EditorApi }) {
         })}
       </ul>
       {adding ? (
-        <div className="mt-2 rounded-xl border border-rivet bg-steel p-3">
+        <div className="mt-2 rounded-xl border border-rivet bg-steel p-3 lg:max-w-xl">
           <StageForm onSubmit={save} onCancel={() => setAdding(false)} busy={busy} />
         </div>
       ) : (
@@ -790,7 +790,7 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
       </div>
 
       {draft && !draft.id ? (
-        <div className="mt-2 rounded-xl border border-rivet bg-steel p-3">
+        <div className="mt-2 rounded-xl border border-rivet bg-steel p-3 lg:max-w-xl">
           <p className="text-sm font-bold text-bone">Neuer Slot</p>
           <SlotForm
             draft={draft}
@@ -811,74 +811,77 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
       )}
       {error && <p className="mt-2 text-sm text-blood">{error}</p>}
 
-      {/* Slots des Tages, gruppiert nach Bühne */}
-      {timetable.stages.map((stage) => {
-        const slots = timetable.slots
-          .filter((s) => s.dayId === activeDayId && s.stageId === stage.id)
-          .sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
-        return (
-          <div key={stage.id} className="mt-4">
-            <h3
-              className="text-xs font-black uppercase tracking-wide"
-              style={{ color: stage.color }}
-            >
-              {stage.name}
-            </h3>
-            {slots.length === 0 ? (
-              <p className="mt-1 text-xs text-ash/70">Keine Slots an diesem Tag.</p>
-            ) : (
-              <ul className="mt-1 space-y-1.5">
-                {slots.map((slot) => {
-                  const count = selectionCounts[slot.id] ?? 0;
-                  return (
-                    <li key={slot.id} className="rounded-xl border border-rivet bg-steel p-2.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <button
-                          onClick={() =>
-                            draft?.id === slot.id ? setDraft(null) : startEdit(slot)
-                          }
-                          className="min-w-0 flex-1 text-left"
-                        >
-                          <span className="text-sm font-bold text-bone">
-                            {formatTime(slot.start)}–{formatTime(slot.end)}
-                          </span>{' '}
-                          <span className="truncate text-sm text-bone">{slot.band}</span>
-                          {!slot.confirmed && (
-                            <span className="ml-1.5 text-[10px] font-bold uppercase text-ember">
-                              unbestätigt
-                            </span>
-                          )}
-                          {count > 0 && (
-                            <span className="ml-1.5 rounded-full bg-rivet px-1.5 py-0.5 text-[10px] font-bold text-ash">
-                              🤘 {count}
-                            </span>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => requestDelete(slot)}
-                          className="shrink-0 text-xs font-bold text-blood"
-                        >
-                          🗑
-                        </button>
-                      </div>
-                      {draft?.id === slot.id && (
-                        <SlotForm
-                          draft={draft}
-                          timetable={timetable}
-                          onChange={setDraft}
-                          onSubmit={save}
-                          onCancel={() => setDraft(null)}
-                          busy={busy}
-                        />
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        );
-      })}
+      {/* Slots des Tages, gruppiert nach Bühne – am Desktop nebeneinander
+          als Spalten-Board, damit die Breite genutzt wird */}
+      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-6 xl:grid-cols-3">
+        {timetable.stages.map((stage) => {
+          const slots = timetable.slots
+            .filter((s) => s.dayId === activeDayId && s.stageId === stage.id)
+            .sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+          return (
+            <div key={stage.id} className="mt-4">
+              <h3
+                className="text-xs font-black uppercase tracking-wide"
+                style={{ color: stage.color }}
+              >
+                {stage.name}
+              </h3>
+              {slots.length === 0 ? (
+                <p className="mt-1 text-xs text-ash/70">Keine Slots an diesem Tag.</p>
+              ) : (
+                <ul className="mt-1 space-y-1.5">
+                  {slots.map((slot) => {
+                    const count = selectionCounts[slot.id] ?? 0;
+                    return (
+                      <li key={slot.id} className="rounded-xl border border-rivet bg-steel p-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <button
+                            onClick={() =>
+                              draft?.id === slot.id ? setDraft(null) : startEdit(slot)
+                            }
+                            className="min-w-0 flex-1 text-left"
+                          >
+                            <span className="text-sm font-bold text-bone">
+                              {formatTime(slot.start)}–{formatTime(slot.end)}
+                            </span>{' '}
+                            <span className="truncate text-sm text-bone">{slot.band}</span>
+                            {!slot.confirmed && (
+                              <span className="ml-1.5 text-[10px] font-bold uppercase text-ember">
+                                unbestätigt
+                              </span>
+                            )}
+                            {count > 0 && (
+                              <span className="ml-1.5 rounded-full bg-rivet px-1.5 py-0.5 text-[10px] font-bold text-ash">
+                                🤘 {count}
+                              </span>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => requestDelete(slot)}
+                            className="shrink-0 text-xs font-bold text-blood"
+                          >
+                            🗑
+                          </button>
+                        </div>
+                        {draft?.id === slot.id && (
+                          <SlotForm
+                            draft={draft}
+                            timetable={timetable}
+                            onChange={setDraft}
+                            onSubmit={save}
+                            onCancel={() => setDraft(null)}
+                            busy={busy}
+                          />
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          );
+        })}
+      </div>
       {confirm && <ConfirmDialog req={confirm} onClose={() => setConfirm(null)} />}
     </section>
   );
