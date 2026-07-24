@@ -21,7 +21,7 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
 > [Teilnahmen & Positionen](docs/wiki/teilnahmen-positionen.md),
 > [Sync & Offline](docs/wiki/sync-offline.md),
 > [Festivals & Timetable](docs/wiki/festivals-timetable.md) und
-> [Admin-Panel](docs/wiki/admin.md).
+> [Veranstalter-Bereich](docs/wiki/veranstalter.md).
 
 ## Features
 
@@ -54,8 +54,12 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
   schematischen Bühnen-Blueprint ein ✕ setzen: „Hier stehe ich.“
 - **Bühnen-Karten mit POIs** – Toiletten 🚻, Wasser 💧, Merch 🛍️,
   Erste Hilfe ⛑️ und Eingänge 🚪 auf jedem Blueprint, für alle sichtbar.
-- **Admin-Panel** (`/admin`, Passwort) – Blueprints bearbeiten und POIs
-  platzieren/verschieben/löschen.
+- **Veranstalter-Bereich** (`/veranstalter`) – Veranstalter pflegen den
+  Timetable (Tage, Bühnen, Slots), die Festival-Metadaten und die
+  Bühnenpläne inkl. POIs **ihres** Festivals selbst. Zugang per
+  Einladungscode vom Betreiber (`npm run organizer -- generate <id>`),
+  eingelöst mit dem normalen Passkey-Konto. Löschen warnt, wenn an
+  betroffenen Slots schon Zusagen der Crews hängen.
 - **PWA mit Offline-Modus** – App auf dem Homescreen installierbar. Der
   Service Worker cached Shell + Daten; die App pollt alle paar Sekunden neue
   Daten. Ohne Netz (Wacken-Funkloch!) läuft alles aus dem Cache weiter, und
@@ -66,7 +70,7 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
 
 ```bash
 docker compose up -d          # lokale PostgreSQL (oder eigene DB nutzen)
-cp .env.example .env.local    # DATABASE_URL & ADMIN_PASSWORD
+cp .env.example .env.local    # DATABASE_URL
 npm install
 npm run dev        # Entwicklung: http://localhost:3000
 npm run build && npm start   # Produktion
@@ -111,26 +115,38 @@ eine andere Domain um, sind bestehende Passkeys dort nicht mehr nutzbar.
    setzt `DATABASE_URL` (bzw. `POSTGRES_URL`, beides wird erkannt)
    automatisch als Env-Variable. Den **pooled** Connection-String verwenden
    (Host mit `-pooler`), mit `?sslmode=require` am Ende.
-2. `ADMIN_PASSWORD` als Env-Variable setzen.
-3. Deploy – fertig. Der Wacken-Timetable wird beim ersten Schemalauf aus
+2. Deploy – fertig. Der Wacken-Timetable wird beim ersten Schemalauf aus
    `data/timetable.json` in die DB geseedet; danach laufen Lineup-Updates
    über `npm run import:db` direkt gegen die Datenbank (kein Redeploy).
 
-## Admin
+## Veranstalter
 
-- URL: `/admin` (auch über das ⚙️ in der unteren Navigation)
-- Passwort: über die Umgebungsvariable `ADMIN_PASSWORD` setzen – am besten
-  ein langes, zufälliges. **In der Produktion gibt es keinen Default:** ist
-  `ADMIN_PASSWORD` nicht gesetzt, ist der Admin-Bereich deaktiviert (fail
-  closed), Login und Speichern werden abgelehnt. Nur in der lokalen
-  Entwicklung greift der Fallback `wacken2026`.
-- Nach dem Login setzt der Server eine signierte, `httpOnly`-Session
-  (Cookie `fb_admin`, 12 h gültig). Das Passwort landet nie im Browser-Storage
-  und wird nicht bei jedem Request mitgeschickt. „Abmelden" beendet die
-  Session serverseitig.
-- Globales Betreiber-Tool (hängt an keiner Gruppe): Blueprints & POIs
-  **pro Festival** pflegen – oben umschalten. Festivals ohne importiertes
-  Lineup zeigen einen Hinweis statt des Editors.
+Ein Passwort-Admin existiert nicht mehr – Festival-Daten pflegen
+**Veranstalter** direkt in der App, strikt beschränkt auf ihr(e)
+zugewiesene(n) Festival(s):
+
+- URL: `/veranstalter` (Veranstalter sehen zusätzlich den 🎪-Tab in der
+  unteren Navigation). Bearbeitbar: Timetable (Tage, Bühnen, Slots),
+  Festival-Name/Edition und die Bühnenpläne inkl. POIs.
+- Zugang: der Betreiber erzeugt per CLI einen **einmaligen
+  Einladungscode** und schickt ihn dem Veranstalter; der löst ihn –
+  eingeloggt mit seinem normalen Passkey-Konto – unter
+  `/veranstalter?code=…` ein.
+
+```bash
+DATABASE_URL=... npm run organizer -- generate woa2026   # Code erzeugen
+DATABASE_URL=... npm run organizer -- list woa2026       # Codes + Veranstalter
+DATABASE_URL=... npm run organizer -- revoke XXXX-XXXX   # offenen Code sperren
+DATABASE_URL=... npm run organizer -- remove woa2026 u-… # Zugang entziehen (sofort)
+```
+
+- Die Zuweisung wird bei jeder Anfrage gegen die DB geprüft – `remove`
+  wirkt sofort. Ein neues (leeres) Festival legt der Betreiber weiterhin
+  per `npm run import:db` an (Skelett-JSON reicht); Tage, Bühnen und
+  Slots kann der Veranstalter danach selbst anlegen.
+- Beim Löschen von Slots, Bühnen oder Tagen werden daran hängende
+  Band-Auswahlen und Positionsmarker der Crews mitgelöscht – der Editor
+  warnt vorher mit Anzahl.
 
 ## Timetable-Daten
 
@@ -224,7 +240,7 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | `POST /api/webauthn/register/verify` | Registrierung prüfen, Nutzer + Session       |
 | `POST /api/webauthn/login/options`   | Passkey-Login starten (discoverable)         |
 | `POST /api/webauthn/login/verify`    | Login prüfen, Session setzen                 |
-| `GET  /api/me`                       | Nutzer + Gruppenliste zur Session (401 = raus) |
+| `GET  /api/me`                       | Nutzer + Gruppenliste + Veranstalter-Zähler zur Session (401 = raus) |
 | `POST /api/logout`                   | Session-Cookie löschen                       |
 | `GET  /api/festivals`                | Festival-Liste für die Gruppengründung       |
 | `POST /api/groups`                   | Gruppe erstellen (`{ name, festivalId }`)    |
@@ -238,11 +254,14 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | `PATCH /api/groups/[id]/members/[userId]` | Owner/Admins: Rolle setzen (`{ role: 'admin' \| 'member' }`) |
 | `POST /api/selection`                | Band-Teilnahme setzen/entfernen (Session, `{ group, slotId, status }`) |
 | `POST /api/position`                 | ✕-Position setzen/löschen (Session, `{ group, slotId, x, y }`) |
-| `POST /api/admin/login`              | Admin-Passwort prüfen, Session-Cookie setzen |
-| `GET  /api/admin/me`                 | Admin-Session gültig? (401 = Login nötig)    |
-| `POST /api/admin/logout`             | Admin-Session-Cookie löschen                 |
-| `GET  /api/admin/state?festival=…`   | Admin: Festivals, Timetable, Blueprints      |
-| `POST /api/admin/blueprint`          | Blueprint einer Bühne speichern (Admin, `{ festivalId, stageId, blueprint }`) |
+| `GET  /api/organizer/me`             | Meine Veranstalter-Festivals                 |
+| `POST /api/organizer/redeem`         | Veranstalter-Code einlösen (`{ code }`, rate-limited) |
+| `GET  /api/organizer/state?festival=…` | Editor-Datenstand: Timetable, Blueprints, Auswahl-Zähler pro Slot (nur Veranstalter des Festivals) |
+| `PATCH /api/organizer/festival`      | Festival-Name/Edition ändern (`{ festivalId, name?, edition? }`) |
+| `PUT/DELETE /api/organizer/day`      | Festivaltag anlegen/ändern bzw. löschen (löscht Slots des Tages mit) |
+| `PUT/DELETE /api/organizer/stage`    | Bühne anlegen/ändern bzw. löschen (löscht Slots + Blueprint mit) |
+| `PUT/DELETE /api/organizer/slot`     | Slot anlegen/ändern bzw. löschen (löscht Auswahlen/Positionen mit) |
+| `POST /api/organizer/blueprint`      | Blueprint einer Bühne speichern (`{ festivalId, stageId, blueprint }`) |
 
 ### Icons neu erzeugen
 

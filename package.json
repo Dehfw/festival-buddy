@@ -10,7 +10,8 @@
     "lint": "next lint",
     "scrape": "node scripts/scrape-wacken.mjs",
     "import": "node scripts/import-lineup.mjs",
-    "import:db": "node scripts/import-festival.mjs"
+    "import:db": "node scripts/import-festival.mjs",
+    "organizer": "node scripts/organizer-code.mjs"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.3.0",

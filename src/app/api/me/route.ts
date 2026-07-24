@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { readSessionUserId } from '@/lib/auth';
-import { getGroupsForUser, getUserById, updateUserColor } from '@/lib/db';
+import {
+  countOrganizerFestivals,
+  getGroupsForUser,
+  getUserById,
+  updateUserColor,
+} from '@/lib/db';
 import { USER_COLORS } from '@/lib/ids';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +14,8 @@ export const dynamic = 'force-dynamic';
  * Wer bin ich laut Session-Cookie – und in welchen Gruppen? 401 heißt:
  * keine (gültige) Session – der Client wirft dann seinen lokalen Nutzer
  * weg und zeigt den Passkey-Login. Die Gruppenliste steuert das Gate
- * (keine Gruppe -> GroupGate) und den Gruppen-Switcher.
+ * (keine Gruppe -> GroupGate) und den Gruppen-Switcher;
+ * organizerFestivals (> 0) blendet den Veranstalter-Link in der Nav ein.
  */
 export async function GET(req: Request) {
   const userId = readSessionUserId(req);
@@ -20,8 +26,11 @@ export async function GET(req: Request) {
   if (!user) {
     return NextResponse.json({ error: 'Nutzer existiert nicht mehr' }, { status: 401 });
   }
-  const groups = await getGroupsForUser(userId);
-  return NextResponse.json({ user, groups });
+  const [groups, organizerFestivals] = await Promise.all([
+    getGroupsForUser(userId),
+    countOrganizerFestivals(userId),
+  ]);
+  return NextResponse.json({ user, groups, organizerFestivals });
 }
 
 /**

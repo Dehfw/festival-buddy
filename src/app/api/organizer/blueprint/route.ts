@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { isAdminRequest } from '@/lib/admin';
-import { getTimetable, saveBlueprint } from '@/lib/db';
+import { getTimetableFresh, saveBlueprint } from '@/lib/db';
+import { canManageFestival } from '@/lib/organizer';
 import type { Blueprint, BlueprintElement, Poi, PoiType } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -44,13 +44,20 @@ function sanitize(input: unknown): Blueprint | null {
 
 /** Blueprint einer Bühne komplett speichern: { festivalId, stageId, blueprint } */
 export async function POST(req: Request) {
-  if (!isAdminRequest(req)) {
-    return NextResponse.json({ error: 'Kein Zugriff' }, { status: 401 });
-  }
   const body = await req.json().catch(() => null);
-  const festivalId = typeof body?.festivalId === 'string' ? body.festivalId : 'woa2026';
+  const festivalId = typeof body?.festivalId === 'string' ? body.festivalId : '';
+  if (!festivalId) {
+    return NextResponse.json({ error: 'festivalId fehlt' }, { status: 400 });
+  }
+  const auth = await canManageFestival(req, festivalId);
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.status === 401 ? 'Nicht eingeloggt' : 'Kein Zugriff' },
+      { status: auth.status }
+    );
+  }
   const stageId = body?.stageId;
-  const timetable = await getTimetable(festivalId);
+  const timetable = await getTimetableFresh(festivalId);
   if (!timetable) {
     return NextResponse.json({ error: 'Unbekanntes Festival' }, { status: 404 });
   }

@@ -15,7 +15,7 @@ ursprüngliche Entwurf des Gruppen-Features in
 | [Teilnahmen & Positionen](teilnahmen-positionen.md) | Band-Zusagen (`going`/`interested`), ✕-Marker auf dem Blueprint, Feuerrahmen 🔥 |
 | [Sync & Offline](sync-offline.md) | Polling, optimistische Updates, Offline-Warteschlange, PWA/Service Worker |
 | [Festivals & Timetable](festivals-timetable.md) | Timetables in der DB, Slot-IDs, Lineup-Import ohne Redeploy |
-| [Admin-Panel](admin.md) | Betreiber-Login, Blueprints & POIs pflegen |
+| [Veranstalter-Bereich](veranstalter.md) | Festival-Zuweisung per Code, Timetable-/Bühnen-/Blueprint-Pflege |
 
 ## Die App in einem Absatz
 
