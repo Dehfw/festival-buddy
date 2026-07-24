@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import {
   createAnnouncement,
-  getAnnouncements,
+  deleteAnnouncement,
+  getAnnouncementsWithAuthor,
   getFestivalAudienceUserIds,
   getTimetable,
 } from '@/lib/db';
@@ -71,7 +72,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true, announcement, push });
 }
 
-/** Verlauf für den Composer: ?festival=… */
+/** Verlauf für den Composer (?festival=…) – inklusive Absender-Namen. */
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const festivalId = url.searchParams.get('festival') || '';
@@ -80,6 +81,27 @@ export async function GET(req: Request) {
   }
   const auth = await canManageFestival(req, festivalId);
   if (!auth.ok) return authError(auth.status);
-  const announcements = await getAnnouncements(festivalId, 50);
+  const announcements = await getAnnouncementsWithAuthor(festivalId, 50);
   return NextResponse.json({ announcements });
+}
+
+/**
+ * Mitteilung zurückziehen (?festival=…&id=…): verschwindet aus der App
+ * aller Nutzer (nächster Daten-Poll). Bereits zugestellte Push-
+ * Benachrichtigungen lassen sich naturgemäß nicht zurückholen.
+ */
+export async function DELETE(req: Request) {
+  const url = new URL(req.url);
+  const festivalId = url.searchParams.get('festival') || '';
+  const id = url.searchParams.get('id') || '';
+  if (!festivalId || !id) {
+    return NextResponse.json({ error: 'festival oder id fehlt' }, { status: 400 });
+  }
+  const auth = await canManageFestival(req, festivalId);
+  if (!auth.ok) return authError(auth.status);
+  const deleted = await deleteAnnouncement(festivalId, id);
+  if (!deleted) {
+    return NextResponse.json({ error: 'Mitteilung nicht gefunden' }, { status: 404 });
+  }
+  return NextResponse.json({ ok: true });
 }

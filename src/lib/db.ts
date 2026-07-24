@@ -4,16 +4,19 @@ import blueprintSeedJson from '../../data/blueprints.seed.json';
 import timetableJson from '../../data/timetable.json';
 import type {
   Announcement,
+  AnnouncementWithAuthor,
   Blueprint,
   FestivalDay,
   FestivalSummary,
   GroupInfo,
   GroupRole,
   GroupSummary,
+  OrganizerInfo,
   Position,
   Selection,
   SelectionStatus,
   Slot,
+  SlotSelectionCounts,
   Stage,
   Timetable,
   User,
@@ -1289,18 +1292,42 @@ export async function redeemOrganizerInvite(
 }
 
 /**
- * Feste Zusagen + Interessen pro Slot (über ALLE Gruppen des Festivals) –
- * der Veranstalter-Editor warnt damit, bevor er Slots löscht, an denen
- * schon Leute dranhängen.
+ * Feste Zusagen und Interessen pro Slot, getrennt nach Status (über ALLE
+ * Gruppen des Festivals) – der Veranstalter-Editor zeigt beides am Slot an
+ * und warnt mit der Summe, bevor er Slots löscht, an denen schon Leute
+ * dranhängen.
  */
 export async function getSelectionCountsForFestival(
   festivalId: string
-): Promise<Record<string, number>> {
-  const res = await query<{ slot_id: string; n: string }>(
-    'SELECT slot_id, count(*) AS n FROM selections WHERE festival_id = $1 GROUP BY slot_id',
+): Promise<Record<string, SlotSelectionCounts>> {
+  const res = await query<{ slot_id: string; status: string; n: string }>(
+    `SELECT slot_id, status, count(*) AS n FROM selections
+      WHERE festival_id = $1 GROUP BY slot_id, status`,
     [festivalId]
   );
-  return Object.fromEntries(res.rows.map((r) => [r.slot_id, Number(r.n)]));
+  const counts: Record<string, SlotSelectionCounts> = {};
+  for (const r of res.rows) {
+    const entry = (counts[r.slot_id] ??= { going: 0, interested: 0 });
+    if (r.status === 'interested') entry.interested += Number(r.n);
+    else entry.going += Number(r.n);
+  }
+  return counts;
+}
+
+/** Alle Veranstalter eines Festivals – Team-Liste im Veranstalter-Bereich */
+export async function getFestivalOrganizers(festivalId: string): Promise<OrganizerInfo[]> {
+  const res = await query<{ id: string; name: string; color: string; created_at: Date }>(
+    `SELECT u.id, u.name, u.color, o.created_at
+       FROM festival_organizers o JOIN users u ON u.id = o.user_id
+      WHERE o.festival_id = $1 ORDER BY o.created_at, u.name`,
+    [festivalId]
+  );
+  return res.rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    color: r.color,
+    since: new Date(r.created_at).toISOString(),
+  }));
 }
 
 /* ------------------------------------------------------------------ */
@@ -1448,6 +1475,44 @@ export async function getAnnouncements(
     [festivalId, limit]
   );
   return res.rows.map(toAnnouncement);
+}
+
+/**
+ * Wie getAnnouncements, aber mit Absender-Namen – NUR für den Verlauf im
+ * Veranstalter-Bereich. Im /api/data-Payload bleibt der Name bewusst außen
+ * vor: Besuchern gegenüber tritt das Festival als Absender auf.
+ */
+export async function getAnnouncementsWithAuthor(
+  festivalId: string,
+  limit: number
+): Promise<AnnouncementWithAuthor[]> {
+  const res = await query<AnnouncementRow & { author_name: string | null }>(
+    `SELECT a.id, a.festival_id, a.title, a.body, a.created_at,
+            u.name AS author_name
+       FROM announcements a LEFT JOIN users u ON u.id = a.author_id
+      WHERE a.festival_id = $1 OR a.festival_id IS NULL
+      ORDER BY a.created_at DESC LIMIT $2`,
+    [festivalId, limit]
+  );
+  return res.rows.map((r) => ({ ...toAnnouncement(r), authorName: r.author_name }));
+}
+
+/**
+ * Mitteilung löschen – nur Mitteilungen DIESES Festivals. App-weite
+ * Betreiber-Nachrichten (festival_id NULL) und fremde Festivals bleiben
+ * damit tabu, egal was der Client schickt. false = nichts gelöscht.
+ */
+export async function deleteAnnouncement(
+  festivalId: string,
+  announcementId: string
+): Promise<boolean> {
+  const res = await query(
+    'DELETE FROM announcements WHERE id = $1 AND festival_id = $2',
+    [announcementId, festivalId]
+  );
+  if ((res.rowCount ?? 0) === 0) return false;
+  await bumpRev();
+  return true;
 }
 
 export interface ReminderTarget {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   defaultBlueprint,
   getBlueprints,
+  getFestivalOrganizers,
   getSelectionCountsForFestival,
   getTimetableFresh,
 } from '@/lib/db';
@@ -12,8 +13,9 @@ export const dynamic = 'force-dynamic';
 /**
  * Datenstand für den Veranstalter-Editor (?festival=…): Timetable (frisch,
  * am Prozess-Cache vorbei), Blueprints (fehlende Bühnen bekommen einen
- * Default) und Auswahl-Zähler pro Slot – Letztere füttern die Warn-Dialoge
- * beim Löschen ("an diesem Slot hängen schon N Leute").
+ * Default), Auswahl-Zähler pro Slot (getrennt nach Zusage/Interesse –
+ * füttern Slot-Badges und die Warn-Dialoge beim Löschen) sowie das
+ * Veranstalter-Team des Festivals (meId markiert das eigene Konto).
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -32,15 +34,16 @@ export async function GET(req: Request) {
   if (!timetable) {
     return NextResponse.json({ error: 'Festival nicht gefunden' }, { status: 404 });
   }
-  const [blueprints, selectionCounts] = await Promise.all([
+  const [blueprints, selectionCounts, organizers] = await Promise.all([
     getBlueprints(festivalId),
     getSelectionCountsForFestival(festivalId),
+    getFestivalOrganizers(festivalId),
   ]);
   for (const stage of timetable.stages) {
     if (!blueprints[stage.id]) blueprints[stage.id] = defaultBlueprint(stage.name);
   }
   return NextResponse.json(
-    { festivalId, timetable, blueprints, selectionCounts },
+    { festivalId, timetable, blueprints, selectionCounts, organizers, meId: auth.userId },
     { headers: { 'Cache-Control': 'no-store' } }
   );
 }

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { Avatar } from '@/components/Avatars';
 import { BlueprintEditor } from '@/components/BlueprintEditor';
 import { AnnouncementComposer } from '@/components/organizer/AnnouncementComposer';
 import {
@@ -15,6 +16,8 @@ import {
   normalizeInviteCode,
   type Blueprint,
   type FestivalSummary,
+  type OrganizerInfo,
+  type SlotSelectionCounts,
   type Timetable,
 } from '@/lib/types';
 
@@ -22,7 +25,10 @@ interface OrganizerState {
   festivalId: string;
   timetable: Timetable;
   blueprints: Record<string, Blueprint>;
-  selectionCounts: Record<string, number>;
+  selectionCounts: Record<string, SlotSelectionCounts>;
+  organizers: OrganizerInfo[];
+  /** Eigene User-ID – markiert „(du)“ in der Team-Liste */
+  meId: string;
 }
 
 type Tab = 'meta' | 'days' | 'stages' | 'slots' | 'map' | 'message';
@@ -334,12 +340,15 @@ function VeranstalterInner() {
             <AnnouncementComposer festivalId={festivalId} />
           )}
           {tab === 'meta' && festivalId && (
-            <MetaEditor
-              festivalId={festivalId}
-              timetable={editorApi.timetable}
-              onTimetable={editorApi.onTimetable}
-              onRenamed={() => void loadMe()}
-            />
+            <>
+              <MetaEditor
+                festivalId={festivalId}
+                timetable={editorApi.timetable}
+                onTimetable={editorApi.onTimetable}
+                onRenamed={() => void loadMe()}
+              />
+              <OrganizerTeam organizers={state!.organizers} meId={state!.meId} />
+            </>
           )}
           {tab === 'map' &&
             (state!.timetable.stages.length === 0 ? (
@@ -377,6 +386,55 @@ function VeranstalterInner() {
         </>
       )}
     </main>
+  );
+}
+
+/**
+ * Team-Liste im Tab „Festival“: Wer darf dieses Festival außer mir noch
+ * pflegen? Nur lesend – Zugänge entstehen per Einladungscode, entziehen
+ * kann sie nur der Betreiber (scripts/organizer-code.mjs).
+ */
+function OrganizerTeam({
+  organizers,
+  meId,
+}: {
+  organizers: OrganizerInfo[];
+  meId: string;
+}) {
+  return (
+    <section className="mt-8 lg:max-w-xl">
+      <div className="mb-2 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-ash/60">
+        <span className="h-px flex-1 bg-rivet" />
+        Veranstalter-Team
+        <span className="h-px flex-1 bg-rivet" />
+      </div>
+      <ul className="space-y-2">
+        {organizers.map((o) => (
+          <li
+            key={o.id}
+            className="flex items-center gap-2.5 rounded-xl border border-rivet bg-steel px-3 py-2.5"
+          >
+            <Avatar
+              user={{ id: o.id, name: o.name, color: o.color, createdAt: o.since }}
+              size={28}
+            />
+            <span className="min-w-0 flex-1 truncate text-sm font-bold text-bone">
+              {o.name}
+              {o.id === meId && (
+                <span className="ml-1.5 text-xs font-normal text-ash">(du)</span>
+              )}
+            </span>
+            <span className="shrink-0 text-[10px] text-ash/70">
+              seit {new Date(o.since).toLocaleDateString('de-DE')}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-[11px] leading-relaxed text-ash/70">
+        Weitere Veranstalter kommen per Einladungscode dazu; Zugänge entziehen
+        kann nur das Festival-Buddy-Team.
+      </p>
+    </section>
   );
 }
 
