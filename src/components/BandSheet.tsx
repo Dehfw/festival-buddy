@@ -44,8 +44,8 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
   }, [onClose]);
 
   // Android-Back-Button: "Zurück" schließt das Sheet statt die (PWA-)App.
-  // StrictMode-Doppel-Mount-Handling steckt im Hook – vorher schloss sich
-  // das Sheet unter `npm run dev` sofort wieder von selbst.
+  // Das StrictMode-Doppelmount-Handling aus PR #47 lebt jetzt im Hook
+  // useSheetHistory und gilt damit auch für das Mitteilungs-Sheet.
   useSheetHistory(onCloseRef);
 
   // Sheet gilt als gerendert, sobald die Slot-Daten vorhanden sind.
