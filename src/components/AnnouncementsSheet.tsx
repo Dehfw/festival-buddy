@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import { useModalDialog } from '@/lib/client/useModalDialog';
 import { useSheetHistory } from '@/lib/client/useSheetHistory';
-import { formatAgo } from '@/lib/types';
+import { formatAgo, type Announcement } from '@/lib/types';
 
 /**
  * Glocke im App-Header + Bottom-Sheet mit den Mitteilungen (Veranstalter-
@@ -22,6 +22,9 @@ export function AnnouncementsBell() {
   const { data } = useApp();
   const [open, setOpen] = useState(false);
   const [seenAt, setSeenAt] = useState('');
+  const [toast, setToast] = useState<Announcement | null>(null);
+  // Neueste Mitteilung beim App-Start – nur was DANACH reinkommt, toastet
+  const toastBaselineRef = useRef<string | null>(null);
 
   useEffect(() => {
     setSeenAt(localStorage.getItem(SEEN_KEY) || '');
@@ -48,6 +51,28 @@ export function AnnouncementsBell() {
     setSeenAt(newest);
   }, [open, newest, seenAt]);
 
+  // Trifft WÄHREND der Nutzung eine neue Mitteilung ein (7s-Polling),
+  // blendet oben kurz ein Toast ein – der Punkt an der Glocke allein ist
+  // leicht zu übersehen. Beim App-Start wird nicht getoastet (dafür gibt
+  // es den Ungelesen-Punkt), bei offenem Sheet auch nicht.
+  useEffect(() => {
+    if (!newest) return;
+    if (toastBaselineRef.current === null) {
+      toastBaselineRef.current = newest;
+      return;
+    }
+    if (newest <= toastBaselineRef.current) return;
+    toastBaselineRef.current = newest;
+    if (!open) setToast(announcements[0] ?? null);
+  }, [newest, open, announcements]);
+
+  // Toast nach ein paar Sekunden von selbst ausblenden
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 8000);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
   return (
     <>
       <button
@@ -62,6 +87,39 @@ export function AnnouncementsBell() {
         )}
       </button>
       {open && <AnnouncementsSheet onClose={() => setOpen(false)} />}
+      {toast && !open && (
+        <div className="fixed inset-x-3 top-[calc(3.4rem+env(safe-area-inset-top))] z-50 mx-auto max-w-lg">
+          <div
+            role="status"
+            className="flex items-start gap-2.5 rounded-2xl border border-blood/40 bg-steel p-3.5 shadow-2xl shadow-black/60"
+          >
+            <span className="text-xl leading-none" aria-hidden>
+              🔔
+            </span>
+            <button
+              onClick={() => {
+                setToast(null);
+                setOpen(true);
+              }}
+              className="min-w-0 flex-1 text-left"
+            >
+              <span className="block truncate text-sm font-bold text-bone">
+                {toast.title}
+              </span>
+              <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-ash">
+                {toast.body}
+              </span>
+            </button>
+            <button
+              onClick={() => setToast(null)}
+              aria-label="Ausblenden"
+              className="-mr-1 -mt-1 p-1 text-ash"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
