@@ -1,0 +1,554 @@
+{
+  "festival": "Party.San Metal Open Air 2026",
+  "edition": "30 Jahre Party.San – 06.–08.08.2026, Flugplatz Obermehler-Schlotheim (Einlass Do 11:00 Uhr)",
+  "dataVersion": "2026-07-22 (Running Order via konzertn.de, Fan-Angaben ohne Gewähr; Tentstage-Endzeiten geschätzt: 40-Min.-Sets)",
+  "days": [
+    {
+      "id": "thu",
+      "label": "Do",
+      "longLabel": "Donnerstag",
+      "date": "2026-08-06"
+    },
+    {
+      "id": "fri",
+      "label": "Fr",
+      "longLabel": "Freitag",
+      "date": "2026-08-07"
+    },
+    {
+      "id": "sat",
+      "label": "Sa",
+      "longLabel": "Samstag",
+      "date": "2026-08-08"
+    }
+  ],
+  "stages": [
+    {
+      "id": "main",
+      "name": "Mainstage",
+      "short": "MAIN",
+      "color": "#e63946"
+    },
+    {
+      "id": "tent",
+      "name": "Tentstage",
+      "short": "TENT",
+      "color": "#2a9d8f"
+    }
+  ],
+  "slots": [
+    {
+      "id": "thu-main-sarcator",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Sarcator",
+      "start": "13:45",
+      "end": "14:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-200-stab-wounds",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "200 Stab Wounds",
+      "start": "14:45",
+      "end": "15:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-iotunn",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Iotunn",
+      "start": "15:45",
+      "end": "16:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-misery-index",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Misery Index",
+      "start": "16:45",
+      "end": "17:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-sadistic-intent",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Sadistic Intent",
+      "start": "17:45",
+      "end": "18:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-schirenc-plays-pungent-stench",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Schirenc plays Pungent Stench",
+      "start": "18:50",
+      "end": "19:35",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-desaster",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Desaster",
+      "start": "19:55",
+      "end": "20:40",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-sventevith",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Sventevith",
+      "start": "21:00",
+      "end": "22:00",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-moonspell",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Moonspell",
+      "start": "22:20",
+      "end": "23:20",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-testament",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Testament",
+      "start": "23:45",
+      "end": "01:00",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tent-morbus-dei",
+      "dayId": "thu",
+      "stageId": "tent",
+      "band": "Morbus Dei",
+      "start": "15:20",
+      "end": "16:00",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tent-rats-of-gomorrah",
+      "dayId": "thu",
+      "stageId": "tent",
+      "band": "Rats Of Gomorrah",
+      "start": "16:20",
+      "end": "17:00",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tent-messticator",
+      "dayId": "thu",
+      "stageId": "tent",
+      "band": "Messticator",
+      "start": "17:20",
+      "end": "18:00",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tent-todomal",
+      "dayId": "thu",
+      "stageId": "tent",
+      "band": "TodoMal",
+      "start": "18:25",
+      "end": "19:05",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tent-begging-for-incest",
+      "dayId": "thu",
+      "stageId": "tent",
+      "band": "Begging For Incest",
+      "start": "19:30",
+      "end": "20:10",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tent-evoken",
+      "dayId": "thu",
+      "stageId": "tent",
+      "band": "Evoken",
+      "start": "20:35",
+      "end": "21:15",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tent-sear-bliss",
+      "dayId": "thu",
+      "stageId": "tent",
+      "band": "Sear Bliss",
+      "start": "21:50",
+      "end": "22:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-guttural-slug",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Guttural Slug",
+      "start": "12:00",
+      "end": "12:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-a-canorous-quintet",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "A Canorous Quintet",
+      "start": "12:45",
+      "end": "13:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-wormed",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Wormed",
+      "start": "13:45",
+      "end": "14:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-sorcerer",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Sorcerer",
+      "start": "14:45",
+      "end": "15:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-jungle-rot",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Jungle Rot",
+      "start": "15:45",
+      "end": "16:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-afsky",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Afsky",
+      "start": "16:45",
+      "end": "17:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-deceased",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Deceased",
+      "start": "17:45",
+      "end": "18:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-wolves-in-the-throne-room",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Wolves In The Throne Room",
+      "start": "18:50",
+      "end": "19:35",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-sacred-reich",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Sacred Reich",
+      "start": "19:55",
+      "end": "20:40",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-alcest",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Alcest",
+      "start": "21:00",
+      "end": "22:00",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-dark-funeral",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Dark Funeral",
+      "start": "22:20",
+      "end": "23:20",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-amorphis",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Amorphis",
+      "start": "23:45",
+      "end": "01:00",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tent-nail-by-nail",
+      "dayId": "fri",
+      "stageId": "tent",
+      "band": "Nail By Nail",
+      "start": "15:20",
+      "end": "16:00",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tent-endonomos",
+      "dayId": "fri",
+      "stageId": "tent",
+      "band": "Endonomos",
+      "start": "16:20",
+      "end": "17:00",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tent-crawl",
+      "dayId": "fri",
+      "stageId": "tent",
+      "band": "Crawl",
+      "start": "17:20",
+      "end": "18:00",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tent-death-worship",
+      "dayId": "fri",
+      "stageId": "tent",
+      "band": "Death Worship",
+      "start": "18:25",
+      "end": "19:05",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tent-lucifers-child",
+      "dayId": "fri",
+      "stageId": "tent",
+      "band": "Lucifer's Child",
+      "start": "19:30",
+      "end": "20:10",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tent-asagraum",
+      "dayId": "fri",
+      "stageId": "tent",
+      "band": "Asagraum",
+      "start": "20:35",
+      "end": "21:15",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tent-fleshcrawl",
+      "dayId": "fri",
+      "stageId": "tent",
+      "band": "Fleshcrawl",
+      "start": "21:50",
+      "end": "22:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-gut",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "GUT",
+      "start": "12:00",
+      "end": "12:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-gates-of-ishtar",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Gates Of Ishtar",
+      "start": "12:45",
+      "end": "13:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-internal-bleeding",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Internal Bleeding",
+      "start": "13:45",
+      "end": "14:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-hexvessel",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Hexvessel",
+      "start": "14:45",
+      "end": "15:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-acranius",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Acranius",
+      "start": "15:45",
+      "end": "16:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-in-the-woods",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "In The Woods…",
+      "start": "16:45",
+      "end": "17:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-firespawn",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Firespawn",
+      "start": "17:45",
+      "end": "18:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-groza",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Groza",
+      "start": "18:50",
+      "end": "19:35",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-murder-squad",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Murder Squad",
+      "start": "19:55",
+      "end": "20:40",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-wolfbrigade",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Wolfbrigade",
+      "start": "21:00",
+      "end": "22:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-marduk",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Marduk",
+      "start": "22:20",
+      "end": "23:20",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-hypocrisy",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Hypocrisy",
+      "start": "23:45",
+      "end": "01:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tent-gorefunest",
+      "dayId": "sat",
+      "stageId": "tent",
+      "band": "Gorefunest (Gorefest-Tribute)",
+      "start": "10:00",
+      "end": "10:40",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tent-for-victory",
+      "dayId": "sat",
+      "stageId": "tent",
+      "band": "For Victory (Bolt Thrower)",
+      "start": "11:00",
+      "end": "11:40",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tent-baxaxaxa",
+      "dayId": "sat",
+      "stageId": "tent",
+      "band": "Baxaxaxa",
+      "start": "15:20",
+      "end": "16:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tent-bloody-vengeance",
+      "dayId": "sat",
+      "stageId": "tent",
+      "band": "Bloody Vengeance",
+      "start": "16:20",
+      "end": "17:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tent-temple-of-dread",
+      "dayId": "sat",
+      "stageId": "tent",
+      "band": "Temple Of Dread",
+      "start": "17:20",
+      "end": "18:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tent-impurity",
+      "dayId": "sat",
+      "stageId": "tent",
+      "band": "Impurity",
+      "start": "18:25",
+      "end": "19:05",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tent-celeste",
+      "dayId": "sat",
+      "stageId": "tent",
+      "band": "Celeste",
+      "start": "19:30",
+      "end": "20:10",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tent-sunken",
+      "dayId": "sat",
+      "stageId": "tent",
+      "band": "Sunken",
+      "start": "20:35",
+      "end": "21:15",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tent-tulus",
+      "dayId": "sat",
+      "stageId": "tent",
+      "band": "Tulus",
+      "start": "21:50",
+      "end": "22:30",
+      "confirmed": true
+    }
+  ]
+}
