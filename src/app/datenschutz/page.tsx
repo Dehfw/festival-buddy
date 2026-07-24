@@ -63,6 +63,16 @@ export default function DatenschutzPage() {
                 um dich wiederzuerkennen.
               </li>
               <li>
+                <span className="text-bone">E-Mail-Adresse &amp; Passwort</span>{' '}
+                (optional) – nur, wenn du statt des Passkeys den Login mit
+                E-Mail &amp; Passwort nutzt. Die E-Mail dient als Login-Name
+                und als Empfänger der &bdquo;Passwort vergessen&ldquo;-Mail;
+                das Passwort speichern wir ausschließlich als Hash (scrypt),
+                nie im Klartext. Für den Versand der Reset-Mails nutzen wir
+                den Dienstleister SendGrid (Twilio Inc.) als
+                Auftragsverarbeiter.
+              </li>
+              <li>
                 <span className="text-bone">Gruppen &amp; Rollen</span> – in
                 welchen Gruppen du bist und ob du Mitglied, Admin oder Owner
                 bist.
@@ -83,7 +93,7 @@ export default function DatenschutzPage() {
               <li>
                 <span className="text-bone">Session-Cookie</span> – ein
                 technisch notwendiges, signiertes Cookie, das dich nach dem
-                Passkey-Login angemeldet hält.
+                Login angemeldet hält.
               </li>
             </ul>
             <p className="mt-2 text-ash">

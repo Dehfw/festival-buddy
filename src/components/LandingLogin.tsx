@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
+import { PasswordAuth } from '@/components/PasswordAuth';
 import { saveUser } from '@/lib/client/sync';
 import { useModalDialog } from '@/lib/client/useModalDialog';
 import type { User } from '@/lib/types';
@@ -16,10 +17,11 @@ import {
 
 /**
  * Prominenter Login direkt in der Landing-Topbar. Öffnet ein kleines
- * Passkey-Panel (gleiche Flows wie die NameGate der App): neue Leute legen
- * per Face ID / Fingerabdruck einen Passkey an, Wiederkehrer nehmen ihren
- * bestehenden. Nach Erfolg wird der Nutzer lokal übernommen und es geht in
- * die App unter /app – deren AppProvider liest die Session dann weiter.
+ * Login-Panel (gleiche Flows wie die NameGate der App): Standard ist der
+ * Passkey (Face ID / Fingerabdruck), alternativ E-Mail & Passwort – auch
+ * als Ausweg für Browser ohne Passkey-Support. Nach Erfolg wird der
+ * Nutzer lokal übernommen und es geht in die App unter /app – deren
+ * AppProvider liest die Session dann weiter.
  */
 export function LandingLogin() {
   const router = useRouter();
@@ -28,6 +30,7 @@ export function LandingLogin() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [supported, setSupported] = useState(true);
+  const [method, setMethod] = useState<'passkey' | 'password'>('passkey');
   const valid = name.trim().length >= 2;
   const mounted = useRef(true);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -57,7 +60,7 @@ export function LandingLogin() {
   // offen ist – iOS/Android bieten den gespeicherten Passkey dann am
   // Namensfeld von selbst an.
   useEffect(() => {
-    if (!open) return;
+    if (!open || method !== 'passkey') return;
     if (!browserSupportsWebAuthn()) {
       setSupported(false);
       return;
@@ -78,7 +81,7 @@ export function LandingLogin() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, method]);
 
   const enter = (user: User) => {
     saveUser(user);
@@ -149,7 +152,9 @@ export function LandingLogin() {
                 id={titleId}
                 className="text-xs font-semibold uppercase tracking-wider text-ash"
               >
-                Rein per Passkey – ohne Passwort
+                {method === 'passkey' && supported
+                  ? 'Rein per Passkey – ohne Passwort'
+                  : 'Mit E-Mail & Passwort'}
               </p>
               <button
                 type="button"
@@ -160,48 +165,71 @@ export function LandingLogin() {
                 ✕
               </button>
             </div>
-            {supported ? (
-              <form onSubmit={register} className="space-y-2.5">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  name="username"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Dein Name, z. B. Daniel"
-                  maxLength={30}
-                  autoComplete="username webauthn"
-                  className="w-full rounded-xl border border-rivet bg-steel px-3.5 py-3 text-base text-bone outline-none placeholder:text-ash/50 focus:border-blood"
-                />
-                {error && (
-                  <p
-                    role="alert"
-                    className="rounded-lg border border-blood/40 bg-blood/10 px-3 py-2 text-xs text-blood"
+            {supported && method === 'passkey' ? (
+              <>
+                <form onSubmit={register} className="space-y-2.5">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    name="username"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Dein Name, z. B. Daniel"
+                    maxLength={30}
+                    autoComplete="username webauthn"
+                    className="w-full rounded-xl border border-rivet bg-steel px-3.5 py-3 text-base text-bone outline-none placeholder:text-ash/50 focus:border-blood"
+                  />
+                  {error && (
+                    <p
+                      role="alert"
+                      className="rounded-lg border border-blood/40 bg-blood/10 px-3 py-2 text-xs text-blood"
+                    >
+                      {error}
+                    </p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={!valid || busy}
+                    className="w-full rounded-xl bg-blood px-4 py-3 font-metal text-base uppercase tracking-wide text-black transition active:scale-[0.98] disabled:opacity-40"
                   >
-                    {error}
-                  </p>
-                )}
-                <button
-                  type="submit"
-                  disabled={!valid || busy}
-                  className="w-full rounded-xl bg-blood px-4 py-3 font-metal text-base uppercase tracking-wide text-black transition active:scale-[0.98] disabled:opacity-40"
-                >
-                  {busy ? 'Moment …' : 'Passkey anlegen & rein'}
-                </button>
+                    {busy ? 'Moment …' : 'Passkey anlegen & rein'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={loginExisting}
+                    disabled={busy}
+                    className="w-full rounded-xl border border-rivet bg-steel px-4 py-3 text-xs font-semibold uppercase tracking-wider text-bone transition active:scale-[0.98] disabled:opacity-40"
+                  >
+                    🔑 Ich hab schon einen Passkey
+                  </button>
+                </form>
                 <button
                   type="button"
-                  onClick={loginExisting}
-                  disabled={busy}
-                  className="w-full rounded-xl border border-rivet bg-steel px-4 py-3 text-xs font-semibold uppercase tracking-wider text-bone transition active:scale-[0.98] disabled:opacity-40"
+                  onClick={() => setMethod('password')}
+                  className="mt-3 text-xs text-ash underline underline-offset-2 hover:text-bone"
                 >
-                  🔑 Ich hab schon einen Passkey
+                  Lieber mit E-Mail &amp; Passwort
                 </button>
-              </form>
+              </>
             ) : (
-              <p className="rounded-lg border border-blood/40 bg-blood/10 px-3 py-2 text-xs text-bone">
-                Dein Browser kann leider keine Passkeys. Bitte ein aktuelles
-                iOS/Android oder einen aktuellen Browser benutzen.
-              </p>
+              <>
+                {!supported && (
+                  <p className="mb-2.5 rounded-lg border border-rivet bg-steel px-3 py-2 text-xs text-ash">
+                    Dein Browser kann leider keine Passkeys – mit E-Mail &amp;
+                    Passwort kommst du trotzdem rein.
+                  </p>
+                )}
+                <PasswordAuth onSuccess={enter} initialName={name.trim()} />
+                {supported && (
+                  <button
+                    type="button"
+                    onClick={() => setMethod('passkey')}
+                    className="mt-3 text-xs text-ash underline underline-offset-2 hover:text-bone"
+                  >
+                    🔑 Lieber mit Passkey
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

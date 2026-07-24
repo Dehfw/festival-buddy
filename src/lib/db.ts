@@ -112,7 +112,7 @@ function getPool(): Pool {
  */
 async function schemaAlreadyExists(client: PoolClient): Promise<boolean> {
   const res = await client.query<{ t: string | null }>(
-    "SELECT to_regclass('public.organizer_invites') AS t"
+    "SELECT to_regclass('public.password_credentials') AS t"
   );
   return res.rows[0]?.t != null;
 }
@@ -213,6 +213,16 @@ async function createSchema(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
       CREATE INDEX IF NOT EXISTS webauthn_credentials_user_idx ON webauthn_credentials (user_id);
+      -- E-Mail+Passwort-Login (optional, zusätzlich zum Passkey): genau
+      -- ein Credential pro Nutzer, die E-Mail ist nur Login-Name (immer
+      -- lowercase gespeichert). Hash-Format: src/lib/password.ts.
+      CREATE TABLE IF NOT EXISTS password_credentials (
+        user_id       TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        email         TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
       CREATE TABLE IF NOT EXISTS blueprints (
         festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}',
         stage_id    TEXT NOT NULL,
@@ -959,16 +969,17 @@ export async function updateUserColor(id: string, color: string): Promise<User |
 }
 
 /**
- * Bestandsnutzer ohne Passkey mit diesem Namen (case-insensitiv) – darf
- * bei der Registrierung übernommen werden, damit Alt-Accounts aus der
- * Nur-Name-Ära ihre Auswahlen behalten. Sobald ein Passkey dran hängt,
- * ist der Account nicht mehr übernehmbar.
+ * Bestandsnutzer ohne Login-Verfahren mit diesem Namen (case-insensitiv)
+ * – darf bei der Registrierung übernommen werden, damit Alt-Accounts aus
+ * der Nur-Name-Ära ihre Auswahlen behalten. Sobald ein Passkey ODER ein
+ * Passwort dran hängt, ist der Account nicht mehr übernehmbar.
  */
 export async function findAdoptableUser(name: string): Promise<User | null> {
   const res = await query<UserRow>(
     `SELECT u.id, u.name, u.color, u.created_at FROM users u
       WHERE lower(u.name) = lower($1)
         AND NOT EXISTS (SELECT 1 FROM webauthn_credentials c WHERE c.user_id = u.id)
+        AND NOT EXISTS (SELECT 1 FROM password_credentials pc WHERE pc.user_id = u.id)
       ORDER BY u.created_at LIMIT 1`,
     [name]
   );
@@ -995,11 +1006,12 @@ export async function createUserWithCredential(
     );
     if (inserted.rowCount === 0) {
       // ID existiert schon: nur als Legacy-Übernahme okay (gleicher Name,
-      // noch kein Passkey) – sonst abbrechen.
+      // noch kein Passkey/Passwort) – sonst abbrechen.
       const adoptable = await client.query(
         `SELECT 1 FROM users u
           WHERE u.id = $1 AND lower(u.name) = lower($2)
-            AND NOT EXISTS (SELECT 1 FROM webauthn_credentials c WHERE c.user_id = u.id)`,
+            AND NOT EXISTS (SELECT 1 FROM webauthn_credentials c WHERE c.user_id = u.id)
+            AND NOT EXISTS (SELECT 1 FROM password_credentials pc WHERE pc.user_id = u.id)`,
         [user.id, user.name]
       );
       if ((adoptable.rowCount ?? 0) === 0) {
@@ -1076,6 +1088,146 @@ export async function updateCredentialCounter(
     credentialId,
     counter,
   ]);
+}
+
+/* ------------------------------------------------------------------ */
+/* Passwort-Login (E-Mail + Passwort, optional zusätzlich zum Passkey) */
+/* ------------------------------------------------------------------ */
+
+/** E-Mail des Passwort-Credentials eines Nutzers (null = keins hinterlegt) */
+export async function getPasswordEmailForUser(userId: string): Promise<string | null> {
+  const res = await query<{ email: string }>(
+    'SELECT email FROM password_credentials WHERE user_id = $1',
+    [userId]
+  );
+  return res.rows[0]?.email ?? null;
+}
+
+/** Credential fürs Reset-Token: aktueller Hash bindet den Fingerprint */
+export async function getPasswordCredentialForUser(
+  userId: string
+): Promise<{ email: string; passwordHash: string } | null> {
+  const res = await query<{ email: string; password_hash: string }>(
+    'SELECT email, password_hash FROM password_credentials WHERE user_id = $1',
+    [userId]
+  );
+  const r = res.rows[0];
+  return r ? { email: r.email, passwordHash: r.password_hash } : null;
+}
+
+/** Nutzer + Passwort-Hash für den Login per E-Mail nachschlagen */
+export async function getUserByEmail(
+  email: string
+): Promise<{ user: User; passwordHash: string } | null> {
+  const res = await query<UserRow & { password_hash: string }>(
+    `SELECT u.id, u.name, u.color, u.created_at, pc.password_hash
+       FROM password_credentials pc JOIN users u ON u.id = pc.user_id
+      WHERE pc.email = $1`,
+    [email]
+  );
+  const r = res.rows[0];
+  return r ? { user: toUser(r), passwordHash: r.password_hash } : null;
+}
+
+/**
+ * Registrierung per E-Mail+Passwort: Nutzer anlegen (oder namensgleichen
+ * Alt-Account ohne Login-Verfahren übernehmen – dieselbe Legacy-Regel wie
+ * beim Passkey) und das Passwort-Credential daran binden.
+ * 'email-taken' = Adresse hat schon ein Konto; null = ID-Kollision.
+ */
+export async function createUserWithPassword(
+  user: { id: string; name: string; color: string },
+  email: string,
+  passwordHash: string
+): Promise<User | 'email-taken' | null> {
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const inserted = await client.query(
+      'INSERT INTO users (id, name, color) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING',
+      [user.id, user.name, user.color]
+    );
+    if (inserted.rowCount === 0) {
+      // ID existiert schon: nur als Legacy-Übernahme okay (gleicher Name,
+      // noch kein Passkey/Passwort) – sonst abbrechen.
+      const adoptable = await client.query(
+        `SELECT 1 FROM users u
+          WHERE u.id = $1 AND lower(u.name) = lower($2)
+            AND NOT EXISTS (SELECT 1 FROM webauthn_credentials c WHERE c.user_id = u.id)
+            AND NOT EXISTS (SELECT 1 FROM password_credentials pc WHERE pc.user_id = u.id)`,
+        [user.id, user.name]
+      );
+      if ((adoptable.rowCount ?? 0) === 0) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+    }
+    try {
+      await client.query(
+        `INSERT INTO password_credentials (user_id, email, password_hash)
+         VALUES ($1, $2, $3)`,
+        [user.id, email, passwordHash]
+      );
+    } catch (err) {
+      await client.query('ROLLBACK');
+      // UNIQUE auf email: Adresse gehört schon einem Konto
+      if ((err as { code?: string }).code === '23505') return 'email-taken';
+      throw err;
+    }
+    const res = await client.query<UserRow>(
+      'SELECT id, name, color, created_at FROM users WHERE id = $1',
+      [user.id]
+    );
+    await client.query('COMMIT');
+    await bumpRev();
+    return toUser(res.rows[0]);
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * E-Mail+Passwort an einen bestehenden (eingeloggten) Nutzer hängen oder
+ * ändern. 'email-taken' = Adresse gehört schon einem anderen Konto.
+ */
+export async function upsertPasswordCredential(
+  userId: string,
+  email: string,
+  passwordHash: string
+): Promise<'ok' | 'email-taken'> {
+  try {
+    await query(
+      `INSERT INTO password_credentials (user_id, email, password_hash)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (user_id) DO UPDATE
+         SET email = EXCLUDED.email, password_hash = EXCLUDED.password_hash,
+             updated_at = now()`,
+      [userId, email, passwordHash]
+    );
+    return 'ok';
+  } catch (err) {
+    // Konflikt-Ziel ist user_id – ein 23505 kommt hier nur noch vom
+    // UNIQUE auf email (Adresse hängt an einem anderen Konto)
+    if ((err as { code?: string }).code === '23505') return 'email-taken';
+    throw err;
+  }
+}
+
+/** Neues Passwort nach Reset setzen; false = kein Credential (mehr) da */
+export async function updatePasswordHash(
+  userId: string,
+  passwordHash: string
+): Promise<boolean> {
+  const res = await query(
+    `UPDATE password_credentials SET password_hash = $2, updated_at = now()
+      WHERE user_id = $1`,
+    [userId, passwordHash]
+  );
+  return (res.rowCount ?? 0) > 0;
 }
 
 /* ------------------------------------------------------------------ */
