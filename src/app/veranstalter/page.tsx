@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { BlueprintEditor } from '@/components/BlueprintEditor';
+import { AnnouncementComposer } from '@/components/organizer/AnnouncementComposer';
 import {
   DaysEditor,
   SlotsEditor,
@@ -24,13 +25,14 @@ interface OrganizerState {
   selectionCounts: Record<string, number>;
 }
 
-type Tab = 'meta' | 'days' | 'stages' | 'slots' | 'map';
+type Tab = 'meta' | 'days' | 'stages' | 'slots' | 'map' | 'message';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'slots', label: 'Timetable' },
   { id: 'stages', label: 'Bühnen' },
   { id: 'days', label: 'Tage' },
   { id: 'map', label: 'Bühnenplan' },
+  { id: 'message', label: 'Mitteilungen' },
   { id: 'meta', label: 'Festival' },
 ];
 
@@ -328,6 +330,9 @@ function VeranstalterInner() {
           {tab === 'slots' && <SlotsEditor api={editorApi} />}
           {tab === 'days' && <DaysEditor api={editorApi} />}
           {tab === 'stages' && <StagesEditor api={editorApi} />}
+          {tab === 'message' && festivalId && (
+            <AnnouncementComposer festivalId={festivalId} />
+          )}
           {tab === 'meta' && festivalId && (
             <MetaEditor
               festivalId={festivalId}

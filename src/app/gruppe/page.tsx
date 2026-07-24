@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Avatar } from '@/components/Avatars';
 import { GroupAvatar } from '@/components/GroupAvatar';
 import { GroupGate } from '@/components/GroupGate';
+import { PushSettings } from '@/components/PushSettings';
 import { resizeImage } from '@/lib/client/image';
 import { AppProvider, useApp } from '@/lib/client/store';
 import { USER_COLORS } from '@/lib/ids';
@@ -596,6 +597,9 @@ function GroupPageInner() {
           })}
         </div>
       </div>
+
+      {/* Push-Mitteilungen auf diesem Gerät */}
+      <PushSettings />
 
       <button
         onClick={doLogout}

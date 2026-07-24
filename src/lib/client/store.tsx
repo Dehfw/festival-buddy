@@ -9,6 +9,7 @@ import React, {
   useState,
 } from 'react';
 import type { DataPayload, GroupSummary, SelectionStatus, User } from '../types';
+import { resyncPushSubscription } from './push';
 import {
   applyMutation,
   cleanupLegacyCache,
@@ -260,6 +261,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     setReady(true);
 
+    // Vorhandenes Push-Abo idempotent re-melden (Upsert): bindet das Gerät
+    // nach einem Nutzerwechsel um und heilt verlorene DB-Zeilen. Ohne
+    // Session/Abo passiert schlicht nichts.
+    void resyncPushSubscription();
+
     // Poll-Loop als setTimeout-Kette statt setInterval: Der nächste
     // Lauf wird erst NACH Abschluss des vorherigen geplant (keine
     // überlappenden Reads bei langsamen Antworten), im ausgeblendeten
@@ -368,6 +374,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       void ensurePrivateCachesPurged()
         .then(() => refreshMe())
         .then(() => refresh());
+      // Push-Abo des Geräts auf den neuen Nutzer umbinden (Upsert)
+      void resyncPushSubscription();
     },
     [refreshMe, refresh]
   );
