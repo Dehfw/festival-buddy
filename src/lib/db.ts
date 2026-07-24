@@ -102,10 +102,17 @@ function getPool(): Pool {
 /* Schema & Migration                                                  */
 /* ------------------------------------------------------------------ */
 
-/** Existiert die Kern-Tabelle schon? (billiger Steady-State-Check) */
+/**
+ * Existiert das Schema schon in der NEUESTEN Ausbaustufe? (billiger
+ * Steady-State-Check.) Geprüft wird bewusst die zuletzt hinzugekommene
+ * Tabelle, nicht die Kern-Tabelle: Auf einer Bestands-DB existiert
+ * `festivals` längst – fehlt aber z. B. `organizer_invites`, muss der
+ * idempotente Schema-Block unten einmal laufen und sie nachziehen.
+ * Beim Anlegen neuer Tabellen hier IMMER auf die neueste umstellen!
+ */
 async function schemaAlreadyExists(client: PoolClient): Promise<boolean> {
   const res = await client.query<{ t: string | null }>(
-    "SELECT to_regclass('public.festivals') AS t"
+    "SELECT to_regclass('public.organizer_invites') AS t"
   );
   return res.rows[0]?.t != null;
 }
