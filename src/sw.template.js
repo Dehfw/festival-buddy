@@ -16,6 +16,9 @@
  *  - Statische Assets (/_next/static, Icons): stale-while-revalidate.
  *  - Schreibzugriffe (POST) laufen NICHT über den SW – die App hat dafür
  *    eine eigene Offline-Warteschlange, die synct, sobald Netz da ist.
+ *  - Web Push: push/notificationclick/pushsubscriptionchange ganz unten –
+ *    zeigt Mitteilungen & Band-Erinnerungen an und öffnet die App per
+ *    Deep-Link.
  *
  * Sicherheitsgrenze (privater Daten-Cache):
  *  - /api/data enthält geschützte Gruppendaten und ist serverseitig mit
@@ -205,4 +208,70 @@ self.addEventListener('fetch', (event) => {
 
   // Statische Assets
   event.respondWith(staleWhileRevalidate(request, STATIC_CACHE));
+});
+
+/* ------------------------------------------------------------------ */
+/* Web Push (Mitteilungen & Band-Erinnerungen)                         */
+/* ------------------------------------------------------------------ */
+
+// Payload: { type, title, body, url, tag? } – siehe src/lib/push.ts.
+// Es wird IMMER eine Notification gezeigt: iOS entzieht Abos, deren
+// Pushes still bleiben.
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    // kein/kaputtes JSON -> generische Anzeige
+  }
+  const title = payload.title || 'Festival Buddy';
+  const options = {
+    body: payload.body || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    data: { url: payload.url || '/app' },
+  };
+  if (payload.tag) options.tag = payload.tag;
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Klick auf die Notification: vorhandenes App-Fenster fokussieren und zum
+// Deep-Link navigieren, sonst ein neues öffnen.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/app';
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clients) => {
+        for (const client of clients) {
+          if (new URL(client.url).origin === self.location.origin) {
+            return client
+              .focus()
+              .then(() => (client.navigate ? client.navigate(url) : undefined));
+          }
+        }
+        return self.clients.openWindow(url);
+      })
+  );
+});
+
+// Push-Dienst hat das Abo rotiert/invalidiert: best effort neu abonnieren
+// und an den Server melden (Same-Origin-Fetch schickt das Session-Cookie
+// mit; ohne Session räumt der nächste 410 die Karteileiche ohnehin ab).
+self.addEventListener('pushsubscriptionchange', (event) => {
+  const oldSub = event.oldSubscription;
+  const key = oldSub && oldSub.options && oldSub.options.applicationServerKey;
+  if (!key) return;
+  const resubscribe = self.registration.pushManager
+    .subscribe({ userVisibleOnly: true, applicationServerKey: key })
+    .then((sub) =>
+      fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub.toJSON() }),
+      })
+    )
+    .catch(() => undefined);
+  if (event.waitUntil) event.waitUntil(resubscribe);
 });

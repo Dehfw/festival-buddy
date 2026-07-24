@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Avatar } from '@/components/Avatars';
 import { GroupAvatar } from '@/components/GroupAvatar';
 import { GroupGate } from '@/components/GroupGate';
+import { PushSettings } from '@/components/PushSettings';
 import { resizeImage } from '@/lib/client/image';
 import { AppProvider, useApp } from '@/lib/client/store';
 import { USER_COLORS } from '@/lib/ids';
@@ -13,10 +14,10 @@ import { formatInviteCode, isGroupAdmin } from '@/lib/types';
 
 /**
  * Eigene Gruppen-Seite (statt Bottom-Sheet), erreichbar über Profilbild
- * und Gruppen-Chip im Header. Drei klar getrennte Bereiche:
- *   1. Aktive Gruppe: Einladen, Mitglieder, Admin-Einstellungen, Verlassen
- *   2. Meine Gruppen: wechseln, gründen/beitreten
- *   3. Konto: Abmelden
+ * und Gruppen-Chip im Header. Zwei Tabs (?tab=konto als Deep-Link):
+ *   Gruppe – aktive Gruppe (Einladen, Mitglieder, Admin-Einstellungen,
+ *            Verlassen) und "Meine Gruppen" (wechseln, gründen/beitreten)
+ *   Konto  – Icon-Farbe, Push-Mitteilungen, Abmelden
  */
 function GroupPageInner() {
   const {
@@ -36,7 +37,17 @@ function GroupPageInner() {
   const [busy, setBusy] = useState(false);
   const [editName, setEditName] = useState<string | null>(null);
   const [showGroupGate, setShowGroupGate] = useState(false);
+  // Zwei Bereiche als Tabs, damit die Konto-Einstellungen (Icon-Farbe,
+  // Mitteilungen, Abmelden) nicht unsichtbar unter den Gruppen versinken.
+  const [tab, setTab] = useState<'gruppe' | 'konto'>('gruppe');
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Deep-Link /gruppe?tab=konto (z. B. aus Hinweisen auf die
+  // Mitteilungs-Einstellungen) öffnet direkt den Konto-Tab.
+  useEffect(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get('tab');
+    if (fromUrl === 'konto') setTab('konto');
+  }, []);
 
   // Ohne Login bzw. ohne Gruppe übernimmt das Gate auf der Startseite
   useEffect(() => {
@@ -243,375 +254,405 @@ function GroupPageInner() {
   return (
     <main className="mx-auto max-w-lg px-4 pb-16 pt-[max(0.75rem,env(safe-area-inset-top))]">
       <div className="flex items-center justify-between">
-        <h1 className="font-metal text-xl font-black uppercase">Gruppe</h1>
+        <h1 className="font-metal text-xl font-black uppercase">Gruppe & Konto</h1>
         <Link href="/app" className="text-sm text-ash underline">
           ← App
         </Link>
       </div>
 
-      {/* ---------- 1) Aktive Gruppe ---------- */}
-      <div className="mt-4 flex items-center gap-3">
-        <button
-          onClick={() => isAdmin && fileRef.current?.click()}
-          disabled={!isAdmin || busy}
-          className="group relative shrink-0 disabled:cursor-default"
-          title={isAdmin ? 'Gruppenbild ändern' : undefined}
-        >
-          <GroupAvatar
-            groupId={group.id}
-            name={group.name}
-            imageVersion={group.imageVersion}
-            size={64}
-          />
-          {isAdmin && (
-            <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border border-rivet bg-steel-2 text-[10px] transition-colors group-hover:border-blood group-hover:bg-rivet">
-              ✏️
-            </span>
-          )}
-        </button>
-        <div className="min-w-0 flex-1">
-          {editName === null ? (
-            <div className="flex items-center gap-1.5">
-              <h2 className="truncate font-metal text-2xl font-black leading-tight">
-                {group.name}
-              </h2>
-              {isAdmin && (
-                <button
-                  onClick={() => setEditName(group.name)}
-                  disabled={busy}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-rivet bg-steel-2 text-sm text-ash transition-colors hover:border-blood hover:bg-rivet hover:text-bone active:scale-95 disabled:opacity-40"
-                  title="Gruppe umbenennen"
-                  aria-label="Gruppe umbenennen"
-                >
-                  ✏️
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <input
-                autoFocus
-                type="text"
-                value={editName}
-                maxLength={40}
-                onChange={(e) => setEditName(e.target.value)}
-                className="w-full rounded-lg border border-rivet bg-steel-2 px-2 py-1.5 text-base text-bone outline-none focus:border-blood"
-              />
-              <button
-                onClick={saveName}
-                disabled={busy || (editName?.trim().length ?? 0) < 2}
-                className="shrink-0 rounded-lg bg-blood px-3 text-sm font-bold text-black disabled:opacity-40"
-              >
-                ✓
-              </button>
-            </div>
-          )}
-          <p className="text-xs text-ash">
-            {group.festivalName} · {members.length}{' '}
-            {members.length === 1 ? 'Mitglied' : 'Mitglieder'}
-          </p>
-        </div>
+      {/* Bereichs-Tabs (Stil wie im Veranstalter-Bereich) */}
+      <div className="mt-3 flex gap-1.5 border-b border-rivet pb-2">
+        {(
+          [
+            { id: 'gruppe', label: 'Gruppe' },
+            { id: 'konto', label: 'Konto' },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`rounded-full border px-4 py-1.5 text-xs font-bold uppercase ${
+              t.id === tab
+                ? 'border-blood bg-blood/15 text-bone'
+                : 'border-rivet bg-steel text-ash'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) void uploadImage(f);
-          e.target.value = '';
-        }}
-      />
 
+      {/* Flash-Meldungen (Farbe gespeichert, Code kopiert, …) – oberhalb
+          der Tab-Inhalte, damit sie in beiden Tabs sichtbar sind */}
       {status && (
         <p className="mt-3 rounded-xl border border-rivet bg-steel-2 px-3 py-2 text-xs text-bone">
           {status}
         </p>
       )}
 
-      {/* Einladen */}
-      <div className="mt-4 rounded-xl border border-rivet bg-steel p-3.5">
-        <div className="text-xs font-semibold uppercase tracking-wider text-ash">
-          Leute einladen
-        </div>
-        <button
-          onClick={() =>
-            copyText(formatInviteCode(group.inviteCode), 'Code kopiert 📋')
-          }
-          title="Code kopieren"
-          className="mt-2 w-full rounded-lg border border-dashed border-rivet px-3 py-2 text-center font-mono text-lg font-bold tracking-[0.2em] text-bone active:scale-[0.99]"
-        >
-          {formatInviteCode(group.inviteCode)}
-        </button>
-        <div className="mt-2 flex gap-2">
-          <button
-            onClick={() => copyText(inviteUrl(), 'Link kopiert 📋')}
-            className="flex-1 rounded-lg border border-rivet px-3.5 py-2.5 text-sm font-bold text-bone active:scale-[0.97]"
-          >
-            🔗 Link kopieren
-          </button>
-          <button
-            onClick={shareInvite}
-            className="flex-1 rounded-lg bg-blood px-3.5 py-2.5 text-sm font-bold text-black active:scale-[0.97]"
-          >
-            Link teilen
-          </button>
-        </div>
-        <p className="mt-2 text-[11px] leading-relaxed text-ash/70">
-          Ein Code für alle: Link öffnen oder Code eintippen – fertig.
-          Code antippen kopiert ihn.
-        </p>
-      </div>
-
-      {/* Mitglieder */}
-      <div className="mt-3 rounded-xl border border-rivet bg-steel p-3.5">
-        <div className="text-xs font-semibold uppercase tracking-wider text-ash">
-          Mitglieder ({members.length})
-        </div>
-        <ul className="mt-3 space-y-2.5">
-          {members.map((m) => {
-            const role = group.roles[m.id];
-            // Owner ist unantastbar; die eigene Rolle ändert man nicht selbst
-            const manageable = isAdmin && m.id !== user.id && role !== 'owner';
-            return (
-              <li key={m.id} className="flex items-center gap-2.5 text-sm">
-                <Avatar user={m} size={26} />
-                <span className="min-w-0 flex-1 truncate font-medium">
-                  {m.name}
-                  {m.id === user.id && <span className="text-ash"> (du)</span>}
+      {tab === 'gruppe' && (
+        <>
+          {/* ---------- 1) Aktive Gruppe ---------- */}
+          <div className="mt-4 flex items-center gap-3">
+            <button
+              onClick={() => isAdmin && fileRef.current?.click()}
+              disabled={!isAdmin || busy}
+              className="group relative shrink-0 disabled:cursor-default"
+              title={isAdmin ? 'Gruppenbild ändern' : undefined}
+            >
+              <GroupAvatar
+                groupId={group.id}
+                name={group.name}
+                imageVersion={group.imageVersion}
+                size={64}
+              />
+              {isAdmin && (
+                <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border border-rivet bg-steel-2 text-[10px] transition-colors group-hover:border-blood group-hover:bg-rivet">
+                  ✏️
                 </span>
-                {role === 'owner' && (
-                  <span className="rounded-full bg-rivet px-2 py-0.5 text-[10px] font-bold uppercase text-ash">
-                    Owner
-                  </span>
-                )}
-                {role === 'admin' && (
-                  <span className="rounded-full bg-rivet px-2 py-0.5 text-[10px] font-bold uppercase text-ember">
-                    Admin
-                  </span>
-                )}
-                {manageable && (
+              )}
+            </button>
+            <div className="min-w-0 flex-1">
+              {editName === null ? (
+                <div className="flex items-center gap-1.5">
+                  <h2 className="truncate font-metal text-2xl font-black leading-tight">
+                    {group.name}
+                  </h2>
+                  {isAdmin && (
+                    <button
+                      onClick={() => setEditName(group.name)}
+                      disabled={busy}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-rivet bg-steel-2 text-sm text-ash transition-colors hover:border-blood hover:bg-rivet hover:text-bone active:scale-95 disabled:opacity-40"
+                      title="Gruppe umbenennen"
+                      aria-label="Gruppe umbenennen"
+                    >
+                      ✏️
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={editName}
+                    maxLength={40}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full rounded-lg border border-rivet bg-steel-2 px-2 py-1.5 text-base text-bone outline-none focus:border-blood"
+                  />
                   <button
-                    onClick={() =>
-                      setRole(m.id, m.name, role === 'admin' ? 'member' : 'admin')
-                    }
-                    disabled={busy}
-                    className="rounded-full border border-rivet px-2 py-0.5 text-[10px] font-bold uppercase text-ash disabled:opacity-40"
-                    title={
-                      role === 'admin'
-                        ? `${m.name} die Admin-Rechte entziehen`
-                        : `${m.name} zum Admin machen`
-                    }
+                    onClick={saveName}
+                    disabled={busy || (editName?.trim().length ?? 0) < 2}
+                    className="shrink-0 rounded-lg bg-blood px-3 text-sm font-bold text-black disabled:opacity-40"
                   >
-                    {role === 'admin' ? '− Admin' : '+ Admin'}
+                    ✓
                   </button>
-                )}
-                {manageable && (
+                </div>
+              )}
+              <p className="text-xs text-ash">
+                {group.festivalName} · {members.length}{' '}
+                {members.length === 1 ? 'Mitglied' : 'Mitglieder'}
+              </p>
+            </div>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void uploadImage(f);
+              e.target.value = '';
+            }}
+          />
+
+          {/* Einladen */}
+          <div className="mt-4 rounded-xl border border-rivet bg-steel p-3.5">
+            <div className="text-xs font-semibold uppercase tracking-wider text-ash">
+              Leute einladen
+            </div>
+            <button
+              onClick={() =>
+                copyText(formatInviteCode(group.inviteCode), 'Code kopiert 📋')
+              }
+              title="Code kopieren"
+              className="mt-2 w-full rounded-lg border border-dashed border-rivet px-3 py-2 text-center font-mono text-lg font-bold tracking-[0.2em] text-bone active:scale-[0.99]"
+            >
+              {formatInviteCode(group.inviteCode)}
+            </button>
+            <div className="mt-2 flex gap-2">
+              <button
+                onClick={() => copyText(inviteUrl(), 'Link kopiert 📋')}
+                className="flex-1 rounded-lg border border-rivet px-3.5 py-2.5 text-sm font-bold text-bone active:scale-[0.97]"
+              >
+                🔗 Link kopieren
+              </button>
+              <button
+                onClick={shareInvite}
+                className="flex-1 rounded-lg bg-blood px-3.5 py-2.5 text-sm font-bold text-black active:scale-[0.97]"
+              >
+                Link teilen
+              </button>
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-ash/70">
+              Ein Code für alle: Link öffnen oder Code eintippen – fertig.
+              Code antippen kopiert ihn.
+            </p>
+          </div>
+
+          {/* Mitglieder */}
+          <div className="mt-3 rounded-xl border border-rivet bg-steel p-3.5">
+            <div className="text-xs font-semibold uppercase tracking-wider text-ash">
+              Mitglieder ({members.length})
+            </div>
+            <ul className="mt-3 space-y-2.5">
+              {members.map((m) => {
+                const role = group.roles[m.id];
+                // Owner ist unantastbar; die eigene Rolle ändert man nicht selbst
+                const manageable = isAdmin && m.id !== user.id && role !== 'owner';
+                return (
+                  <li key={m.id} className="flex items-center gap-2.5 text-sm">
+                    <Avatar user={m} size={26} />
+                    <span className="min-w-0 flex-1 truncate font-medium">
+                      {m.name}
+                      {m.id === user.id && <span className="text-ash"> (du)</span>}
+                    </span>
+                    {role === 'owner' && (
+                      <span className="rounded-full bg-rivet px-2 py-0.5 text-[10px] font-bold uppercase text-ash">
+                        Owner
+                      </span>
+                    )}
+                    {role === 'admin' && (
+                      <span className="rounded-full bg-rivet px-2 py-0.5 text-[10px] font-bold uppercase text-ember">
+                        Admin
+                      </span>
+                    )}
+                    {manageable && (
+                      <button
+                        onClick={() =>
+                          setRole(m.id, m.name, role === 'admin' ? 'member' : 'admin')
+                        }
+                        disabled={busy}
+                        className="rounded-full border border-rivet px-2 py-0.5 text-[10px] font-bold uppercase text-ash disabled:opacity-40"
+                        title={
+                          role === 'admin'
+                            ? `${m.name} die Admin-Rechte entziehen`
+                            : `${m.name} zum Admin machen`
+                        }
+                      >
+                        {role === 'admin' ? '− Admin' : '+ Admin'}
+                      </button>
+                    )}
+                    {manageable && (
+                      <button
+                        onClick={() => kick(m.id, m.name)}
+                        disabled={busy}
+                        className="text-xs font-bold text-blood disabled:opacity-40"
+                        title={`${m.name} entfernen`}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            {isAdmin && (
+              <p className="mt-2.5 text-[11px] leading-relaxed text-ash/70">
+                Admins können die Gruppe bearbeiten, Mitglieder entfernen und
+                weitere Admins ernennen. Der Owner bleibt unantastbar.
+              </p>
+            )}
+          </div>
+
+          {/* Admin-Einstellungen */}
+          {isAdmin && (
+            <div className="mt-3 rounded-xl border border-rivet bg-steel p-3.5">
+              <div className="text-xs font-semibold uppercase tracking-wider text-ash">
+                Einstellungen (Admins)
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <span className="text-sm text-bone">
+                  🔥 Feuerrahmen ab
+                  <span className="ml-1 text-[11px] text-ash">
+                    {group.hotThreshold === 0
+                      ? '– aus'
+                      : `${group.hotThreshold} festen Zusagen`}
+                  </span>
+                </span>
+                <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => kick(m.id, m.name)}
-                    disabled={busy}
-                    className="text-xs font-bold text-blood disabled:opacity-40"
-                    title={`${m.name} entfernen`}
+                    onClick={() => setThreshold(Math.max(0, group.hotThreshold - 1))}
+                    disabled={busy || group.hotThreshold <= 0}
+                    className="h-8 w-8 rounded-lg border border-rivet text-lg font-bold text-bone disabled:opacity-30"
                   >
-                    ✕
+                    −
+                  </button>
+                  <span className="w-8 text-center font-mono text-base font-bold text-bone">
+                    {group.hotThreshold === 0 ? 'aus' : group.hotThreshold}
+                  </span>
+                  <button
+                    onClick={() => setThreshold(Math.min(99, group.hotThreshold + 1))}
+                    disabled={busy || group.hotThreshold >= 99}
+                    className="h-8 w-8 rounded-lg border border-rivet text-lg font-bold text-bone disabled:opacity-30"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  onClick={rotateCode}
+                  disabled={busy}
+                  className="rounded-lg border border-rivet px-3 py-2 text-xs font-bold text-ember disabled:opacity-40"
+                  title="Alter Einladungslink/-code wird sofort ungültig"
+                >
+                  ↻ Code neu würfeln
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-3 text-right">
+            <button
+              onClick={leave}
+              disabled={busy}
+              className="text-xs font-bold uppercase tracking-wider text-blood disabled:opacity-40"
+            >
+              Gruppe verlassen
+            </button>
+          </div>
+
+          {/* ---------- 2) Meine Gruppen (klar abgetrennt) ---------- */}
+          <div className="mt-10 mb-3 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-ash/60">
+            <span className="h-px flex-1 bg-rivet" />
+            Meine Gruppen
+            <span className="h-px flex-1 bg-rivet" />
+          </div>
+          <ul className="space-y-1.5">
+            {(groups ?? []).map((g) => (
+              <li key={g.id}>
+                {g.id === group.id ? (
+                  <div className="flex w-full items-center gap-2.5 rounded-xl border border-blood/50 bg-blood/10 px-3 py-2">
+                    <GroupAvatar
+                      groupId={g.id}
+                      name={g.name}
+                      imageVersion={g.imageVersion}
+                      size={28}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-bold text-bone">
+                        {g.name}
+                      </span>
+                      <span className="block text-[11px] text-ash">
+                        {g.festivalName}
+                      </span>
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-blood">
+                      aktiv
+                    </span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => switchTo(g.id)}
+                    className="flex w-full items-center gap-2.5 rounded-xl border border-rivet bg-steel px-3 py-2 text-left"
+                  >
+                    <GroupAvatar
+                      groupId={g.id}
+                      name={g.name}
+                      imageVersion={g.imageVersion}
+                      size={28}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-bold text-bone">
+                        {g.name}
+                      </span>
+                      <span className="block text-[11px] text-ash">
+                        {g.festivalName}
+                      </span>
+                    </span>
+                    <span className="text-xs text-ash">wechseln →</span>
                   </button>
                 )}
               </li>
-            );
-          })}
-        </ul>
-        {isAdmin && (
-          <p className="mt-2.5 text-[11px] leading-relaxed text-ash/70">
-            Admins können die Gruppe bearbeiten, Mitglieder entfernen und
-            weitere Admins ernennen. Der Owner bleibt unantastbar.
-          </p>
-        )}
-      </div>
-
-      {/* Admin-Einstellungen */}
-      {isAdmin && (
-        <div className="mt-3 rounded-xl border border-rivet bg-steel p-3.5">
-          <div className="text-xs font-semibold uppercase tracking-wider text-ash">
-            Einstellungen (Admins)
-          </div>
-
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <span className="text-sm text-bone">
-              🔥 Feuerrahmen ab
-              <span className="ml-1 text-[11px] text-ash">
-                {group.hotThreshold === 0
-                  ? '– aus'
-                  : `${group.hotThreshold} festen Zusagen`}
-              </span>
-            </span>
-            <div className="flex items-center gap-1.5">
+            ))}
+            <li>
               <button
-                onClick={() => setThreshold(Math.max(0, group.hotThreshold - 1))}
-                disabled={busy || group.hotThreshold <= 0}
-                className="h-8 w-8 rounded-lg border border-rivet text-lg font-bold text-bone disabled:opacity-30"
+                onClick={() => setShowGroupGate(true)}
+                className="w-full rounded-xl border border-dashed border-rivet px-3 py-2.5 text-sm font-bold text-ash"
               >
-                −
+                + Gruppe gründen oder beitreten
               </button>
-              <span className="w-8 text-center font-mono text-base font-bold text-bone">
-                {group.hotThreshold === 0 ? 'aus' : group.hotThreshold}
-              </span>
-              <button
-                onClick={() => setThreshold(Math.min(99, group.hotThreshold + 1))}
-                disabled={busy || group.hotThreshold >= 99}
-                className="h-8 w-8 rounded-lg border border-rivet text-lg font-bold text-bone disabled:opacity-30"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              onClick={rotateCode}
-              disabled={busy}
-              className="rounded-lg border border-rivet px-3 py-2 text-xs font-bold text-ember disabled:opacity-40"
-              title="Alter Einladungslink/-code wird sofort ungültig"
-            >
-              ↻ Code neu würfeln
-            </button>
-          </div>
-        </div>
+            </li>
+          </ul>
+        </>
       )}
 
-      <div className="mt-3 text-right">
-        <button
-          onClick={leave}
-          disabled={busy}
-          className="text-xs font-bold uppercase tracking-wider text-blood disabled:opacity-40"
-        >
-          Gruppe verlassen
-        </button>
-      </div>
-
-      {/* ---------- 2) Meine Gruppen (klar abgetrennt) ---------- */}
-      <div className="mt-10 mb-3 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-ash/60">
-        <span className="h-px flex-1 bg-rivet" />
-        Meine Gruppen
-        <span className="h-px flex-1 bg-rivet" />
-      </div>
-      <ul className="space-y-1.5">
-        {(groups ?? []).map((g) => (
-          <li key={g.id}>
-            {g.id === group.id ? (
-              <div className="flex w-full items-center gap-2.5 rounded-xl border border-blood/50 bg-blood/10 px-3 py-2">
-                <GroupAvatar
-                  groupId={g.id}
-                  name={g.name}
-                  imageVersion={g.imageVersion}
-                  size={28}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-bold text-bone">
-                    {g.name}
-                  </span>
-                  <span className="block text-[11px] text-ash">
-                    {g.festivalName}
-                  </span>
-                </span>
-                <span className="text-[10px] font-black uppercase tracking-wider text-blood">
-                  aktiv
-                </span>
+      {tab === 'konto' && (
+        <>
+          {/* ---------- 3) Konto: Icon-Farbe, Mitteilungen, Abmelden ---------- */}
+          {/* Eigene Icon-Farbe */}
+          <div className="mt-4 mb-3 rounded-xl border border-rivet bg-steel p-3.5">
+            <div className="flex items-center gap-2.5">
+              <Avatar user={user} size={40} ring />
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold text-bone">Deine Icon-Farbe</div>
+                <div className="text-[11px] text-ash">
+                  So erscheint dein Avatar bei den anderen
+                </div>
               </div>
-            ) : (
-              <button
-                onClick={() => switchTo(g.id)}
-                className="flex w-full items-center gap-2.5 rounded-xl border border-rivet bg-steel px-3 py-2 text-left"
-              >
-                <GroupAvatar
-                  groupId={g.id}
-                  name={g.name}
-                  imageVersion={g.imageVersion}
-                  size={28}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-bold text-bone">
-                    {g.name}
-                  </span>
-                  <span className="block text-[11px] text-ash">
-                    {g.festivalName}
-                  </span>
-                </span>
-                <span className="text-xs text-ash">wechseln →</span>
-              </button>
-            )}
-          </li>
-        ))}
-        <li>
-          <button
-            onClick={() => setShowGroupGate(true)}
-            className="w-full rounded-xl border border-dashed border-rivet px-3 py-2.5 text-sm font-bold text-ash"
-          >
-            + Gruppe gründen oder beitreten
-          </button>
-        </li>
-      </ul>
-
-      {/* ---------- 3) Konto ---------- */}
-      <div className="mt-10 mb-3 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-ash/60">
-        <span className="h-px flex-1 bg-rivet" />
-        Konto
-        <span className="h-px flex-1 bg-rivet" />
-      </div>
-      {/* Eigene Icon-Farbe */}
-      <div className="mb-3 rounded-xl border border-rivet bg-steel p-3.5">
-        <div className="flex items-center gap-2.5">
-          <Avatar user={user} size={40} ring />
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-bold text-bone">Deine Icon-Farbe</div>
-            <div className="text-[11px] text-ash">
-              So erscheint dein Avatar bei den anderen
+            </div>
+            <div className="mt-3 grid grid-cols-10 gap-2">
+              {USER_COLORS.map((c) => {
+                const active = c === user.color;
+                return (
+                  <button
+                    key={c}
+                    onClick={() => changeColor(c)}
+                    disabled={busy}
+                    className="relative aspect-square rounded-full transition active:scale-90 disabled:opacity-50"
+                    style={{
+                      backgroundColor: c,
+                      boxShadow: active ? '0 0 0 2px #e7e7ee' : '0 0 0 1.5px #0b0b0f',
+                    }}
+                    title={active ? 'Aktuelle Farbe' : 'Diese Farbe wählen'}
+                    aria-label={`Icon-Farbe ${c}`}
+                    aria-pressed={active}
+                  >
+                    {active && (
+                      <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-black/85">
+                        ✓
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
-        </div>
-        <div className="mt-3 grid grid-cols-10 gap-2">
-          {USER_COLORS.map((c) => {
-            const active = c === user.color;
-            return (
-              <button
-                key={c}
-                onClick={() => changeColor(c)}
-                disabled={busy}
-                className="relative aspect-square rounded-full transition active:scale-90 disabled:opacity-50"
-                style={{
-                  backgroundColor: c,
-                  boxShadow: active ? '0 0 0 2px #e7e7ee' : '0 0 0 1.5px #0b0b0f',
-                }}
-                title={active ? 'Aktuelle Farbe' : 'Diese Farbe wählen'}
-                aria-label={`Icon-Farbe ${c}`}
-                aria-pressed={active}
-              >
-                {active && (
-                  <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-black/85">
-                    ✓
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
-      <button
-        onClick={doLogout}
-        className="flex w-full items-center gap-2.5 rounded-xl border border-rivet bg-steel px-3 py-2.5 text-left"
-      >
-        <Avatar user={user} size={28} />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-bold text-bone">
-            {user.name}
-          </span>
-          <span className="block text-[11px] text-ash">
-            Passkey bleibt auf dem Gerät
-          </span>
-        </span>
-        <span className="text-xs text-ash underline">Abmelden</span>
-      </button>
+          {/* Push-Mitteilungen auf diesem Gerät */}
+          <PushSettings />
+
+          <button
+            onClick={doLogout}
+            className="flex w-full items-center gap-2.5 rounded-xl border border-rivet bg-steel px-3 py-2.5 text-left"
+          >
+            <Avatar user={user} size={28} />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-bold text-bone">
+                {user.name}
+              </span>
+              <span className="block text-[11px] text-ash">
+                Passkey bleibt auf dem Gerät
+              </span>
+            </span>
+            <span className="text-xs text-ash underline">Abmelden</span>
+          </button>
+        </>
+      )}
 
       {showGroupGate && <GroupGate onClose={() => setShowGroupGate(false)} />}
     </main>

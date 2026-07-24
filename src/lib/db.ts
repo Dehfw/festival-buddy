@@ -3,6 +3,7 @@ import { Pool, type PoolClient } from 'pg';
 import blueprintSeedJson from '../../data/blueprints.seed.json';
 import timetableJson from '../../data/timetable.json';
 import type {
+  Announcement,
   Blueprint,
   FestivalDay,
   FestivalSummary,
@@ -112,7 +113,7 @@ function getPool(): Pool {
  */
 async function schemaAlreadyExists(client: PoolClient): Promise<boolean> {
   const res = await client.query<{ t: string | null }>(
-    "SELECT to_regclass('public.organizer_invites') AS t"
+    "SELECT to_regclass('public.push_reminders_sent') AS t"
   );
   return res.rows[0]?.t != null;
 }
@@ -243,6 +244,40 @@ async function createSchema(): Promise<void> {
         used_at     TIMESTAMPTZ
       );
       CREATE INDEX IF NOT EXISTS organizer_invites_festival_idx ON organizer_invites (festival_id);
+      -- Web-Push-Abos: ein Browser/Gerät = eine Zeile, der Push-Endpoint ist
+      -- der natürliche Schlüssel. Bei Nutzerwechsel auf demselben Gerät wird
+      -- die Zeile per Upsert auf den neuen Nutzer umgebunden.
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        endpoint   TEXT PRIMARY KEY,
+        user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        p256dh     TEXT NOT NULL,
+        auth       TEXT NOT NULL,
+        user_agent TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS push_subscriptions_user_idx ON push_subscriptions (user_id);
+      -- Mitteilungen von Veranstaltern (festival_id gesetzt) bzw. vom
+      -- Betreiber (festival_id NULL = app-weit). Zusätzlich zum Push landen
+      -- sie im /api/data-Payload, damit auch Nutzer ohne Push sie sehen.
+      CREATE TABLE IF NOT EXISTS announcements (
+        id          TEXT PRIMARY KEY,
+        festival_id TEXT REFERENCES festivals(id) ON DELETE CASCADE,
+        author_id   TEXT REFERENCES users(id) ON DELETE SET NULL,
+        title       TEXT NOT NULL,
+        body        TEXT NOT NULL,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS announcements_festival_idx ON announcements (festival_id, created_at DESC);
+      -- Versand-Log der Band-Erinnerungen: pro (Nutzer, Festival, Slot) genau
+      -- eine Erinnerung. Der Cron claimt Zeilen per INSERT … ON CONFLICT DO
+      -- NOTHING, bevor er pusht – parallele Läufe senden so nie doppelt.
+      CREATE TABLE IF NOT EXISTS push_reminders_sent (
+        user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        festival_id TEXT NOT NULL,
+        slot_id     TEXT NOT NULL,
+        sent_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (user_id, festival_id, slot_id)
+      );
       CREATE SEQUENCE IF NOT EXISTS db_rev START 1;
 
       -- Primärschlüssel der Bestandstabellen um festival_id erweitern
@@ -1266,6 +1301,204 @@ export async function getSelectionCountsForFestival(
     [festivalId]
   );
   return Object.fromEntries(res.rows.map((r) => [r.slot_id, Number(r.n)]));
+}
+
+/* ------------------------------------------------------------------ */
+/* Web Push & Mitteilungen                                             */
+/* ------------------------------------------------------------------ */
+
+/** Mehr Abos pro Nutzer wären Karteileichen – die ältesten fliegen raus. */
+const MAX_PUSH_SUBS_PER_USER = 20;
+
+export interface PushSubscriptionRecord {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  userId: string;
+}
+
+/**
+ * Push-Abo speichern bzw. auf den aktuell eingeloggten Nutzer umbinden
+ * (geteiltes Gerät: der Endpoint bleibt, der Nutzer dahinter wechselt).
+ */
+export async function upsertPushSubscription(
+  userId: string,
+  endpoint: string,
+  p256dh: string,
+  auth: string,
+  userAgent: string
+): Promise<void> {
+  await query(
+    `INSERT INTO push_subscriptions (endpoint, user_id, p256dh, auth, user_agent)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (endpoint) DO UPDATE
+       SET user_id = EXCLUDED.user_id, p256dh = EXCLUDED.p256dh,
+           auth = EXCLUDED.auth, user_agent = EXCLUDED.user_agent`,
+    [endpoint, userId, p256dh, auth, userAgent]
+  );
+  await query(
+    `DELETE FROM push_subscriptions
+      WHERE user_id = $1 AND endpoint IN (
+        SELECT endpoint FROM push_subscriptions WHERE user_id = $1
+         ORDER BY created_at DESC OFFSET $2
+      )`,
+    [userId, MAX_PUSH_SUBS_PER_USER]
+  );
+}
+
+/** Abmelden aus der App: löscht nur das eigene Abo (endpoint + user_id). */
+export async function deletePushSubscription(
+  endpoint: string,
+  userId: string
+): Promise<void> {
+  await query(
+    'DELETE FROM push_subscriptions WHERE endpoint = $1 AND user_id = $2',
+    [endpoint, userId]
+  );
+}
+
+/** Cleanup toter Abos (Push-Dienst antwortet 404/410). */
+export async function deletePushSubscriptionByEndpoint(endpoint: string): Promise<void> {
+  await query('DELETE FROM push_subscriptions WHERE endpoint = $1', [endpoint]);
+}
+
+export async function getPushSubscriptionsForUsers(
+  userIds: string[]
+): Promise<PushSubscriptionRecord[]> {
+  if (userIds.length === 0) return [];
+  const res = await query<{ endpoint: string; p256dh: string; auth: string; user_id: string }>(
+    'SELECT endpoint, p256dh, auth, user_id FROM push_subscriptions WHERE user_id = ANY($1)',
+    [userIds]
+  );
+  return res.rows.map((r) => ({
+    endpoint: r.endpoint,
+    p256dh: r.p256dh,
+    auth: r.auth,
+    userId: r.user_id,
+  }));
+}
+
+/** Hat der Nutzer mindestens ein Push-Abo? (für die Konto-Anzeige) */
+export async function hasPushSubscription(userId: string): Promise<boolean> {
+  const res = await query('SELECT 1 FROM push_subscriptions WHERE user_id = $1 LIMIT 1', [
+    userId,
+  ]);
+  return (res.rowCount ?? 0) > 0;
+}
+
+/**
+ * Zielgruppe einer Veranstalter-Mitteilung: alle Mitglieder aller Gruppen
+ * dieses Festivals (dieselbe Kette wie beim Daten-Payload, nur festivalweit).
+ */
+export async function getFestivalAudienceUserIds(festivalId: string): Promise<string[]> {
+  const res = await query<{ user_id: string }>(
+    `SELECT DISTINCT gm.user_id
+       FROM groups g JOIN group_members gm ON gm.group_id = g.id
+      WHERE g.festival_id = $1`,
+    [festivalId]
+  );
+  return res.rows.map((r) => r.user_id);
+}
+
+interface AnnouncementRow {
+  id: string;
+  festival_id: string | null;
+  title: string;
+  body: string;
+  created_at: Date;
+}
+
+function toAnnouncement(r: AnnouncementRow): Announcement {
+  return {
+    id: r.id,
+    festivalId: r.festival_id,
+    title: r.title,
+    body: r.body,
+    createdAt: r.created_at.toISOString(),
+  };
+}
+
+/** Mitteilung persistieren; bumpRev() -> Polling-Clients sehen sie in ≤7 s. */
+export async function createAnnouncement(
+  festivalId: string | null,
+  authorId: string | null,
+  title: string,
+  body: string
+): Promise<Announcement> {
+  const id = `a-${randomUUID()}`;
+  const res = await query<AnnouncementRow>(
+    `INSERT INTO announcements (id, festival_id, author_id, title, body)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, festival_id, title, body, created_at`,
+    [id, festivalId, authorId, title, body]
+  );
+  await bumpRev();
+  return toAnnouncement(res.rows[0]);
+}
+
+/** Neueste Mitteilungen für ein Festival – app-weite (festival_id NULL) inklusive. */
+export async function getAnnouncements(
+  festivalId: string,
+  limit: number
+): Promise<Announcement[]> {
+  const res = await query<AnnouncementRow>(
+    `SELECT id, festival_id, title, body, created_at FROM announcements
+      WHERE festival_id = $1 OR festival_id IS NULL
+      ORDER BY created_at DESC LIMIT $2`,
+    [festivalId, limit]
+  );
+  return res.rows.map(toAnnouncement);
+}
+
+export interface ReminderTarget {
+  userId: string;
+  festivalId: string;
+  slotId: string;
+}
+
+/**
+ * Empfänger für Band-Erinnerungen: Nutzer mit Auswahl ('going' UND
+ * 'interested' – beides sind explizite Favoriten in "Unsere Bands") auf
+ * einem der Kandidaten-Slots, die mindestens ein Push-Abo haben.
+ */
+export async function getReminderCandidates(
+  festivalId: string,
+  slotIds: string[]
+): Promise<ReminderTarget[]> {
+  if (slotIds.length === 0) return [];
+  const res = await query<{ user_id: string; slot_id: string }>(
+    `SELECT DISTINCT s.user_id, s.slot_id
+       FROM selections s
+      WHERE s.festival_id = $1 AND s.slot_id = ANY($2)
+        AND EXISTS (SELECT 1 FROM push_subscriptions p WHERE p.user_id = s.user_id)`,
+    [festivalId, slotIds]
+  );
+  return res.rows.map((r) => ({ userId: r.user_id, festivalId, slotId: r.slot_id }));
+}
+
+/**
+ * Erinnerungen claimen: INSERT … ON CONFLICT DO NOTHING RETURNING gibt nur
+ * die Paare zurück, die dieser Lauf als Erster eingetragen hat – parallele
+ * Cron-Läufe senden dadurch nie doppelt.
+ */
+export async function claimReminders(targets: ReminderTarget[]): Promise<ReminderTarget[]> {
+  if (targets.length === 0) return [];
+  const res = await query<{ user_id: string; festival_id: string; slot_id: string }>(
+    `INSERT INTO push_reminders_sent (user_id, festival_id, slot_id)
+     SELECT * FROM unnest($1::text[], $2::text[], $3::text[])
+     ON CONFLICT DO NOTHING
+     RETURNING user_id, festival_id, slot_id`,
+    [
+      targets.map((t) => t.userId),
+      targets.map((t) => t.festivalId),
+      targets.map((t) => t.slotId),
+    ]
+  );
+  return res.rows.map((r) => ({
+    userId: r.user_id,
+    festivalId: r.festival_id,
+    slotId: r.slot_id,
+  }));
 }
 
 /* ------------------------------------------------------------------ */

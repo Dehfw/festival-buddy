@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import { useModalDialog } from '@/lib/client/useModalDialog';
+import { useSheetHistory } from '@/lib/client/useSheetHistory';
 import {
   DEFAULT_HOT_THRESHOLD,
   formatAgo,
@@ -24,13 +25,6 @@ function SpotifyIcon() {
 }
 
 /**
- * Ausstehendes history.back() aus dem Cleanup des History-Effekts (modulweit,
- * es gibt höchstens ein BandSheet). Ein direkt folgender Remount (StrictMode
- * im Dev-Modus) storniert es und übernimmt den vorhandenen History-Eintrag.
- */
-let pendingHistoryBack: ReturnType<typeof setTimeout> | null = null;
-
-/**
  * Bottom-Sheet mit Band-Details: Wer kommt mit? Eintragen/Austragen,
  * Spotify-Link und Position im Publikum auf dem Bühnen-Blueprint markieren.
  */
@@ -49,39 +43,10 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
     onCloseRef.current = onClose;
   }, [onClose]);
 
-  // Android-Back-Button: beim Öffnen einen History-Eintrag pushen, sodass
-  // "Zurück" das Sheet schließt statt die (PWA-)App zu beenden.
-  useEffect(() => {
-    if (pendingHistoryBack !== null) {
-      // StrictMode-Doppelmount (Dev-Modus): Das Cleanup des ersten Mounts
-      // hat gerade ein back() geplant. Es stornieren und dessen History-
-      // Eintrag weiterverwenden statt einen zweiten zu pushen – sonst
-      // poppt das asynchrone back() den frischen Eintrag wieder weg und
-      // der popstate-Handler schließt das Sheet sofort (Flackern).
-      clearTimeout(pendingHistoryBack);
-      pendingHistoryBack = null;
-    } else {
-      window.history.pushState({ bandSheet: true }, '');
-    }
-    let closedByPop = false;
-    const onPop = () => {
-      closedByPop = true;
-      onCloseRef.current();
-    };
-    window.addEventListener('popstate', onPop);
-    return () => {
-      window.removeEventListener('popstate', onPop);
-      // Wurde das Sheet anders geschlossen (Backdrop, Swipe), den
-      // gepushten Eintrag wieder entfernen. Aufgeschoben, damit ein
-      // sofortiger Remount (StrictMode) es oben stornieren kann.
-      if (!closedByPop) {
-        pendingHistoryBack = setTimeout(() => {
-          pendingHistoryBack = null;
-          window.history.back();
-        }, 0);
-      }
-    };
-  }, []);
+  // Android-Back-Button: "Zurück" schließt das Sheet statt die (PWA-)App.
+  // Das StrictMode-Doppelmount-Handling aus PR #47 lebt jetzt im Hook
+  // useSheetHistory und gilt damit auch für das Mitteilungs-Sheet.
+  useSheetHistory(onCloseRef);
 
   // Sheet gilt als gerendert, sobald die Slot-Daten vorhanden sind.
   const rendered = !!(data && data.timetable.stages.some((s) => s.id === slot.stageId));

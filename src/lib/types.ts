@@ -158,6 +158,20 @@ export function splitAttendees(
   return { going, interested };
 }
 
+/**
+ * Mitteilung an die Nutzer: von einem Veranstalter an alle Gruppen seines
+ * Festivals oder vom Betreiber app-weit (festivalId = null). Wird zusätzlich
+ * per Web Push zugestellt; hier im Payload sehen sie auch Nutzer ohne Push.
+ */
+export interface Announcement {
+  id: string;
+  /** null = app-weite Betreiber-Nachricht */
+  festivalId: string | null;
+  title: string;
+  body: string;
+  createdAt: string;
+}
+
 export interface Position {
   userId: string;
   slotId: string;
@@ -224,6 +238,8 @@ export interface DataPayload {
   positions: Position[];
   blueprints: Record<string, Blueprint>;
   group: GroupInfo;
+  /** Neueste Mitteilungen (Festival + app-weit), absteigend nach Datum */
+  announcements: Announcement[];
   rev: number;
   serverTime: string;
 }
