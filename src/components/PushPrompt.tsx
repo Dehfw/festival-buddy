@@ -2,51 +2,75 @@
 
 import { useEffect, useState } from 'react';
 import { enablePush, getPushPermission, getPushSupport } from '@/lib/client/push';
+import { isInstallPromptVisible, onPromptSlotChange } from '@/lib/client/promptSlot';
 import { useApp } from '@/lib/client/store';
 
 /**
- * Einmaliges Banner "Mitteilungen aktivieren?" im Stil von Install-/
- * UpdatePrompt. Erscheint nur, wenn es sofort klappen kann: eingeloggt und
- * in einer Gruppe, Browser kann Push, Server hat VAPID-Keys, Permission
- * noch unentschieden. Der Button ruft enablePush() direkt im Tap auf –
- * die Nutzer-Gesten-Kette (iOS-Pflicht) bleibt intakt.
+ * Aktives Opt-in-Banner "Mitteilungen aktivieren?" im Stil des
+ * InstallPrompt: erscheint kurz nach dem App-Start einmalig für alle,
+ * bei denen es sofort klappen kann – eingeloggt und in einer Gruppe,
+ * Browser kann Push, Server hat VAPID-Keys, Permission noch
+ * unentschieden. Der "Aktivieren"-Button ruft enablePush() direkt im
+ * Tap auf, damit die Nutzer-Gesten-Kette (iOS-Pflicht) intakt bleibt.
  *
- * Damit es nicht mit dem InstallPrompt an derselben Stelle stapelt,
- * kommt es erst dran, wenn der Install-Hinweis erledigt ist (installiert
- * oder weggeklickt).
+ * iOS im Safari-Tab bekommt dieses Banner bewusst NICHT: Dort gibt es
+ * kein Web Push, solange die App nicht installiert ist. Den Hinweis
+ * darauf sehen iOS-Nutzer stattdessen in der Install-Anleitung des
+ * InstallPrompt und auf der Mitteilungs-Karte unter Gruppe & Konto.
+ *
+ * Install- und Push-Banner teilen sich dieselbe Position am unteren
+ * Rand – der PushPrompt wartet deshalb, bis der Platz frei ist
+ * (promptSlot), und kommt erst nach einer kurzen Schonfrist.
  */
 
 const DISMISS_KEY = 'fb.pushPromptDismissed.v1';
-const INSTALL_DISMISS_KEY = 'fb.installDismissed.v1';
-
-function isStandalone(): boolean {
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    (navigator as { standalone?: boolean }).standalone === true
-  );
-}
+/** Schonfrist nach App-Start bzw. nach dem Install-Banner */
+const SHOW_DELAY_MS = 3000;
 
 export function PushPrompt() {
   const { data, user } = useApp();
+  const ready = Boolean(data && user);
+  const [eligible, setEligible] = useState(false);
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  // Kommt das Banner überhaupt in Frage? (einmalig, sobald Daten da sind)
   useEffect(() => {
-    if (!data || !user) return;
+    if (!ready || eligible) return;
     if (localStorage.getItem(DISMISS_KEY)) return;
     if (getPushSupport() !== 'ok' || getPushPermission() !== 'default') return;
-    if (!isStandalone() && !localStorage.getItem(INSTALL_DISMISS_KEY)) return;
     // Nur zeigen, wenn der Server Push überhaupt kann (VAPID konfiguriert)
     let cancelled = false;
     fetch('/api/push/vapid')
       .then((res) => {
-        if (!cancelled && res.ok) setShow(true);
+        if (!cancelled && res.ok) setEligible(true);
       })
       .catch(() => undefined);
     return () => {
       cancelled = true;
     };
-  }, [data, user]);
+  }, [ready, eligible]);
+
+  // Anzeigen, sobald der Banner-Platz frei ist – mit Verzögerung, damit
+  // die App erst in Ruhe laden kann und nichts aufpoppt, während der
+  // Nutzer gerade den Install-Hinweis liest.
+  useEffect(() => {
+    if (!eligible || show) return;
+    let timer: number | undefined;
+    const tryShow = () => {
+      window.clearTimeout(timer);
+      if (isInstallPromptVisible()) return;
+      timer = window.setTimeout(() => {
+        if (!isInstallPromptVisible()) setShow(true);
+      }, SHOW_DELAY_MS);
+    };
+    const unsubscribe = onPromptSlotChange(tryShow);
+    tryShow();
+    return () => {
+      unsubscribe();
+      window.clearTimeout(timer);
+    };
+  }, [eligible, show]);
 
   if (!show) return null;
 

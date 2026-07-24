@@ -37,12 +37,18 @@ Erinnerungen kommt `CRON_SECRET` dazu (siehe unten).
 
 ## Client-Seite
 
-- Opt-in unter **Gruppe & Konto** (`PushSettings`) plus einmaliges
-  Banner in der App (`PushPrompt`). `enablePush()` läuft bewusst im
-  Button-Tap: iOS verlangt die Permission-Abfrage aus einer Nutzer-Geste.
-  iOS kann Web Push überhaupt erst ab 16.4 und **nur als installierte
-  Home-Screen-App** – im Safari-Tab zeigt die UI stattdessen die
-  Installations-Anleitung.
+- Opt-in unter **Gruppe & Konto → Konto** (`PushSettings`) plus ein
+  aktives Einmal-Banner in der App (`PushPrompt`): erscheint ein paar
+  Sekunden nach dem Start, sobald der Banner-Platz frei ist – Install-
+  und Push-Banner teilen sich die Position am unteren Rand und
+  koordinieren sich über `promptSlot.ts` (nie beide gleichzeitig).
+  `enablePush()` läuft bewusst im Button-Tap und fragt die Permission
+  **vor** jedem Netz-await ab: iOS verlangt die Abfrage aus einer noch
+  gültigen Nutzer-Geste. iOS kann Web Push überhaupt erst ab 16.4 und
+  **nur als installierte Home-Screen-App** – iOS-Nutzer im Safari-Tab
+  bekommen deshalb kein Push-Banner; den Hinweis „Mitteilungen gibt's
+  nur installiert“ tragen dort die iOS-Anleitung des InstallPrompt und
+  die Mitteilungs-Karte im Konto-Tab.
 - Der Service Worker (`src/sw.template.js`) zeigt bei `push` immer eine
   Notification (iOS entzieht Abos mit stillen Pushes), öffnet bei
   `notificationclick` die App per Deep-Link (`/app?announcement=…` →

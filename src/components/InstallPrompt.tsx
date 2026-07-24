@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { setInstallPromptVisible } from '@/lib/client/promptSlot';
 
 /**
  * Install-Popup für die PWA: fragt einmalig, ob die App auf dem
@@ -32,6 +33,12 @@ export function InstallPrompt() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
   const [iosGuide, setIosGuide] = useState(false);
+
+  // Banner-Platz belegen/freigeben, damit der PushPrompt solange wartet
+  useEffect(() => {
+    setInstallPromptVisible(show);
+    return () => setInstallPromptVisible(false);
+  }, [show]);
 
   useEffect(() => {
     if (isStandalone() || localStorage.getItem(DISMISS_KEY)) return;
@@ -97,7 +104,10 @@ export function InstallPrompt() {
                 Safari auf <b className="text-bone">Teilen</b>{' '}
                 <span aria-hidden>(📤)</span> und dann auf{' '}
                 <b className="text-bone">„Zum Home-Bildschirm“</b> – startet
-                schneller und läuft auch offline im Infield.
+                schneller, läuft auch offline im Infield, und nur die
+                installierte App kann dir <b className="text-bone">Mitteilungen</b>{' '}
+                schicken (Durchsagen vom Festival, Erinnerungen an deine
+                Bands – so will es iOS).
               </p>
             ) : (
               <p className="mt-1 text-xs leading-relaxed text-ash">

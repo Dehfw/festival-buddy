@@ -77,10 +77,13 @@ async function postSubscription(sub: PushSubscription): Promise<boolean> {
  */
 export async function enablePush(): Promise<EnablePushResult> {
   if (getPushSupport() !== 'ok') return 'unavailable';
-  const key = await fetchVapidKey();
-  if (!key) return 'unavailable';
+  // Permission ZUERST – noch vor jedem await auf Netz. iOS bindet die
+  // Abfrage an die "transient activation" des Taps; ein fetch davor kann
+  // sie verfallen lassen und die Abfrage wird still abgelehnt.
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') return 'denied';
+  const key = await fetchVapidKey();
+  if (!key) return 'unavailable';
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub =
