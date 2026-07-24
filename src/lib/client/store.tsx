@@ -52,6 +52,12 @@ interface AppState {
   data: DataPayload | null;
   online: boolean;
   pending: number;
+  /**
+   * Für wie viele Festivals bin ich Veranstalter? (> 0 blendet den
+   * Veranstalter-Link in der Nav ein.) Nur im Speicher – offline fehlt
+   * der Link kurz, der Editor braucht ohnehin Netz.
+   */
+  organizerFestivals: number;
   /** Nach erfolgreichem Passkey-Login/-Registrierung übernehmen */
   loginAs: (user: User) => void;
   logout: () => void;
@@ -84,6 +90,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<DataPayload | null>(null);
   const [online, setOnline] = useState(true);
   const [pending, setPending] = useState(0);
+  const [organizerFestivals, setOrganizerFestivals] = useState(0);
   const dataRef = useRef<DataPayload | null>(null);
   dataRef.current = data;
   const activeRef = useRef<string | null>(null);
@@ -115,6 +122,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         saveGroups(null);
         setGroups(null);
+        setOrganizerFestivals(0);
         if (hadUser) {
           // Session serverseitig beendet -> private Daten der Session räumen
           // (Snapshots + SW-Daten-Cache), bevor jemand anderes übernimmt.
@@ -124,14 +132,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       if (res.ok) {
-        const { user: serverUser, groups: serverGroups } = (await res.json()) as {
+        const {
+          user: serverUser,
+          groups: serverGroups,
+          organizerFestivals: serverOrganizerFestivals,
+        } = (await res.json()) as {
           user: User;
           groups: GroupSummary[];
+          organizerFestivals?: number;
         };
         saveUser(serverUser);
         setUser(serverUser);
         saveGroups(serverGroups);
         setGroups(serverGroups);
+        setOrganizerFestivals(serverOrganizerFestivals ?? 0);
         const active = activeRef.current;
         if (!active || !serverGroups.some((g) => g.id === active)) {
           const next = serverGroups[0]?.id ?? null;
@@ -386,6 +400,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     saveGroups(null);
     setGroups(null);
+    setOrganizerFestivals(0);
     saveActiveGroup(null);
     activeRef.current = null;
     setActiveGroupIdState(null);
@@ -477,6 +492,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         data,
         online,
         pending,
+        organizerFestivals,
         loginAs,
         logout,
         refreshMe,

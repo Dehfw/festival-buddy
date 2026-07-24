@@ -17,6 +17,13 @@ sonst verlieren die Crews ihre Eintragungen. Der Wacken-Import filtert
 deshalb Alt-Events und hält die IDs stabil; ein Import ersetzt immer
 den kompletten Timetable-Block eines Festivals.
 
+Dieselbe Regel gilt im [Veranstalter-Editor](veranstalter.md), dem
+zweiten Schreibpfad neben dem Import: IDs werden nur beim **Anlegen**
+generiert (`slugify` + `-2`-Suffix bei Kollision) und ändern sich bei
+Edits nie – erst echtes Löschen entfernt die daran hängenden
+Teilnahmen/Positionen (in derselben Transaktion, mit Warn-Dialog im
+Editor).
+
 ## Zeiten nach Mitternacht
 
 Sets nach Mitternacht zählen zum Vortag und werden mit Stunden ≥ 24

@@ -25,7 +25,7 @@ function todayFestivalDate(): string {
 }
 
 export function AppShell() {
-  const { data, user, online, pending } = useApp();
+  const { data, user, online, pending, organizerFestivals } = useApp();
   const [tab, setTab] = useState<Tab>('timetable');
   const [dayId, setDayId] = useState('');
   const [activeSlot, setActiveSlot] = useState<Slot | null>(null);
@@ -154,15 +154,18 @@ export function AppShell() {
           icon="🗺️"
           label="Bühnen"
         />
-        <Link
-          href="/admin"
-          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-ash"
-        >
-          <span className="text-lg leading-none">⚙️</span>
-          <span className="text-[10px] font-semibold uppercase tracking-wide">
-            Admin
-          </span>
-        </Link>
+        {/* Nur für Veranstalter sichtbar (organizerFestivals aus /api/me) */}
+        {organizerFestivals > 0 && (
+          <Link
+            href="/veranstalter"
+            className="flex flex-1 flex-col items-center gap-0.5 py-2 text-ash"
+          >
+            <span className="text-lg leading-none">🎪</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wide">
+              Veranstalter
+            </span>
+          </Link>
+        )}
       </nav>
 
       {activeSlot && (

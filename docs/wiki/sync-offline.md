@@ -119,7 +119,7 @@ Die App ist als PWA installierbar (Manifest +
 einer Version gestempelt und unter `/sw.js` ausgeliefert
 (`src/app/sw.js/route.ts`):
 
-- **Precache** der App-Shell (u. a. `/` und `/admin`),
+- **Precache** der App-Shell (u. a. `/` und `/veranstalter`),
 - **network-first mit Cache-Fallback** für Daten,
 - **stale-while-revalidate** für Assets.
 

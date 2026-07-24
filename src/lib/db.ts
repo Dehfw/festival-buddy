@@ -4,6 +4,7 @@ import blueprintSeedJson from '../../data/blueprints.seed.json';
 import timetableJson from '../../data/timetable.json';
 import type {
   Blueprint,
+  FestivalDay,
   FestivalSummary,
   GroupInfo,
   GroupRole,
@@ -11,9 +12,12 @@ import type {
   Position,
   Selection,
   SelectionStatus,
+  Slot,
+  Stage,
   Timetable,
   User,
 } from './types';
+import { toMinutes } from './types';
 
 /**
  * Datenschicht: Festivals (inkl. Timetable), Gruppen, Nutzer, Band-
@@ -98,10 +102,17 @@ function getPool(): Pool {
 /* Schema & Migration                                                  */
 /* ------------------------------------------------------------------ */
 
-/** Existiert die Kern-Tabelle schon? (billiger Steady-State-Check) */
+/**
+ * Existiert das Schema schon in der NEUESTEN Ausbaustufe? (billiger
+ * Steady-State-Check.) Geprüft wird bewusst die zuletzt hinzugekommene
+ * Tabelle, nicht die Kern-Tabelle: Auf einer Bestands-DB existiert
+ * `festivals` längst – fehlt aber z. B. `organizer_invites`, muss der
+ * idempotente Schema-Block unten einmal laufen und sie nachziehen.
+ * Beim Anlegen neuer Tabellen hier IMMER auf die neueste umstellen!
+ */
 async function schemaAlreadyExists(client: PoolClient): Promise<boolean> {
   const res = await client.query<{ t: string | null }>(
-    "SELECT to_regclass('public.festivals') AS t"
+    "SELECT to_regclass('public.organizer_invites') AS t"
   );
   return res.rows[0]?.t != null;
 }
@@ -209,6 +220,29 @@ async function createSchema(): Promise<void> {
         PRIMARY KEY (festival_id, stage_id)
       );
       ALTER TABLE blueprints ADD COLUMN IF NOT EXISTS festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}';
+      -- Veranstalter: Nutzer, die Timetable/Bühnen/Blueprints "ihres"
+      -- Festivals pflegen dürfen. Zuweisung entsteht durch Einlösen eines
+      -- Einladungscodes; Entzug per CLI (scripts/organizer-code.mjs).
+      CREATE TABLE IF NOT EXISTS festival_organizers (
+        festival_id TEXT NOT NULL REFERENCES festivals(id) ON DELETE CASCADE,
+        user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (festival_id, user_id)
+      );
+      CREATE INDEX IF NOT EXISTS festival_organizers_user_idx ON festival_organizers (user_id);
+      -- Einmal-Codes für die Veranstalter-Zuweisung: der Betreiber erzeugt
+      -- sie per CLI, ein eingeloggter Nutzer löst sie in der App ein.
+      -- Einlösen verbraucht den Code (used_by/used_at), revoked_at sperrt
+      -- einen noch offenen Code.
+      CREATE TABLE IF NOT EXISTS organizer_invites (
+        code        TEXT PRIMARY KEY,
+        festival_id TEXT NOT NULL REFERENCES festivals(id) ON DELETE CASCADE,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+        revoked_at  TIMESTAMPTZ,
+        used_by     TEXT REFERENCES users(id) ON DELETE SET NULL,
+        used_at     TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS organizer_invites_festival_idx ON organizer_invites (festival_id);
       CREATE SEQUENCE IF NOT EXISTS db_rev START 1;
 
       -- Primärschlüssel der Bestandstabellen um festival_id erweitern
@@ -400,6 +434,16 @@ export async function getTimetable(festivalId: string): Promise<Timetable | null
   };
   timetableCache.set(festivalId, { at: Date.now(), value: timetable });
   return timetable;
+}
+
+/**
+ * Timetable garantiert frisch aus der DB (am Cache vorbei) – für den
+ * Veranstalter-Editor, der nie einen bis zu 15 s alten Stand einer
+ * anderen Instanz sehen soll. Aktualisiert den Cache gleich mit.
+ */
+export async function getTimetableFresh(festivalId: string): Promise<Timetable | null> {
+  timetableCache.delete(festivalId);
+  return getTimetable(festivalId);
 }
 
 export async function getFestivals(): Promise<FestivalSummary[]> {
@@ -1116,10 +1160,543 @@ export async function setPosition(
 }
 
 /* ------------------------------------------------------------------ */
-/* Blueprints (Admin)                                                  */
+/* Veranstalter (Festival-Organizer)                                   */
 /* ------------------------------------------------------------------ */
 
-/** Blueprint einer Bühne komplett ersetzen (Admin). */
+export async function isFestivalOrganizer(
+  userId: string,
+  festivalId: string
+): Promise<boolean> {
+  const res = await query(
+    'SELECT 1 FROM festival_organizers WHERE festival_id = $1 AND user_id = $2',
+    [festivalId, userId]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+/** Festivals, die dieser Nutzer als Veranstalter pflegen darf */
+export async function getOrganizerFestivals(userId: string): Promise<FestivalSummary[]> {
+  const res = await query<{ id: string; name: string; edition: string; has_lineup: boolean }>(
+    `SELECT f.id, f.name, f.edition,
+            jsonb_array_length(f.timetable->'slots') > 0 AS has_lineup
+       FROM festival_organizers o JOIN festivals f ON f.id = o.festival_id
+      WHERE o.user_id = $1 ORDER BY f.id`,
+    [userId]
+  );
+  return res.rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    edition: r.edition,
+    hasLineup: r.has_lineup,
+  }));
+}
+
+/** Billiger Zähler für /api/me – steuert den Veranstalter-Link in der Nav */
+export async function countOrganizerFestivals(userId: string): Promise<number> {
+  const res = await query<{ n: string }>(
+    'SELECT count(*) AS n FROM festival_organizers WHERE user_id = $1',
+    [userId]
+  );
+  return Number(res.rows[0].n);
+}
+
+/**
+ * Veranstalter-Code einlösen: macht den Nutzer zum Veranstalter des
+ * zugehörigen Festivals und verbraucht den Code. null = Code unbekannt,
+ * bereits eingelöst oder widerrufen (bewusst dieselbe Antwort – kein
+ * Orakel für Code-Rater).
+ */
+export async function redeemOrganizerInvite(
+  userId: string,
+  code: string
+): Promise<FestivalSummary | null> {
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const invite = await client.query<{ festival_id: string }>(
+      `SELECT festival_id FROM organizer_invites
+        WHERE code = $1 AND revoked_at IS NULL AND used_by IS NULL
+        FOR UPDATE`,
+      [code]
+    );
+    const festivalId = invite.rows[0]?.festival_id;
+    if (!festivalId) {
+      await client.query('ROLLBACK');
+      return null;
+    }
+    await client.query(
+      'UPDATE organizer_invites SET used_by = $2, used_at = now() WHERE code = $1',
+      [code, userId]
+    );
+    await client.query(
+      `INSERT INTO festival_organizers (festival_id, user_id) VALUES ($1, $2)
+       ON CONFLICT DO NOTHING`,
+      [festivalId, userId]
+    );
+    const fest = await client.query<{ id: string; name: string; edition: string; has_lineup: boolean }>(
+      `SELECT id, name, edition,
+              jsonb_array_length(timetable->'slots') > 0 AS has_lineup
+         FROM festivals WHERE id = $1`,
+      [festivalId]
+    );
+    await client.query('COMMIT');
+    const f = fest.rows[0];
+    return f
+      ? { id: f.id, name: f.name, edition: f.edition, hasLineup: f.has_lineup }
+      : null;
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Feste Zusagen + Interessen pro Slot (über ALLE Gruppen des Festivals) –
+ * der Veranstalter-Editor warnt damit, bevor er Slots löscht, an denen
+ * schon Leute dranhängen.
+ */
+export async function getSelectionCountsForFestival(
+  festivalId: string
+): Promise<Record<string, number>> {
+  const res = await query<{ slot_id: string; n: string }>(
+    'SELECT slot_id, count(*) AS n FROM selections WHERE festival_id = $1 GROUP BY slot_id',
+    [festivalId]
+  );
+  return Object.fromEntries(res.rows.map((r) => [r.slot_id, Number(r.n)]));
+}
+
+/* ------------------------------------------------------------------ */
+/* Timetable-Bearbeitung (Veranstalter)                                */
+/* ------------------------------------------------------------------ */
+
+const MAX_DAYS = 30;
+const MAX_STAGES = 40;
+const MAX_SLOTS = 2000;
+
+/** "HH:MM" mit Stunden 0–31 (>= 24 = nach Mitternacht, wie toMinutes) */
+function isValidTime(value: string): boolean {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(value);
+  if (!m) return false;
+  return Number(m[1]) <= 31 && Number(m[2]) <= 59;
+}
+
+/**
+ * IDs im dokumentierten Schema tag-buehne-bandslug: Umlaute ausschreiben,
+ * alles andere zu '-' – einmal vergeben, nie wieder geändert (Auswahlen
+ * und Positionen hängen an der Slot-ID).
+ */
+function slugify(input: string): string {
+  const slug = input
+    .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'x';
+}
+
+function uniqueId(base: string, taken: Set<string>): string {
+  if (!taken.has(base)) return base;
+  for (let i = 2; ; i++) {
+    const candidate = `${base}-${i}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+}
+
+/** Jede Editor-Mutation stempelt die Datenversion neu (reine Anzeige) */
+function editorDataVersion(): string {
+  const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  return `Stand ${now} UTC · Veranstalter-Editor`;
+}
+
+interface TimetableBody {
+  days: FestivalDay[];
+  stages: Stage[];
+  slots: Slot[];
+}
+
+type TimetableEditError = { error: string; status?: number };
+
+export type TimetableEditResult =
+  | { ok: true; rev: number; timetable: Timetable; id?: string }
+  | { ok: false; error: string; status: number };
+
+/**
+ * Kern der Timetable-Bearbeitung: liest den JSONB-Block der Festival-Zeile
+ * unter FOR UPDATE (serialisiert parallele Edits), wendet `fn` an und
+ * räumt in derselben Transaktion auf, was an entfernten Slots/Bühnen
+ * hängt (Auswahlen, Positionen, Blueprints). Slot-IDs bleiben bei Edits
+ * stabil – nur echtes Entfernen löscht Nutzerdaten.
+ */
+async function mutateTimetable(
+  festivalId: string,
+  fn: (t: TimetableBody) => TimetableBody | TimetableEditError,
+  extra?: (client: PoolClient, next: TimetableBody) => Promise<void>
+): Promise<TimetableEditResult> {
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const res = await client.query<{
+      name: string;
+      edition: string;
+      timetable: TimetableBody;
+    }>(
+      'SELECT name, edition, timetable FROM festivals WHERE id = $1 FOR UPDATE',
+      [festivalId]
+    );
+    const row = res.rows[0];
+    if (!row) {
+      await client.query('ROLLBACK');
+      return { ok: false, error: 'Unbekanntes Festival', status: 404 };
+    }
+    const current: TimetableBody = {
+      days: row.timetable.days ?? [],
+      stages: row.timetable.stages ?? [],
+      slots: row.timetable.slots ?? [],
+    };
+    const applied = fn(current);
+    if ('error' in applied) {
+      await client.query('ROLLBACK');
+      return { ok: false, error: applied.error, status: applied.status ?? 400 };
+    }
+
+    // Entfernte Slots: zugehörige Auswahlen + Positionsmarker mitlöschen
+    const keptSlotIds = new Set(applied.slots.map((s) => s.id));
+    const removedSlotIds = current.slots
+      .filter((s) => !keptSlotIds.has(s.id))
+      .map((s) => s.id);
+    if (removedSlotIds.length > 0) {
+      await client.query(
+        'DELETE FROM selections WHERE festival_id = $1 AND slot_id = ANY($2)',
+        [festivalId, removedSlotIds]
+      );
+      await client.query(
+        'DELETE FROM positions WHERE festival_id = $1 AND slot_id = ANY($2)',
+        [festivalId, removedSlotIds]
+      );
+    }
+    // Entfernte Bühnen: ihren Blueprint mitlöschen
+    const keptStageIds = new Set(applied.stages.map((s) => s.id));
+    const removedStageIds = current.stages
+      .filter((s) => !keptStageIds.has(s.id))
+      .map((s) => s.id);
+    if (removedStageIds.length > 0) {
+      await client.query(
+        'DELETE FROM blueprints WHERE festival_id = $1 AND stage_id = ANY($2)',
+        [festivalId, removedStageIds]
+      );
+    }
+    if (extra) await extra(client, applied);
+
+    const dataVersion = editorDataVersion();
+    await client.query(
+      'UPDATE festivals SET timetable = $2, data_version = $3, updated_at = now() WHERE id = $1',
+      [festivalId, JSON.stringify(applied), dataVersion]
+    );
+    await client.query('COMMIT');
+
+    const timetable: Timetable = {
+      festival: row.name,
+      edition: row.edition,
+      dataVersion,
+      days: applied.days,
+      stages: applied.stages,
+      slots: applied.slots,
+    };
+    // Write-through: dieselbe Instanz sieht den neuen Stand sofort; andere
+    // Instanzen konvergieren über die Cache-TTL + den Rev-Poll.
+    timetableCache.set(festivalId, { at: Date.now(), value: timetable });
+    const rev = await bumpRev();
+    return { ok: true, rev, timetable };
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/** Festival-Metadaten (Name, Edition) ändern */
+export async function updateFestivalMeta(
+  festivalId: string,
+  patch: { name?: string; edition?: string }
+): Promise<TimetableEditResult> {
+  if (patch.name !== undefined && (patch.name.length < 1 || patch.name.length > 80)) {
+    return { ok: false, error: 'Name muss 1–80 Zeichen lang sein', status: 400 };
+  }
+  if (patch.edition !== undefined && patch.edition.length > 120) {
+    return { ok: false, error: 'Edition darf höchstens 120 Zeichen lang sein', status: 400 };
+  }
+  const sets: string[] = [];
+  const params: unknown[] = [festivalId];
+  if (patch.name !== undefined) {
+    params.push(patch.name);
+    sets.push(`name = $${params.length}`);
+  }
+  if (patch.edition !== undefined) {
+    params.push(patch.edition);
+    sets.push(`edition = $${params.length}`);
+  }
+  if (sets.length > 0) {
+    const res = await query(
+      `UPDATE festivals SET ${sets.join(', ')}, updated_at = now() WHERE id = $1`,
+      params
+    );
+    if ((res.rowCount ?? 0) === 0) {
+      return { ok: false, error: 'Unbekanntes Festival', status: 404 };
+    }
+  }
+  const timetable = await getTimetableFresh(festivalId);
+  if (!timetable) {
+    return { ok: false, error: 'Unbekanntes Festival', status: 404 };
+  }
+  const rev = await bumpRev();
+  return { ok: true, rev, timetable };
+}
+
+export interface DayInput {
+  id?: string;
+  label: string;
+  longLabel: string;
+  date: string;
+}
+
+/** Festivaltag anlegen (ohne id) oder ändern; Tage bleiben nach Datum sortiert */
+export async function upsertDay(
+  festivalId: string,
+  input: DayInput
+): Promise<TimetableEditResult> {
+  let resultId = input.id;
+  const result = await mutateTimetable(festivalId, (t) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date) || Number.isNaN(Date.parse(input.date))) {
+      return { error: 'Datum muss im Format JJJJ-MM-TT vorliegen' };
+    }
+    if (input.label.length < 1 || input.label.length > 8) {
+      return { error: 'Kurz-Label muss 1–8 Zeichen lang sein' };
+    }
+    if (input.longLabel.length < 1 || input.longLabel.length > 20) {
+      return { error: 'Langes Label muss 1–20 Zeichen lang sein' };
+    }
+    let days: FestivalDay[];
+    if (input.id) {
+      if (!t.days.some((d) => d.id === input.id)) {
+        return { error: 'Unbekannter Tag', status: 404 };
+      }
+      days = t.days.map((d) =>
+        d.id === input.id
+          ? { ...d, label: input.label, longLabel: input.longLabel, date: input.date }
+          : d
+      );
+    } else {
+      if (t.days.length >= MAX_DAYS) {
+        return { error: `Höchstens ${MAX_DAYS} Tage möglich` };
+      }
+      const id = uniqueId(`d-${input.date}`, new Set(t.days.map((d) => d.id)));
+      resultId = id;
+      days = [...t.days, { id, label: input.label, longLabel: input.longLabel, date: input.date }];
+    }
+    days = [...days].sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+    return { ...t, days };
+  });
+  return result.ok ? { ...result, id: resultId } : result;
+}
+
+/** Tag löschen – nimmt alle Slots des Tages (samt Nutzerdaten) mit */
+export async function deleteDay(
+  festivalId: string,
+  dayId: string
+): Promise<TimetableEditResult> {
+  return mutateTimetable(festivalId, (t) => {
+    if (!t.days.some((d) => d.id === dayId)) {
+      return { error: 'Unbekannter Tag', status: 404 };
+    }
+    return {
+      ...t,
+      days: t.days.filter((d) => d.id !== dayId),
+      slots: t.slots.filter((s) => s.dayId !== dayId),
+    };
+  });
+}
+
+export interface StageInput {
+  id?: string;
+  name: string;
+  short: string;
+  color: string;
+}
+
+/**
+ * Bühne anlegen (ohne id) oder ändern. Beim Umbenennen wird die
+ * Beschriftung eines vorhandenen Blueprints mitgezogen.
+ */
+export async function upsertStage(
+  festivalId: string,
+  input: StageInput
+): Promise<TimetableEditResult> {
+  let resultId = input.id;
+  let renamedTo: string | null = null;
+  const result = await mutateTimetable(
+    festivalId,
+    (t) => {
+      if (input.name.length < 1 || input.name.length > 40) {
+        return { error: 'Name muss 1–40 Zeichen lang sein' };
+      }
+      if (input.short.length < 1 || input.short.length > 5) {
+        return { error: 'Kürzel muss 1–5 Zeichen lang sein' };
+      }
+      if (!/^#[0-9a-fA-F]{6}$/.test(input.color)) {
+        return { error: 'Farbe muss ein Hex-Wert wie #ff5a17 sein' };
+      }
+      if (input.id) {
+        const existing = t.stages.find((s) => s.id === input.id);
+        if (!existing) return { error: 'Unbekannte Bühne', status: 404 };
+        if (existing.name !== input.name) renamedTo = input.name;
+        return {
+          ...t,
+          stages: t.stages.map((s) =>
+            s.id === input.id
+              ? { ...s, name: input.name, short: input.short, color: input.color }
+              : s
+          ),
+        };
+      }
+      if (t.stages.length >= MAX_STAGES) {
+        return { error: `Höchstens ${MAX_STAGES} Bühnen möglich` };
+      }
+      const id = uniqueId(slugify(input.name), new Set(t.stages.map((s) => s.id)));
+      resultId = id;
+      return {
+        ...t,
+        stages: [...t.stages, { id, name: input.name, short: input.short, color: input.color }],
+      };
+    },
+    async (client) => {
+      if (input.id && renamedTo) {
+        await client.query(
+          `UPDATE blueprints SET data = jsonb_set(data, '{stageLabel}', to_jsonb($3::text))
+            WHERE festival_id = $1 AND stage_id = $2`,
+          [festivalId, input.id, renamedTo]
+        );
+      }
+    }
+  );
+  return result.ok ? { ...result, id: resultId } : result;
+}
+
+/** Bühne löschen – nimmt ihre Slots (samt Nutzerdaten) und ihren Blueprint mit */
+export async function deleteStage(
+  festivalId: string,
+  stageId: string
+): Promise<TimetableEditResult> {
+  return mutateTimetable(festivalId, (t) => {
+    if (!t.stages.some((s) => s.id === stageId)) {
+      return { error: 'Unbekannte Bühne', status: 404 };
+    }
+    return {
+      ...t,
+      stages: t.stages.filter((s) => s.id !== stageId),
+      slots: t.slots.filter((s) => s.stageId !== stageId),
+    };
+  });
+}
+
+export interface SlotInput {
+  id?: string;
+  dayId: string;
+  stageId: string;
+  band: string;
+  start: string;
+  end: string;
+  confirmed: boolean;
+  spotifyArtistId?: string;
+}
+
+/** Slot anlegen (ohne id) oder ändern – die Slot-ID bleibt bei Edits stabil */
+export async function upsertSlot(
+  festivalId: string,
+  input: SlotInput
+): Promise<TimetableEditResult> {
+  let resultId = input.id;
+  const result = await mutateTimetable(festivalId, (t) => {
+    const band = input.band.trim();
+    if (band.length < 1 || band.length > 80) {
+      return { error: 'Bandname muss 1–80 Zeichen lang sein' };
+    }
+    if (!t.days.some((d) => d.id === input.dayId)) {
+      return { error: 'Unbekannter Tag' };
+    }
+    if (!t.stages.some((s) => s.id === input.stageId)) {
+      return { error: 'Unbekannte Bühne' };
+    }
+    if (!isValidTime(input.start) || !isValidTime(input.end)) {
+      return { error: 'Zeiten bitte als HH:MM angeben (nach Mitternacht z. B. 25:30)' };
+    }
+    if (toMinutes(input.end) <= toMinutes(input.start)) {
+      return { error: 'Ende muss nach dem Beginn liegen' };
+    }
+    if (
+      input.spotifyArtistId !== undefined &&
+      !/^[A-Za-z0-9]{1,40}$/.test(input.spotifyArtistId)
+    ) {
+      return { error: 'Ungültige Spotify-Artist-ID' };
+    }
+    const patch: Omit<Slot, 'id'> = {
+      dayId: input.dayId,
+      stageId: input.stageId,
+      band,
+      start: input.start,
+      end: input.end,
+      confirmed: input.confirmed,
+      ...(input.spotifyArtistId ? { spotifyArtistId: input.spotifyArtistId } : {}),
+    };
+    if (input.id) {
+      if (!t.slots.some((s) => s.id === input.id)) {
+        return { error: 'Unbekannter Slot', status: 404 };
+      }
+      return {
+        ...t,
+        slots: t.slots.map((s) => (s.id === input.id ? { id: s.id, ...patch } : s)),
+      };
+    }
+    if (t.slots.length >= MAX_SLOTS) {
+      return { error: `Höchstens ${MAX_SLOTS} Slots möglich` };
+    }
+    const id = uniqueId(
+      `${input.dayId}-${input.stageId}-${slugify(band)}`,
+      new Set(t.slots.map((s) => s.id))
+    );
+    resultId = id;
+    return { ...t, slots: [...t.slots, { id, ...patch }] };
+  });
+  return result.ok ? { ...result, id: resultId } : result;
+}
+
+/** Slot löschen – Auswahlen/Positionen dazu werden mitgelöscht */
+export async function deleteSlot(
+  festivalId: string,
+  slotId: string
+): Promise<TimetableEditResult> {
+  return mutateTimetable(festivalId, (t) => {
+    if (!t.slots.some((s) => s.id === slotId)) {
+      return { error: 'Unbekannter Slot', status: 404 };
+    }
+    return { ...t, slots: t.slots.filter((s) => s.id !== slotId) };
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* Blueprints (Veranstalter)                                           */
+/* ------------------------------------------------------------------ */
+
+/** Blueprint einer Bühne komplett ersetzen (Veranstalter). */
 export async function saveBlueprint(
   festivalId: string,
   stageId: string,
