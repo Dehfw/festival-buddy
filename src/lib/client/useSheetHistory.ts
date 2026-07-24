@@ -1,47 +1,51 @@
 'use client';
 
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, type RefObject } from 'react';
 
 /**
- * Android-Back-Button-Support für Bottom-Sheets: Beim Öffnen wird ein
- * History-Eintrag gepusht, sodass "Zurück" das Sheet schließt statt die
- * (PWA-)App zu beenden. Wird das Sheet anders geschlossen (Backdrop,
- * Swipe, Escape), entfernt ein history.back() den Eintrag wieder.
+ * Android-Back-Button-Support für Bottom-Sheets (BandSheet,
+ * AnnouncementsSheet): Beim Öffnen wird ein History-Eintrag gepusht,
+ * sodass "Zurück" das Sheet schließt statt die (PWA-)App zu beenden.
+ * Wird das Sheet anders geschlossen (Backdrop, Swipe, Escape), entfernt
+ * ein history.back() den Eintrag wieder.
  *
- * StrictMode-fest (wichtig für `npm run dev`): React mountet Effekte im
- * Dev-StrictMode doppelt (mount → cleanup → mount). Ein naives
- * pushState/back-Paar feuert dabei ein verspätetes popstate vom eigenen
- * Cleanup-back(), das das frisch geöffnete Sheet sofort wieder schließt.
- * Deshalb läuft das Aufräum-back() über einen setTimeout(0), den der
- * synchron folgende Re-Mount wieder cancelt, und gepusht wird pro
- * Sheet-Instanz höchstens einmal (pushedRef).
+ * StrictMode-fest (wichtig für `npm run dev`): reactStrictMode mountet
+ * Effekte doppelt (Setup -> Cleanup -> Setup). Ein naives pushState/
+ * back()-Paar pusht dabei zweimal, und das asynchrone back() aus dem
+ * ersten Cleanup poppt den frischen Eintrag wieder weg – der popstate-
+ * Handler schließt das Sheet direkt nach dem Öffnen. Deshalb wird das
+ * Cleanup-back() um einen Tick aufgeschoben und modulweit gemerkt: Ein
+ * unmittelbar folgender (Re-)Mount storniert es und übernimmt den
+ * vorhandenen History-Eintrag, statt neu zu pushen. Modulweit statt pro
+ * Instanz, damit auch Schließen + sofortiges Wiederöffnen (oder der
+ * Wechsel zwischen zwei Sheets) keinen verwaisten back()-Sprung erzeugt
+ * – es ist ohnehin höchstens ein Sheet gleichzeitig offen.
  *
  * @param onCloseRef Ref auf den aktuellen onClose-Handler des Sheets.
  */
-export function useSheetHistory(onCloseRef: RefObject<() => void>): void {
-  const pushedRef = useRef(false);
-  const backTimerRef = useRef<number | undefined>(undefined);
 
+let pendingHistoryBack: ReturnType<typeof setTimeout> | null = null;
+
+export function useSheetHistory(onCloseRef: RefObject<() => void>): void {
   useEffect(() => {
-    // Ein vom StrictMode-Fake-Unmount geplantes back() abfangen – der
-    // History-Eintrag gehört weiterhin dieser Sheet-Instanz.
-    window.clearTimeout(backTimerRef.current);
-    if (!pushedRef.current) {
+    if (pendingHistoryBack !== null) {
+      clearTimeout(pendingHistoryBack);
+      pendingHistoryBack = null;
+    } else {
       window.history.pushState({ sheet: true }, '');
-      pushedRef.current = true;
     }
     let closedByPop = false;
     const onPop = () => {
       closedByPop = true;
-      pushedRef.current = false;
       onCloseRef.current();
     };
     window.addEventListener('popstate', onPop);
     return () => {
       window.removeEventListener('popstate', onPop);
+      // Aufgeschoben, damit ein sofortiger Remount es oben stornieren kann.
       if (!closedByPop) {
-        backTimerRef.current = window.setTimeout(() => {
-          pushedRef.current = false;
+        pendingHistoryBack = setTimeout(() => {
+          pendingHistoryBack = null;
           window.history.back();
         }, 0);
       }
