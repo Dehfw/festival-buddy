@@ -260,23 +260,34 @@ function GroupPageInner() {
         </Link>
       </div>
 
-      {/* Bereichs-Tabs (Stil wie im Veranstalter-Bereich) */}
-      <div className="mt-3 flex gap-1.5 border-b border-rivet pb-2">
+      {/* Bereichs-Umschalter: Segmented Control über die volle Breite.
+          Bewusst auffälliger als die kleinen Chip-Tabs im Veranstalter-
+          Bereich – der aktive Bereich füllt sich in Signal-Orange (wie
+          die Primär-Buttons), damit sofort klar ist, dass es hier zwei
+          umschaltbare Bereiche gibt. */}
+      <div
+        role="tablist"
+        aria-label="Bereich wählen"
+        className="mt-3 grid grid-cols-2 gap-1 rounded-xl border border-rivet bg-steel p-1"
+      >
         {(
           [
-            { id: 'gruppe', label: 'Gruppe' },
-            { id: 'konto', label: 'Konto' },
+            { id: 'gruppe', label: 'Gruppe', icon: '👥' },
+            { id: 'konto', label: 'Konto', icon: '👤' },
           ] as const
         ).map((t) => (
           <button
             key={t.id}
+            role="tab"
+            aria-selected={t.id === tab}
             onClick={() => setTab(t.id)}
-            className={`rounded-full border px-4 py-1.5 text-xs font-bold uppercase ${
-              t.id === tab
-                ? 'border-blood bg-blood/15 text-bone'
-                : 'border-rivet bg-steel text-ash'
+            className={`rounded-lg py-2.5 text-sm font-black uppercase tracking-wide transition-colors ${
+              t.id === tab ? 'bg-blood text-black' : 'text-ash hover:text-bone'
             }`}
           >
+            <span className="mr-1.5" aria-hidden>
+              {t.icon}
+            </span>
             {t.label}
           </button>
         ))}
