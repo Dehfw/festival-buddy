@@ -124,8 +124,13 @@ export function AnnouncementsBell() {
   );
 }
 
+// Mehr macht das Sheet unübersichtlich – ältere Mitteilungen sind auf
+// Wunsch per "ältere anzeigen" weiterhin erreichbar.
+const MAX_VISIBLE = 10;
+
 function AnnouncementsSheet({ onClose }: { onClose: () => void }) {
   const { data } = useApp();
+  const [showOlder, setShowOlder] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -148,6 +153,9 @@ function AnnouncementsSheet({ onClose }: { onClose: () => void }) {
   });
 
   const announcements = data?.announcements ?? [];
+  // Neueste zuerst (Server-Sortierung): nur die letzten 10 direkt zeigen
+  const recent = announcements.slice(0, MAX_VISIBLE);
+  const older = announcements.slice(MAX_VISIBLE);
 
   return (
     <div ref={overlayRef} className="fixed inset-0 z-50 flex items-end justify-center">
@@ -189,29 +197,48 @@ function AnnouncementsSheet({ onClose }: { onClose: () => void }) {
           </p>
         ) : (
           <ul className="flex flex-col gap-3 pb-2">
-            {announcements.map((a) => (
-              <li key={a.id} className="rounded-xl border border-rivet bg-steel-2 p-3.5">
-                <div className="flex items-baseline gap-2">
-                  <span className="min-w-0 flex-1 text-sm font-bold text-bone">
-                    {a.title}
-                  </span>
-                  <span className="shrink-0 text-[10px] text-ash/70">
-                    {formatAgo(a.createdAt)}
-                  </span>
-                </div>
-                <p className="mt-1 whitespace-pre-line text-xs leading-relaxed text-ash">
-                  {a.body}
-                </p>
-                {a.festivalId === null && (
-                  <span className="mt-2 inline-block rounded-full bg-rivet px-2 py-0.5 text-[10px] font-bold text-ash">
-                    Festival Buddy Team
-                  </span>
-                )}
-              </li>
+            {recent.map((a) => (
+              <AnnouncementItem key={a.id} announcement={a} />
             ))}
+            {older.length > 0 && !showOlder && (
+              <li>
+                <button
+                  onClick={() => setShowOlder(true)}
+                  className="w-full rounded-xl border border-dashed border-rivet px-3 py-2.5 text-sm font-bold text-ash"
+                >
+                  {older.length === 1
+                    ? '1 ältere Mitteilung anzeigen'
+                    : `${older.length} ältere Mitteilungen anzeigen`}
+                </button>
+              </li>
+            )}
+            {showOlder && older.map((a) => <AnnouncementItem key={a.id} announcement={a} />)}
           </ul>
         )}
       </div>
     </div>
+  );
+}
+
+function AnnouncementItem({ announcement: a }: { announcement: Announcement }) {
+  return (
+    <li className="rounded-xl border border-rivet bg-steel-2 p-3.5">
+      <div className="flex items-baseline gap-2">
+        <span className="min-w-0 flex-1 text-sm font-bold text-bone">
+          {a.title}
+        </span>
+        <span className="shrink-0 text-[10px] text-ash/70">
+          {formatAgo(a.createdAt)}
+        </span>
+      </div>
+      <p className="mt-1 whitespace-pre-line text-xs leading-relaxed text-ash">
+        {a.body}
+      </p>
+      {a.festivalId === null && (
+        <span className="mt-2 inline-block rounded-full bg-rivet px-2 py-0.5 text-[10px] font-bold text-ash">
+          Festival Buddy Team
+        </span>
+      )}
+    </li>
   );
 }

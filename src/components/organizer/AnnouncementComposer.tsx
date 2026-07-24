@@ -77,7 +77,8 @@ export function AnnouncementComposer({ festivalId }: { festivalId: string }) {
   };
 
   return (
-    <div className="mt-4">
+    // Desktop: Formular links, Verlauf rechts daneben statt darunter
+    <div className="mt-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-10">
       <form onSubmit={send} className="space-y-3">
         <label className="block text-sm text-ash">
           Titel
@@ -118,34 +119,36 @@ export function AnnouncementComposer({ festivalId }: { festivalId: string }) {
         </div>
       </form>
 
-      <div className="mb-2 mt-8 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-ash/60">
-        <span className="h-px flex-1 bg-rivet" />
-        Bisherige Mitteilungen
-        <span className="h-px flex-1 bg-rivet" />
+      <div>
+        <div className="mb-2 mt-8 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-ash/60 lg:mt-0">
+          <span className="h-px flex-1 bg-rivet" />
+          Bisherige Mitteilungen
+          <span className="h-px flex-1 bg-rivet" />
+        </div>
+        {history === null ? (
+          <p className="text-center text-sm text-ash">Lade …</p>
+        ) : history.length === 0 ? (
+          <p className="text-sm text-ash">Noch keine Mitteilungen gesendet.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {history.map((a) => (
+              <li key={a.id} className="rounded-xl border border-rivet bg-steel p-3">
+                <div className="flex items-baseline gap-2">
+                  <span className="min-w-0 flex-1 text-sm font-bold text-bone">
+                    {a.title}
+                  </span>
+                  <span className="shrink-0 text-[10px] text-ash/70">
+                    {formatAgo(a.createdAt)}
+                  </span>
+                </div>
+                <p className="mt-1 whitespace-pre-line text-xs leading-relaxed text-ash">
+                  {a.body}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-      {history === null ? (
-        <p className="text-center text-sm text-ash">Lade …</p>
-      ) : history.length === 0 ? (
-        <p className="text-sm text-ash">Noch keine Mitteilungen gesendet.</p>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {history.map((a) => (
-            <li key={a.id} className="rounded-xl border border-rivet bg-steel p-3">
-              <div className="flex items-baseline gap-2">
-                <span className="min-w-0 flex-1 text-sm font-bold text-bone">
-                  {a.title}
-                </span>
-                <span className="shrink-0 text-[10px] text-ash/70">
-                  {formatAgo(a.createdAt)}
-                </span>
-              </div>
-              <p className="mt-1 whitespace-pre-line text-xs leading-relaxed text-ash">
-                {a.body}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }
