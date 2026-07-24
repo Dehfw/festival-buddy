@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import { useModalDialog } from '@/lib/client/useModalDialog';
+import { useSheetHistory } from '@/lib/client/useSheetHistory';
 import { formatAgo } from '@/lib/types';
 
 /**
@@ -77,25 +78,8 @@ function AnnouncementsSheet({ onClose }: { onClose: () => void }) {
     onCloseRef.current = onClose;
   }, [onClose]);
 
-  // Android-Back-Button schließt das Sheet statt die PWA (wie BandSheet).
-  // Zusätzlicher Guard: Nur schließen, wenn der Sheet-Eintrag wirklich
-  // verlassen wurde – der Doppel-Mount im React-StrictMode (Dev) erzeugt
-  // sonst ein verspätetes popstate vom eigenen Cleanup-back(), das das
-  // Sheet sofort wieder zumachen würde.
-  useEffect(() => {
-    window.history.pushState({ announcementsSheet: true }, '');
-    let closedByPop = false;
-    const onPop = (e: PopStateEvent) => {
-      if ((e.state as { announcementsSheet?: boolean } | null)?.announcementsSheet) return;
-      closedByPop = true;
-      onCloseRef.current();
-    };
-    window.addEventListener('popstate', onPop);
-    return () => {
-      window.removeEventListener('popstate', onPop);
-      if (!closedByPop) window.history.back();
-    };
-  }, []);
+  // Android-Back-Button schließt das Sheet statt die PWA
+  useSheetHistory(onCloseRef);
 
   useModalDialog({
     onClose,

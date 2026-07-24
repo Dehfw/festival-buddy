@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import { useModalDialog } from '@/lib/client/useModalDialog';
+import { useSheetHistory } from '@/lib/client/useSheetHistory';
 import {
   DEFAULT_HOT_THRESHOLD,
   formatAgo,
@@ -42,23 +43,10 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
     onCloseRef.current = onClose;
   }, [onClose]);
 
-  // Android-Back-Button: beim Öffnen einen History-Eintrag pushen, sodass
-  // "Zurück" das Sheet schließt statt die (PWA-)App zu beenden.
-  useEffect(() => {
-    window.history.pushState({ bandSheet: true }, '');
-    let closedByPop = false;
-    const onPop = () => {
-      closedByPop = true;
-      onCloseRef.current();
-    };
-    window.addEventListener('popstate', onPop);
-    return () => {
-      window.removeEventListener('popstate', onPop);
-      // Wurde das Sheet anders geschlossen (Backdrop, Swipe), den
-      // gepushten Eintrag wieder entfernen.
-      if (!closedByPop) window.history.back();
-    };
-  }, []);
+  // Android-Back-Button: "Zurück" schließt das Sheet statt die (PWA-)App.
+  // StrictMode-Doppel-Mount-Handling steckt im Hook – vorher schloss sich
+  // das Sheet unter `npm run dev` sofort wieder von selbst.
+  useSheetHistory(onCloseRef);
 
   // Sheet gilt als gerendert, sobald die Slot-Daten vorhanden sind.
   const rendered = !!(data && data.timetable.stages.some((s) => s.id === slot.stageId));

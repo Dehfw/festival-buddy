@@ -58,6 +58,52 @@ async function fetchVapidKey(): Promise<string | null> {
   }
 }
 
+/** Auf einen Zustandswechsel eines Workers warten – mit Timeout, nie hängen. */
+function waitForState(
+  worker: ServiceWorker,
+  done: () => boolean,
+  timeoutMs: number
+): Promise<void> {
+  return new Promise((resolve) => {
+    if (done()) return resolve();
+    const timer = window.setTimeout(finish, timeoutMs);
+    function finish() {
+      window.clearTimeout(timer);
+      worker.removeEventListener('statechange', check);
+      resolve();
+    }
+    function check() {
+      if (done()) finish();
+    }
+    worker.addEventListener('statechange', check);
+  });
+}
+
+/**
+ * Sicherstellen, dass der NEUESTE Service Worker aktiv ist, bevor ein
+ * Push-Abo angelegt/genutzt wird. Push-Events landen immer beim AKTIVEN
+ * Worker – hängt noch eine alte Version ohne push-Handler im Sattel
+ * (der neue SW wartet standardmäßig auf "Neu laden"), werden Pushes
+ * zwar zugestellt, aber nie angezeigt. Für Push-Nutzer aktivieren wir
+ * deshalb einen wartenden SW sofort (SKIP_WAITING); der Update-Hinweis
+ * der App bleibt davon unberührt, ein Reload ist nicht nötig.
+ */
+async function ensureLatestServiceWorker(): Promise<ServiceWorkerRegistration> {
+  const reg = await navigator.serviceWorker.ready;
+  await reg.update().catch(() => undefined);
+  const installing = reg.installing;
+  if (installing) {
+    // Frisch entdecktes Update erst fertig installieren lassen
+    await waitForState(installing, () => installing.state !== 'installing', 8000);
+  }
+  const waiting = reg.waiting;
+  if (waiting) {
+    waiting.postMessage({ type: 'SKIP_WAITING' });
+    await waitForState(waiting, () => waiting.state === 'activated', 8000);
+  }
+  return reg;
+}
+
 async function postSubscription(sub: PushSubscription): Promise<boolean> {
   try {
     const res = await fetch('/api/push/subscribe', {
@@ -85,7 +131,7 @@ export async function enablePush(): Promise<EnablePushResult> {
   const key = await fetchVapidKey();
   if (!key) return 'unavailable';
   try {
-    const reg = await navigator.serviceWorker.ready;
+    const reg = await ensureLatestServiceWorker();
     const sub =
       (await reg.pushManager.getSubscription()) ||
       (await reg.pushManager.subscribe({
@@ -132,8 +178,14 @@ export async function getActiveSubscription(): Promise<PushSubscription | null> 
  * Vorhandenes Abo idempotent an den Server re-melden (Upsert): heilt einen
  * Nutzerwechsel auf geteiltem Gerät und verlorene DB-Zeilen. Einmal nach
  * App-Start aufrufen; ohne aktives Abo passiert nichts.
+ *
+ * Aktiviert für Push-Nutzer außerdem einen evtl. wartenden neuen SW:
+ * Solange eine alte Version ohne push-Handler aktiv ist, kämen Pushes an,
+ * würden aber nie angezeigt – dieses Gerät braucht den neuesten Stand.
  */
 export async function resyncPushSubscription(): Promise<void> {
   const sub = await getActiveSubscription();
-  if (sub) await postSubscription(sub);
+  if (!sub) return;
+  await ensureLatestServiceWorker().catch(() => undefined);
+  await postSubscription(sub);
 }
