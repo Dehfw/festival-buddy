@@ -403,12 +403,42 @@ export async function getTimetable(festivalId: string): Promise<Timetable | null
 }
 
 export async function getFestivals(): Promise<FestivalSummary[]> {
-  const res = await query<{ id: string; name: string; edition: string; has_lineup: boolean }>(
+  const res = await query<{
+    id: string;
+    name: string;
+    edition: string;
+    has_lineup: boolean;
+    starts_on: string | null;
+    ends_on: string | null;
+  }>(
     `SELECT id, name, edition,
-            jsonb_array_length(timetable->'slots') > 0 AS has_lineup
-       FROM festivals ORDER BY id`
+            jsonb_array_length(timetable->'slots') > 0 AS has_lineup,
+            (SELECT min(d->>'date') FROM jsonb_array_elements(timetable->'days') d) AS starts_on,
+            (SELECT max(d->>'date') FROM jsonb_array_elements(timetable->'days') d) AS ends_on
+       FROM festivals`
   );
-  return res.rows.map((r) => ({
+  // Sortierung für die Gruppengründung: das zeitlich nächste (oder gerade
+  // laufende) Festival zuerst, dahinter die weiteren nach Startdatum.
+  // Vergangene Festivals rutschen ans Ende (jüngstes zuerst), Festivals
+  // ganz ohne Termine dahinter. ISO-Daten (YYYY-MM-DD) vergleichen sich
+  // als Strings korrekt; "heute" in deutscher Zeit, da die Festivals
+  // hierzulande stattfinden und der Server in UTC laufen kann.
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date());
+  const bucket = (r: { ends_on: string | null }): number =>
+    r.ends_on === null ? 2 : r.ends_on >= today ? 0 : 1;
+  const sorted = [...res.rows].sort((a, b) => {
+    const ba = bucket(a);
+    const bb = bucket(b);
+    if (ba !== bb) return ba - bb;
+    if (ba === 0 && a.starts_on !== b.starts_on) {
+      return (a.starts_on ?? '') < (b.starts_on ?? '') ? -1 : 1;
+    }
+    if (ba === 1 && a.ends_on !== b.ends_on) {
+      return (a.ends_on ?? '') > (b.ends_on ?? '') ? -1 : 1;
+    }
+    return a.id.localeCompare(b.id);
+  });
+  return sorted.map((r) => ({
     id: r.id,
     name: r.name,
     edition: r.edition,

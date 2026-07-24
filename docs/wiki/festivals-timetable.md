@@ -39,6 +39,13 @@ vor dem Import) sind trotzdem gründbar – die App zeigt „Lineup folgt",
 der Import füllt später. `GET /api/festivals` liefert dafür das Flag
 `hasLineup`.
 
+Die Liste ist zeitlich sortiert (Termine aus `days[].date`, „heute" in
+deutscher Zeit): erst das laufende bzw. zeitlich nächste Festival, dann
+die weiteren nach Startdatum; vergangene Festivals folgen am Ende
+(jüngstes zuerst), Festivals ohne Termine ganz hinten. Das GroupGate
+wählt den ersten Eintrag vor – bei der Gruppengründung ist also das
+nächste Festival vorausgewählt.
+
 ## Woher kommen die Daten?
 
 - **Wacken:** offizieller W:O:A-Datenexport (`wackenlineup.json`),

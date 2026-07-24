@@ -58,6 +58,8 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
         };
         if (!cancelled) {
           setFestivals(list);
+          // Die API liefert zeitlich sortiert – der erste Eintrag ist das
+          // nächste (oder laufende) Festival und damit die Vorauswahl.
           setFestivalId((prev) => prev || list[0]?.id || '');
         }
       } catch {
