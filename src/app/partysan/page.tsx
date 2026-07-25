@@ -13,8 +13,8 @@ import { resolveSiteUrl } from '@/lib/siteUrl';
 /* Festival – im GroupGate ist Party.San dann schon vorausgewählt.     */
 /* ------------------------------------------------------------------ */
 
-/** DB-ID des Festivals (Konvention wie woa2026, Seed: data/partysan2026.json) */
-const FESTIVAL_ID = 'partysan2026';
+/** DB-ID des Festivals (Timetable-Seed: data/partysan2026.json) */
+const FESTIVAL_ID = 'psoa2026';
 
 /** Party.San-Rot – bewusst nicht das DEFƎKT-Orange (= Mainstage-Farbe der Daten) */
 const PS_RED = '#e63946';
