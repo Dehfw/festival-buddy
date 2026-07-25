@@ -48,8 +48,11 @@ Jede Route unter `/api/organizer/*` liest die `festivalId` aus der
 Anfrage und prüft die Zuweisung des eingeloggten Nutzers genau dafür –
 der Veranstalter von Festival A bekommt für Festival B ein 403. Ohne
 Session gibt es 401. Gruppen-, Nutzer- oder Auswahl-Daten anderer Leute
-gibt der Bereich nicht heraus; einzige Ausnahme sind die
-**Auswahl-Zähler pro Slot** (anonyme Anzahl) für die Lösch-Warnungen.
+gibt der Bereich nicht heraus; einzige Ausnahmen sind anonyme Summen:
+die **Auswahl-Zähler pro Slot** für die Lösch-Warnungen und die
+**Gruppen-Zähler** (wie viele Gruppen und wie viele verschiedene
+Personen darin – Kopfzeile im Veranstalter-Bereich, als Gefühl für die
+erwartete Menge). Gruppennamen oder Mitglieder sind nie dabei.
 
 ## Timetable bearbeiten
 
