@@ -254,7 +254,7 @@ export function DaysEditor({ api }: { api: EditorApi }) {
           Slots im Timetable planen.
         </p>
       )}
-      <ul className="space-y-2 lg:grid lg:grid-cols-2 lg:items-start lg:gap-2 lg:space-y-0">
+      <ul className="space-y-2 md:grid md:grid-cols-2 md:items-start md:gap-2 md:space-y-0">
         {timetable.days.map((day) => {
           const slotCount = timetable.slots.filter((s) => s.dayId === day.id).length;
           return (
@@ -295,7 +295,7 @@ export function DaysEditor({ api }: { api: EditorApi }) {
         })}
       </ul>
       {adding ? (
-        <div className="mt-2 rounded-xl border border-rivet bg-steel p-3 lg:max-w-xl">
+        <div className="mt-2 rounded-xl border border-rivet bg-steel p-3 md:max-w-xl">
           <DayForm onSubmit={save} onCancel={() => setAdding(false)} busy={busy} />
         </div>
       ) : (
@@ -451,7 +451,7 @@ export function StagesEditor({ api }: { api: EditorApi }) {
           planen und den Bühnenplan bearbeiten.
         </p>
       )}
-      <ul className="space-y-2 lg:grid lg:grid-cols-2 lg:items-start lg:gap-2 lg:space-y-0">
+      <ul className="space-y-2 md:grid md:grid-cols-2 md:items-start md:gap-2 md:space-y-0">
         {timetable.stages.map((stage) => {
           const slotCount = timetable.slots.filter((s) => s.stageId === stage.id).length;
           return (
@@ -495,7 +495,7 @@ export function StagesEditor({ api }: { api: EditorApi }) {
         })}
       </ul>
       {adding ? (
-        <div className="mt-2 rounded-xl border border-rivet bg-steel p-3 lg:max-w-xl">
+        <div className="mt-2 rounded-xl border border-rivet bg-steel p-3 md:max-w-xl">
           <StageForm onSubmit={save} onCancel={() => setAdding(false)} busy={busy} />
         </div>
       ) : (
@@ -779,7 +779,7 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
   return (
     <section className="mt-3">
       {/* Tages-Auswahl */}
-      <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 scrollbar-thin">
+      <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 scrollbar-thin md:mx-0 md:px-0">
         {timetable.days.map((d) => (
           <button
             key={d.id}
@@ -796,7 +796,7 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
       </div>
 
       {draft && !draft.id ? (
-        <div className="mt-2 rounded-xl border border-rivet bg-steel p-3 lg:max-w-xl">
+        <div className="mt-2 rounded-xl border border-rivet bg-steel p-3 md:max-w-xl">
           <p className="text-sm font-bold text-bone">Neuer Slot</p>
           <SlotForm
             draft={draft}
@@ -819,7 +819,7 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
 
       {/* Slots des Tages, gruppiert nach Bühne – am Desktop nebeneinander
           als Spalten-Board, damit die Breite genutzt wird */}
-      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-6 xl:grid-cols-3">
+      <div className="md:grid md:grid-cols-2 md:items-start md:gap-x-6 xl:grid-cols-3">
         {timetable.stages.map((stage) => {
           const slots = timetable.slots
             .filter((s) => s.dayId === activeDayId && s.stageId === stage.id)
