@@ -10,6 +10,11 @@ Mit den **Gruppen-Rollen** (Owner/Admin) hat das nichts zu tun:
 Veranstalter sein ist eine Zuweisung **pro Festival**, gespeichert in
 der Tabelle `festival_organizers`.
 
+Die öffentliche Marketing-Seite `/fuer-veranstalter` erklärt den Bereich
+für Interessenten und nennt den Kontakt für neue Festivals
+(`moin@festivalbuddy.app`); verlinkt ist sie im Footer der Startseite
+und aus den Logged-out-/Kein-Zugang-Zuständen von `/veranstalter`.
+
 ## Zugang & Zuweisung
 
 1. Der Betreiber erzeugt per CLI einen **einmaligen Einladungscode**

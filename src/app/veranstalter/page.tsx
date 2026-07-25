@@ -203,6 +203,12 @@ function VeranstalterInner() {
         >
           Zur App & anmelden
         </Link>
+        <Link
+          href="/fuer-veranstalter"
+          className="mt-4 text-center text-sm text-ash underline"
+        >
+          Was kann der Veranstalter-Bereich?
+        </Link>
       </main>
     );
   }
@@ -215,7 +221,11 @@ function VeranstalterInner() {
         <p className="mt-2 text-sm text-ash">
           Löse deinen Veranstalter-Code ein, um den Timetable, die Bühnen und
           die Bühnenpläne deines Festivals zu pflegen. Den Code bekommst du vom
-          Festival-Buddy-Team.
+          Festival-Buddy-Team –{' '}
+          <Link href="/fuer-veranstalter" className="underline">
+            hier steht, wie das läuft
+          </Link>
+          .
         </p>
         <form onSubmit={redeem} className="mt-6 space-y-3">
           <input
