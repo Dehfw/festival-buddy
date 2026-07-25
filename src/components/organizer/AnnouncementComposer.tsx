@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { formatAgo, type Announcement } from '@/lib/types';
+import { formatAgo, type AnnouncementWithAuthor } from '@/lib/types';
 
 /** Muss zu PUSH_TITLE_MAX/PUSH_BODY_MAX in src/lib/push.ts passen. */
 const TITLE_MAX = 80;
@@ -11,14 +11,17 @@ const BODY_MAX = 500;
  * Veranstalter-Tab "Mitteilungen": Durchsage an alle Mitglieder aller
  * Gruppen des Festivals verfassen. Der Server persistiert sie (in-App für
  * alle sichtbar, mit oder ohne Push) und pusht an alle Abos; als Absender
- * erscheint der Festivalname. Darunter der Verlauf bisheriger Mitteilungen.
+ * erscheint der Festivalname. Darunter der Verlauf bisheriger Mitteilungen –
+ * hier (und nur hier) mit dem Konto, das gesendet hat, plus Löschen:
+ * Gelöschte Mitteilungen verschwinden beim nächsten Poll aus der App aller
+ * Nutzer; bereits zugestellte Pushes lassen sich nicht zurückholen.
  */
 export function AnnouncementComposer({ festivalId }: { festivalId: string }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
-  const [history, setHistory] = useState<Announcement[] | null>(null);
+  const [history, setHistory] = useState<AnnouncementWithAuthor[] | null>(null);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -27,7 +30,7 @@ export function AnnouncementComposer({ festivalId }: { festivalId: string }) {
         { cache: 'no-store' }
       );
       if (!res.ok) return;
-      const data = (await res.json()) as { announcements: Announcement[] };
+      const data = (await res.json()) as { announcements: AnnouncementWithAuthor[] };
       setHistory(data.announcements);
     } catch {
       // Verlauf ist nice-to-have – Senden funktioniert auch ohne
@@ -74,6 +77,30 @@ export function AnnouncementComposer({ festivalId }: { festivalId: string }) {
       setStatus('Keine Verbindung');
     }
     setBusy(false);
+  };
+
+  const remove = async (a: AnnouncementWithAuthor) => {
+    if (
+      !confirm(
+        `„${a.title}“ für alle löschen? Die Mitteilung verschwindet aus der App aller Nutzer – bereits zugestellte Push-Benachrichtigungen lassen sich aber nicht zurückholen.`
+      )
+    ) {
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/organizer/announcement?festival=${encodeURIComponent(festivalId)}&id=${encodeURIComponent(a.id)}`,
+        { method: 'DELETE' }
+      );
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        setStatus(data?.error ?? 'Löschen fehlgeschlagen');
+        return;
+      }
+      setHistory((prev) => (prev ? prev.filter((x) => x.id !== a.id) : prev));
+    } catch {
+      setStatus('Keine Verbindung');
+    }
   };
 
   return (
@@ -144,6 +171,22 @@ export function AnnouncementComposer({ festivalId }: { festivalId: string }) {
                 <p className="mt-1 whitespace-pre-line text-xs leading-relaxed text-ash">
                   {a.body}
                 </p>
+                <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate text-[10px] text-ash/70">
+                    {a.festivalId === null
+                      ? 'Festival Buddy Team (app-weit)'
+                      : `gesendet von ${a.authorName ?? 'gelöschtem Konto'}`}
+                  </span>
+                  {/* App-weite Betreiber-Nachrichten kann nur der Betreiber löschen */}
+                  {a.festivalId !== null && (
+                    <button
+                      onClick={() => void remove(a)}
+                      className="shrink-0 text-[10px] font-bold text-blood"
+                    >
+                      🗑 Löschen
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>

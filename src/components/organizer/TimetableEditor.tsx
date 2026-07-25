@@ -6,6 +6,7 @@ import {
   toMinutes,
   type FestivalDay,
   type Slot,
+  type SlotSelectionCounts,
   type Stage,
   type Timetable,
 } from '@/lib/types';
@@ -24,9 +25,14 @@ import {
 export interface EditorApi {
   festivalId: string;
   timetable: Timetable;
-  /** Zusagen+Interessen pro Slot-ID (über alle Gruppen des Festivals) */
-  selectionCounts: Record<string, number>;
+  /** Zusagen/Interessen pro Slot-ID, getrennt (über alle Gruppen des Festivals) */
+  selectionCounts: Record<string, SlotSelectionCounts>;
   onTimetable: (t: Timetable) => void;
+}
+
+/** Summe für die Lösch-Warnungen – da zählt jeder Eintrag, egal welcher Status */
+function totalSelections(counts: SlotSelectionCounts | undefined): number {
+  return counts ? counts.going + counts.interested : 0;
 }
 
 type ApiResult =
@@ -211,7 +217,7 @@ export function DaysEditor({ api }: { api: EditorApi }) {
 
   const requestDelete = (day: FestivalDay) => {
     const slots = timetable.slots.filter((s) => s.dayId === day.id);
-    const selections = slots.reduce((sum, s) => sum + (selectionCounts[s.id] ?? 0), 0);
+    const selections = slots.reduce((sum, s) => sum + totalSelections(selectionCounts[s.id]), 0);
     setConfirm({
       title: 'Tag löschen?',
       message:
@@ -408,7 +414,7 @@ export function StagesEditor({ api }: { api: EditorApi }) {
 
   const requestDelete = (stage: Stage) => {
     const slots = timetable.slots.filter((s) => s.stageId === stage.id);
-    const selections = slots.reduce((sum, s) => sum + (selectionCounts[s.id] ?? 0), 0);
+    const selections = slots.reduce((sum, s) => sum + totalSelections(selectionCounts[s.id]), 0);
     setConfirm({
       title: 'Bühne löschen?',
       message:
@@ -748,7 +754,7 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
     setConfirm({
       title: 'Slot löschen?',
       message: `"${slot.band}" (${formatTime(slot.start)}–${formatTime(slot.end)}) wird aus dem Timetable entfernt.`,
-      affectedSelections: selectionCounts[slot.id] ?? 0,
+      affectedSelections: totalSelections(selectionCounts[slot.id]),
       confirmLabel: 'Löschen',
       onConfirm: () => {
         void (async () => {
@@ -831,7 +837,8 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
               ) : (
                 <ul className="mt-1 space-y-1.5">
                   {slots.map((slot) => {
-                    const count = selectionCounts[slot.id] ?? 0;
+                    const going = selectionCounts[slot.id]?.going ?? 0;
+                    const interested = selectionCounts[slot.id]?.interested ?? 0;
                     return (
                       <li key={slot.id} className="rounded-xl border border-rivet bg-steel p-2.5">
                         <div className="flex items-center justify-between gap-2">
@@ -850,9 +857,20 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
                                 unbestätigt
                               </span>
                             )}
-                            {count > 0 && (
-                              <span className="ml-1.5 rounded-full bg-rivet px-1.5 py-0.5 text-[10px] font-bold text-ash">
-                                🤘 {count}
+                            {going > 0 && (
+                              <span
+                                title={`${going} ${going === 1 ? 'feste Zusage' : 'feste Zusagen'}`}
+                                className="ml-1.5 rounded-full bg-rivet px-1.5 py-0.5 text-[10px] font-bold text-ash"
+                              >
+                                🤘 {going}
+                              </span>
+                            )}
+                            {interested > 0 && (
+                              <span
+                                title={`${interested} interessiert (unverbindlich)`}
+                                className="ml-1.5 rounded-full border border-dashed border-ember/60 px-1.5 py-0.5 text-[10px] font-bold text-ember"
+                              >
+                                🤔 {interested}
                               </span>
                             )}
                           </button>
