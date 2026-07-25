@@ -254,9 +254,9 @@ function VeranstalterInner() {
   const stage = state?.timetable.stages.find((s) => s.id === stageId) ?? null;
 
   return (
-    <main className="mx-auto max-w-lg px-4 pb-16 pt-[max(0.75rem,env(safe-area-inset-top))] lg:max-w-5xl">
+    <main className="mx-auto max-w-lg px-4 pb-16 pt-[max(0.75rem,env(safe-area-inset-top))] md:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
       <div className="flex items-center justify-between">
-        <h1 className="font-metal text-xl font-black uppercase lg:text-2xl">Veranstalter</h1>
+        <h1 className="font-metal text-xl font-black uppercase md:text-2xl">Veranstalter</h1>
         <Link href="/app" className="text-sm text-ash underline">
           ← App
         </Link>
@@ -312,12 +312,12 @@ function VeranstalterInner() {
       </details>
 
       {/* Bereichs-Tabs */}
-      <div className="-mx-4 mt-3 flex gap-1.5 overflow-x-auto border-b border-rivet px-4 pb-2 scrollbar-thin">
+      <div className="-mx-4 mt-3 flex gap-1.5 overflow-x-auto border-b border-rivet px-4 pb-2 scrollbar-thin md:mx-0 md:px-0">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold uppercase lg:px-4 lg:py-2 lg:text-sm ${
+            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold uppercase md:px-4 md:py-2 md:text-sm ${
               t.id === tab
                 ? 'border-blood bg-blood/15 text-bone'
                 : 'border-rivet bg-steel text-ash'
@@ -357,8 +357,8 @@ function VeranstalterInner() {
               </p>
             ) : (
               // Desktop: Karte begrenzen, sonst wird das Quadrat riesig
-              <div className="lg:max-w-2xl">
-                <div className="-mx-4 mt-3 flex gap-1.5 overflow-x-auto px-4 pb-1 scrollbar-thin lg:mx-0 lg:px-0">
+              <div className="md:max-w-2xl">
+                <div className="-mx-4 mt-3 flex gap-1.5 overflow-x-auto px-4 pb-1 scrollbar-thin md:mx-0 md:px-0">
                   {state!.timetable.stages.map((s) => (
                     <button
                       key={s.id}
@@ -402,7 +402,7 @@ function OrganizerTeam({
   meId: string;
 }) {
   return (
-    <section className="mt-8 lg:max-w-xl">
+    <section className="mt-8 md:max-w-xl">
       <div className="mb-2 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-ash/60">
         <span className="h-px flex-1 bg-rivet" />
         Veranstalter-Team
@@ -477,7 +477,7 @@ function MetaEditor({
   };
 
   return (
-    <form onSubmit={save} className="mt-4 space-y-3 lg:max-w-xl">
+    <form onSubmit={save} className="mt-4 space-y-3 md:max-w-xl">
       <label className="block text-sm text-ash">
         Festival-Name
         <input

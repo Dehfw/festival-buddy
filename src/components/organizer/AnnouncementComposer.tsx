@@ -105,7 +105,7 @@ export function AnnouncementComposer({ festivalId }: { festivalId: string }) {
 
   return (
     // Desktop: Formular links, Verlauf rechts daneben statt darunter
-    <div className="mt-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-10">
+    <div className="mt-4 md:grid md:grid-cols-2 md:items-start md:gap-8 lg:gap-10">
       <form onSubmit={send} className="space-y-3">
         <label className="block text-sm text-ash">
           Titel
@@ -147,7 +147,7 @@ export function AnnouncementComposer({ festivalId }: { festivalId: string }) {
       </form>
 
       <div>
-        <div className="mb-2 mt-8 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-ash/60 lg:mt-0">
+        <div className="mb-2 mt-8 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-ash/60 md:mt-0">
           <span className="h-px flex-1 bg-rivet" />
           Bisherige Mitteilungen
           <span className="h-px flex-1 bg-rivet" />
