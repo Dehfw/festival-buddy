@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { DefektLogo } from '@/components/DefektLogo';
@@ -18,6 +20,18 @@ const FESTIVAL_ID = 'psoa2026';
 
 /** Party.San-Rot – bewusst nicht das DEFƎKT-Orange (= Mainstage-Farbe der Daten) */
 const PS_RED = '#e63946';
+
+/*
+ * Offizielle Grafiken (mit Okay der Veranstalter einchecken):
+ *   public/partysan/logo.png   – Gold-Wortmark, transparent (800×393)
+ *   public/partysan/poster.jpg – Running-Order-Poster 2026 (960×1200)
+ * Liegen die Dateien nicht im Repo, rendert die Seite den handgebauten
+ * Poster-Header ohne Bild-Assets weiter – nichts bricht.
+ */
+const LOGO = { src: '/partysan/logo.png', width: 800, height: 393 };
+const POSTER = { src: '/partysan/poster.jpg', width: 960, height: 1200 };
+const hasAsset = (src: string) =>
+  existsSync(path.join(process.cwd(), 'public', src));
 
 const TITLE =
   'Party.San 2026 Festival Buddy – Gruppe erstellen & Running Order planen';
@@ -152,6 +166,8 @@ const CTA_CLASS =
 
 export default async function PartysanLandingPage() {
   const structuredData = await jsonLd();
+  const hasLogo = hasAsset(LOGO.src);
+  const hasPoster = hasAsset(POSTER.src);
   return (
     <main className="defekt-grid min-h-dvh">
       <script
@@ -190,10 +206,16 @@ export default async function PartysanLandingPage() {
         </div>
       </header>
 
-      {/* Hero: Poster-Header im Party.San-Look + CTA */}
-      <section className="mx-auto max-w-4xl px-6 pt-12 pb-14 sm:pt-16 sm:pb-20">
-        {/* "Bild im Header": handgebautes Festival-Poster (HTML/CSS statt
-            Bilddatei – wie der AppScreenshot auf der Startseite) */}
+      {/* Hero: Poster-Header im Party.San-Look + CTA. Mit offiziellem
+          Poster im Repo wird der Hero zweispaltig (wie Startseite + Mockup). */}
+      <section
+        className={`mx-auto px-6 pt-12 pb-14 sm:pt-16 sm:pb-20 ${
+          hasPoster ? 'max-w-5xl' : 'max-w-4xl'
+        }`}
+      >
+        <div className={hasPoster ? 'grid items-center gap-10 lg:grid-cols-2 lg:gap-8' : ''}>
+        {/* "Bild im Header": Branding-Card – mit offiziellem Logo, sobald es
+            im Repo liegt, sonst handgebaut (wie der AppScreenshot) */}
         <div
           className="relative overflow-hidden rounded-3xl border px-6 py-12 text-center sm:py-16"
           style={{
@@ -217,20 +239,35 @@ export default async function PartysanLandingPage() {
               <span className="opacity-50">//</span> 30 Jahre Jubiläum
             </div>
 
-            <div aria-hidden className="text-5xl">
-              💀
-            </div>
+            {!hasLogo && (
+              <div aria-hidden className="text-5xl">
+                💀
+              </div>
+            )}
 
             <h1 className="mt-4 font-metal uppercase leading-[0.95]">
-              <span
-                className="block text-5xl sm:text-7xl"
-                style={{ color: PS_RED, textShadow: `0 0 50px ${PS_RED}73` }}
-              >
-                Party.San
-              </span>
-              <span className="mt-2 block text-lg tracking-[0.25em] text-bone sm:text-2xl sm:tracking-[0.35em]">
-                Metal Open Air
-              </span>
+              {hasLogo ? (
+                <img
+                  src={LOGO.src}
+                  alt="Party.San Metal Open Air"
+                  width={LOGO.width}
+                  height={LOGO.height}
+                  className="mx-auto h-auto w-full max-w-sm"
+                  style={{ filter: `drop-shadow(0 0 35px ${PS_RED}59)` }}
+                />
+              ) : (
+                <>
+                  <span
+                    className="block text-5xl sm:text-7xl"
+                    style={{ color: PS_RED, textShadow: `0 0 50px ${PS_RED}73` }}
+                  >
+                    Party.San
+                  </span>
+                  <span className="mt-2 block text-lg tracking-[0.25em] text-bone sm:text-2xl sm:tracking-[0.35em]">
+                    Metal Open Air
+                  </span>
+                </>
+              )}
             </h1>
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-[13px] font-black uppercase tracking-[0.2em] text-bone sm:tracking-[0.3em]">
@@ -257,6 +294,28 @@ export default async function PartysanLandingPage() {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Offizielles Running-Order-Poster als zweite Hero-Spalte */}
+        {hasPoster && (
+          <div className="relative">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[70%] w-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[90px]"
+              style={{ background: `${PS_RED}33` }}
+            />
+            <img
+              src={POSTER.src}
+              alt="Offizielles Party.San-2026-Poster mit der kompletten Running Order"
+              width={POSTER.width}
+              height={POSTER.height}
+              className="relative mx-auto h-auto w-full max-w-md rounded-2xl border border-rivet/60"
+            />
+            <p className="relative mt-4 text-center text-xs text-ash/70">
+              Offizielles Poster © Party.San Metal Open Air
+            </p>
+          </div>
+        )}
         </div>
 
         {/* Copy + CTA */}
