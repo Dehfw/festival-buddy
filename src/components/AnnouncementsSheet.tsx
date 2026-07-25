@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import { useModalDialog } from '@/lib/client/useModalDialog';
+import { useSheetDrag } from '@/lib/client/useSheetDrag';
 import { useSheetHistory } from '@/lib/client/useSheetHistory';
 import { formatAgo, type Announcement } from '@/lib/types';
 
@@ -143,6 +144,9 @@ function AnnouncementsSheet({ onClose }: { onClose: () => void }) {
 
   // Android-Back-Button schließt das Sheet statt die PWA
   useSheetHistory(onCloseRef);
+
+  // Swipe-down zum Schließen – der Griff-Balken oben ist sonst nur Deko
+  useSheetDrag(sheetRef, onCloseRef);
 
   useModalDialog({
     onClose,
