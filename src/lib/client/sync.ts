@@ -27,6 +27,7 @@ const USER_KEY = 'fb.user.v1';
 const GROUPS_KEY = 'fb.groups.v1';
 const ACTIVE_GROUP_KEY = 'fb.group.v1';
 const PENDING_INVITE_KEY = 'fb.pendingInvite';
+const PENDING_FESTIVAL_KEY = 'fb.pendingFestival';
 
 // userId dient dem optimistischen Update und bestimmt, in welcher
 // Nutzer-Queue die Mutation liegt – serverseitig zählt weiterhin
@@ -162,6 +163,28 @@ export function savePendingInvite(code: string | null) {
   try {
     if (code) sessionStorage.setItem(PENDING_INVITE_KEY, code);
     else sessionStorage.removeItem(PENDING_INVITE_KEY);
+  } catch {
+    // Safari Private Mode o. Ä. – dann eben ohne Merken
+  }
+}
+
+/**
+ * Festival-Vorauswahl von einer Festival-Landingpage (z. B. /partysan):
+ * muss wie der Einladungscode den Passkey-Login überleben und wird vom
+ * GroupGate einmalig konsumiert (Vorauswahl in "Neue Gruppe gründen").
+ */
+export function loadPendingFestival(): string | null {
+  try {
+    return sessionStorage.getItem(PENDING_FESTIVAL_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function savePendingFestival(festivalId: string | null) {
+  try {
+    if (festivalId) sessionStorage.setItem(PENDING_FESTIVAL_KEY, festivalId);
+    else sessionStorage.removeItem(PENDING_FESTIVAL_KEY);
   } catch {
     // Safari Private Mode o. Ä. – dann eben ohne Merken
   }

@@ -2,6 +2,10 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
+import {
+  loadPendingFestival,
+  savePendingFestival,
+} from '@/lib/client/sync';
 import { useModalDialog } from '@/lib/client/useModalDialog';
 import {
   normalizeInviteCode,
@@ -58,7 +62,13 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
         };
         if (!cancelled) {
           setFestivals(list);
-          setFestivalId((prev) => prev || list[0]?.id || '');
+          // Vorauswahl von einer Festival-Landingpage (z. B. /partysan):
+          // einmalig konsumieren; unbekannte IDs fallen auf list[0] zurück.
+          const pending = loadPendingFestival();
+          if (pending) savePendingFestival(null);
+          const preselected =
+            pending && list.some((f) => f.id === pending) ? pending : null;
+          setFestivalId((prev) => prev || preselected || list[0]?.id || '');
         }
       } catch {
         if (!cancelled) setError('Festivals konnten nicht geladen werden – Netz?');
