@@ -1,10 +1,12 @@
-# Login & Passkeys
+# Login: Passkeys & E-Mail/Passwort
 
-Kein Passwort, kein externer Identity-Provider: Die Identität eines
-Nutzers hängt an seinem **Passkey** (WebAuthn, `@simplewebauthn`), der
-Name ist nur Anzeigename. Serverseitig steckt die gesamte Auth-Schicht
-in **`src/lib/auth.ts`**, die vier WebAuthn-Routen liegen unter
-`src/app/api/webauthn/`.
+Kein externer Identity-Provider: Die Identität eines Nutzers hängt an
+seinem **Passkey** (WebAuthn, `@simplewebauthn`) – oder alternativ an
+**E-Mail + Passwort** –, der Name ist nur Anzeigename. Serverseitig
+steckt die Session-/Token-Schicht in **`src/lib/auth.ts`**, die vier
+WebAuthn-Routen liegen unter `src/app/api/webauthn/`, die fünf
+Passwort-Routen unter `src/app/api/password/`. Beide Wege enden im
+selben Session-Cookie; ein Konto kann beides gleichzeitig haben.
 
 ## Registrierung & Login
 
@@ -42,15 +44,74 @@ sonst aus dem Request abgeleitet) kann nicht per gefälschtem Header
 ausgehebelt werden: rpIdHash und Origin stecken signiert in der
 Authenticator-Antwort und müssen zu den erwarteten Werten passen.
 
+## E-Mail & Passwort (optional)
+
+Zweiter Login-Weg neben dem Passkey – für Browser ohne
+Passkey-Support, fremde Geräte oder als Fallback bei Geräteverlust.
+
+- **Speicherung:** Tabelle `password_credentials` (genau ein Credential
+  pro Nutzer; `email` UNIQUE, immer lowercase). Passwörter werden mit
+  **scrypt** aus `node:crypto` gehasht (`src/lib/password.ts`, Format
+  `scrypt$N$r$p$salt$hash` – Kostenparameter stecken im Wert).
+- **Routen** (`src/app/api/password/`): `register` (Konto anlegen, mit
+  derselben Legacy-Adoption wie beim Passkey), `login` (neutrale
+  Fehlermeldung + Dummy-scrypt-Lauf bei unbekannter Adresse, damit
+  weder Antwort noch Timing verraten, ob ein Konto existiert),
+  `forgot`, `reset`, `set` (eingeloggt: Credential anlegen/ändern;
+  bestehendes Passwort muss dafür mitgeschickt werden).
+- **Passwort vergessen:** `forgot` antwortet immer `{ ok: true }` und
+  schickt – falls es das Konto gibt – über **SendGrid**
+  (`SENDGRID_API_KEY` + `MAIL_FROM`, `src/lib/mail.ts`) einen Link auf
+  `/passwort-reset`. Das Token ist ein `sealToken` (30 min) mit
+  **Fingerprint des aktuellen Passwort-Hashes**: keine Token-Tabelle,
+  und nach jeder Passwortänderung (auch durch den Reset selbst) ist es
+  automatisch wertlos. Es steckt im URL-Fragment (`#…`), damit es
+  nicht in Server-Logs landet, und trägt `ruid` statt `uid`, damit es
+  nie als Session-Cookie durchgeht.
+- **Keine E-Mail-Verifikation:** Die Adresse ist nur Login-Name und
+  Reset-Empfänger. Wer eine fremde Adresse einträgt, verschenkt damit
+  effektiv den Zugriff auf sein Konto (Reset-Mail geht an den echten
+  Inhaber) – für ein Crew-Tool ist das der akzeptierte Kompromiss.
+- **Rate-Limits:** alle Passwort-Routen bremsen per In-Memory-Limit
+  (`src/lib/ratelimit.ts`, pro Serverless-Instanz, best effort); die
+  eigentliche Brute-Force-Härte kommt aus den scrypt-Kosten.
+- **UI:** Umschalter in beiden Login-Gates (`PasswordAuth`-Komponente),
+  Reset-Seite `/passwort-reset`, und unter *Gruppe → Konto → „Login &
+  Sicherheit“* verwaltet man beide Wege (`PasswordSettings`).
+
+## Login-Wege verwalten (Login & Sicherheit)
+
+Beide Verfahren lassen sich nachträglich hinzufügen UND wieder
+entfernen – unter *Gruppe → Konto → „Login & Sicherheit“*:
+
+- **Passkeys auflisten/löschen:** `GET /api/webauthn/credentials`,
+  `DELETE /api/webauthn/credentials/<id>`.
+- **Passkey zum bestehenden Konto hinzufügen** (eingeloggt, typisch:
+  Passwort-Nutzer steigt auf Passkey um): `POST /api/webauthn/add/
+  options` + `add/verify`. Eigenes Challenge-Cookie `fb_wa_add`, an die
+  Session gebunden – es entsteht KEIN neuer Nutzer; bereits registrierte
+  Credentials werden per `excludeCredentials` ausgeschlossen.
+- **E-Mail+Passwort einrichten/ändern:** `POST /api/password/set`
+  (Ändern verlangt das aktuelle Passwort); **entfernen:**
+  `DELETE /api/password/set`.
+- **Aussperr-Schutz:** Der letzte verbliebene Login-Weg ist nie
+  entfernbar. Der Check steckt jeweils im DELETE-Statement selbst
+  (`deleteWebauthnCredentialGuarded` / `deletePasswordCredentialGuarded`
+  in `src/lib/db.ts`) – ein Passkey fällt nur, wenn ein Passwort oder
+  ein weiterer Passkey bleibt; das Passwort nur, wenn mindestens ein
+  Passkey existiert. Die UI blendet die Entfernen-Aktion in diesen
+  Fällen aus („einziger Login-Weg“), der Server antwortet sonst 409.
+
 ## Alt-Account-Übernahme (Legacy-Adoption)
 
-Aus der Nur-Name-Ära können noch Accounts **ohne Passkey** existieren.
-Registriert sich jemand mit exakt diesem Namen (case-insensitiv),
+Aus der Nur-Name-Ära können noch Accounts **ohne Login-Verfahren**
+existieren. Registriert sich jemand mit exakt diesem Namen
+(case-insensitiv) – egal ob per Passkey oder per E-Mail+Passwort –,
 übernimmt er den Alt-Account samt Teilnahmen (`findAdoptableUser` in
-`src/lib/db.ts`). Sobald ein Passkey am Account hängt, ist er nicht
-mehr übernehmbar. Das ist ein bewusstes Migrations-Einfallstor – per
-`LEGACY_NAME_ADOPTION=off` abschalten, sobald die ganze Crew ihren
-Passkey hat.
+`src/lib/db.ts`). Sobald ein Passkey oder ein Passwort am Account
+hängt, ist er nicht mehr übernehmbar. Das ist ein bewusstes
+Migrations-Einfallstor – per `LEGACY_NAME_ADOPTION=off` abschalten,
+sobald die ganze Crew ihren Passkey hat.
 
 ## Logout
 

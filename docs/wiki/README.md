@@ -10,7 +10,7 @@ ursprüngliche Entwurf des Gruppen-Features in
 | Seite | Inhalt |
 | --- | --- |
 | [Architektur & Datenmodell](architektur.md) | Überblick, Mandanten-Modell (Gruppe → Festival), Tabellen, Schema-Migration, Revisionszähler |
-| [Login & Passkeys](auth-passkeys.md) | WebAuthn-Registrierung/-Login, Session-Cookies, Alt-Account-Übernahme |
+| [Login: Passkeys & E-Mail/Passwort](auth-passkeys.md) | WebAuthn-Registrierung/-Login, E-Mail+Passwort inkl. Reset per SendGrid, Session-Cookies, Alt-Account-Übernahme |
 | [Gruppen](gruppen.md) | Rollen, Einladungscodes, Beitritt, Verlassen (Owner-Nachrücken), Mitglieder entfernen – und was dabei mit den Teilnahmen passiert |
 | [Teilnahmen & Positionen](teilnahmen-positionen.md) | Band-Zusagen (`going`/`interested`), ✕-Marker auf dem Blueprint, Feuerrahmen 🔥 |
 | [Sync & Offline](sync-offline.md) | Polling, optimistische Updates, Offline-Warteschlange, PWA/Service Worker |
@@ -22,7 +22,8 @@ ursprüngliche Entwurf des Gruppen-Features in
 
 Festival Buddy ist ein Timetable-Planer für Festival-Crews: Wer geht zu
 welcher Band, und wo steht ihr im Publikum? Nutzer melden sich per
-**Passkey** an, organisieren sich in **Gruppen** (jede Gruppe gehört zu
+**Passkey** (oder E-Mail & Passwort) an, organisieren sich in
+**Gruppen** (jede Gruppe gehört zu
 genau einem Festival) und tragen sich bei Bands ein. Die App ist eine
 **offline-fähige PWA**: Der Datenstand der aktiven Gruppe wird alle paar
 Sekunden gepollt und lokal gecacht; ohne Netz läuft alles weiter, und

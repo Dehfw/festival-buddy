@@ -13,6 +13,10 @@ import type { NextResponse } from 'next/server';
 export const SESSION_COOKIE = 'fb_session';
 export const REG_CHALLENGE_COOKIE = 'fb_wa_reg';
 export const AUTH_CHALLENGE_COOKIE = 'fb_wa_auth';
+/** Eigenes Cookie für "Passkey zum bestehenden Konto hinzufügen" – bewusst
+ *  getrennt von fb_wa_reg, damit sich Add- und Register-Flow nie
+ *  gegenseitig ihre Challenges unterschieben können. */
+export const ADD_CHALLENGE_COOKIE = 'fb_wa_add';
 
 /** Session lang genug für die ganze Festival-Saison */
 export const SESSION_MAX_AGE_S = 180 * 24 * 60 * 60;

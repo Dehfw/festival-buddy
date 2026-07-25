@@ -3,6 +3,7 @@ import { readSessionUserId } from '@/lib/auth';
 import {
   countOrganizerFestivals,
   getGroupsForUser,
+  getPasswordEmailForUser,
   getUserById,
   updateUserColor,
 } from '@/lib/db';
@@ -26,11 +27,14 @@ export async function GET(req: Request) {
   if (!user) {
     return NextResponse.json({ error: 'Nutzer existiert nicht mehr' }, { status: 401 });
   }
-  const [groups, organizerFestivals] = await Promise.all([
+  const [groups, organizerFestivals, passwordEmail] = await Promise.all([
     getGroupsForUser(userId),
     countOrganizerFestivals(userId),
+    getPasswordEmailForUser(userId),
   ]);
-  return NextResponse.json({ user, groups, organizerFestivals });
+  // passwordEmail: hinterlegte Login-E-Mail (null = nur Passkey) – für den
+  // Bereich "Login & Sicherheit" auf der Gruppen-Seite
+  return NextResponse.json({ user, groups, organizerFestivals, passwordEmail });
 }
 
 /**

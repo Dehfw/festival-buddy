@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Avatar } from '@/components/Avatars';
 import { GroupAvatar } from '@/components/GroupAvatar';
 import { GroupGate } from '@/components/GroupGate';
+import { PasswordSettings } from '@/components/PasswordSettings';
 import { PushSettings } from '@/components/PushSettings';
 import { resizeImage } from '@/lib/client/image';
 import { AppProvider, useApp } from '@/lib/client/store';
@@ -17,7 +18,7 @@ import { formatInviteCode, isGroupAdmin } from '@/lib/types';
  * und Gruppen-Chip im Header. Zwei Tabs (?tab=konto als Deep-Link):
  *   Gruppe – aktive Gruppe (Einladen, Mitglieder, Admin-Einstellungen,
  *            Verlassen) und "Meine Gruppen" (wechseln, gründen/beitreten)
- *   Konto  – Icon-Farbe, Push-Mitteilungen, Abmelden
+ *   Konto  – Icon-Farbe, Login & Sicherheit, Push-Mitteilungen, Abmelden
  */
 function GroupPageInner() {
   const {
@@ -643,6 +644,9 @@ function GroupPageInner() {
               })}
             </div>
           </div>
+
+          {/* Login & Sicherheit: Passkeys & E-Mail+Passwort verwalten */}
+          <PasswordSettings />
 
           {/* Push-Mitteilungen auf diesem Gerät */}
           <PushSettings />
