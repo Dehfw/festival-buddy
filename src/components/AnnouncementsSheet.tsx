@@ -301,7 +301,8 @@ function AnnouncementItem({
  * Zentriertes Popup mit dem vollen Text einer Mitteilung. Liegt als
  * Geschwister ÜBER dem Sheet im selben Overlay: useModalDialog schaltet
  * das Sheet dahinter inert, der Dialog-Stack sorgt dafür, dass Escape
- * nur das Popup schließt (nicht das Sheet gleich mit).
+ * nur das Popup schließt (nicht das Sheet gleich mit). Gleiches gilt für
+ * den Android-Back-Button über den Ebenen-Stack von useSheetHistory.
  */
 function AnnouncementDetailDialog({
   announcement: a,
@@ -314,6 +315,15 @@ function AnnouncementDetailDialog({
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const titleId = useId();
+
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Eigener History-Eintrag: "Zurück" schließt nur das Popup, nicht das
+  // Sheet darunter.
+  useSheetHistory(onCloseRef);
 
   useModalDialog({
     onClose,
