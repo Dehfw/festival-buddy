@@ -201,6 +201,16 @@ export interface SlotSelectionCounts {
   interested: number;
 }
 
+/**
+ * Anonyme Gruppen-Zähler eines Festivals für den Veranstalter-Bereich –
+ * wie viele Crews haben sich organisiert und wie viele Leute stecken drin?
+ */
+export interface FestivalGroupStats {
+  groups: number;
+  /** Verschiedene Personen; wer in mehreren Gruppen ist, zählt nur einmal */
+  people: number;
+}
+
 export interface Position {
   userId: string;
   slotId: string;

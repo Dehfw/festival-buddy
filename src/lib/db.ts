@@ -7,6 +7,7 @@ import type {
   AnnouncementWithAuthor,
   Blueprint,
   FestivalDay,
+  FestivalGroupStats,
   FestivalSummary,
   GroupInfo,
   GroupRole,
@@ -1547,6 +1548,24 @@ export async function getSelectionCountsForFestival(
     else entry.going += Number(r.n);
   }
   return counts;
+}
+
+/**
+ * Anonyme Gruppen-Zähler fürs Veranstalter-Dashboard: Wie viele Gruppen gibt
+ * es zum Festival und wie viele verschiedene Personen stecken darin? Bewusst
+ * nur Summen – Gruppennamen oder Mitglieder bekommt der Veranstalter nicht.
+ */
+export async function getGroupStatsForFestival(
+  festivalId: string
+): Promise<FestivalGroupStats> {
+  const res = await query<{ groups: string; people: string }>(
+    `SELECT count(DISTINCT g.id) AS groups, count(DISTINCT m.user_id) AS people
+       FROM groups g LEFT JOIN group_members m ON m.group_id = g.id
+      WHERE g.festival_id = $1`,
+    [festivalId]
+  );
+  const row = res.rows[0];
+  return { groups: Number(row?.groups ?? 0), people: Number(row?.people ?? 0) };
 }
 
 /** Alle Veranstalter eines Festivals – Team-Liste im Veranstalter-Bereich */

@@ -15,6 +15,7 @@ import {
   formatInviteCode,
   normalizeInviteCode,
   type Blueprint,
+  type FestivalGroupStats,
   type FestivalSummary,
   type OrganizerInfo,
   type SlotSelectionCounts,
@@ -26,6 +27,7 @@ interface OrganizerState {
   timetable: Timetable;
   blueprints: Record<string, Blueprint>;
   selectionCounts: Record<string, SlotSelectionCounts>;
+  groupStats: FestivalGroupStats;
   organizers: OrganizerInfo[];
   /** Eigene User-ID – markiert „(du)“ in der Team-Liste */
   meId: string;
@@ -285,6 +287,7 @@ function VeranstalterInner() {
           {state.timetable.festival} · {state.timetable.dataVersion || 'noch keine Daten'}
         </p>
       )}
+      {state && <GroupStatsLine stats={state.groupStats} />}
 
       {/* Weiteren Code einlösen (z. B. zweites Festival) */}
       <details className="mt-2">
@@ -386,6 +389,27 @@ function VeranstalterInner() {
         </>
       )}
     </main>
+  );
+}
+
+/**
+ * Menge-Anzeige unter dem Kopf, auf jedem Tab sichtbar: Wie viele Leute
+ * haben sich schon in Gruppen für dieses Festival organisiert? Nur anonyme
+ * Summen – welche Gruppen das sind und wer drinsteckt, bleibt privat.
+ */
+function GroupStatsLine({ stats }: { stats: FestivalGroupStats }) {
+  if (stats.groups === 0) {
+    return (
+      <p className="mt-0.5 text-xs text-ash/70">👥 Noch keine Gruppen zu diesem Festival</p>
+    );
+  }
+  return (
+    <p className="mt-0.5 text-xs text-ash/70">
+      👥 <span className="font-bold text-bone">{stats.people.toLocaleString('de-DE')}</span>{' '}
+      {stats.people === 1 ? 'Person' : 'Leute'} in{' '}
+      <span className="font-bold text-bone">{stats.groups.toLocaleString('de-DE')}</span>{' '}
+      {stats.groups === 1 ? 'Gruppe' : 'Gruppen'}
+    </p>
   );
 }
 
