@@ -16,6 +16,7 @@ ursprüngliche Entwurf des Gruppen-Features in
 | [Sync & Offline](sync-offline.md) | Polling, optimistische Updates, Offline-Warteschlange, PWA/Service Worker |
 | [Festivals & Timetable](festivals-timetable.md) | Timetables in der DB, Slot-IDs, Lineup-Import ohne Redeploy |
 | [Veranstalter-Bereich](veranstalter.md) | Festival-Zuweisung per Code, Timetable-/Bühnen-/Blueprint-Pflege |
+| [Push & Mitteilungen](push-mitteilungen.md) | Web Push (VAPID), Veranstalter-Durchsagen, Betreiber-Broadcast, Band-Erinnerungen per Cron |
 
 ## Die App in einem Absatz
 

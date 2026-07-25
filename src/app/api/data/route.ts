@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { readSessionUserId } from '@/lib/auth';
 import {
   defaultBlueprint,
+  getAnnouncements,
   getFirstGroupIdForUser,
   getState,
   getTimetable,
@@ -56,6 +57,9 @@ export async function GET(req: Request) {
     positions: state.positions,
     blueprints,
     group: state.group,
+    // Mitteilungen reiten auf dem 7s-Polling mit – so sehen auch Nutzer
+    // ohne Push-Erlaubnis (und offline via SW-Cache) alle Durchsagen.
+    announcements: await getAnnouncements(state.festivalId, 20),
     rev: state.rev,
     serverTime: new Date().toISOString(),
   };

@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import type { Slot } from '@/lib/types';
+import { AnnouncementsBell } from './AnnouncementsSheet';
 import { Avatar } from './Avatars';
 import { BandSheet } from './BandSheet';
 import { DefektLogo } from './DefektLogo';
 import { GroupAvatar } from './GroupAvatar';
 import { InstallPrompt } from './InstallPrompt';
 import { ListView } from './ListView';
+import { PushPrompt } from './PushPrompt';
 import { StagesView } from './StagesView';
 import { TimetableView } from './TimetableView';
 
@@ -96,6 +98,8 @@ export function AppShell() {
               Sync … {pending}
             </span>
           )}
+          {/* Mitteilungen (Veranstalter-Durchsagen & App-News) */}
+          <AnnouncementsBell />
           {/* Profilbild öffnet die Gruppen-Seite (Abmelden lebt dort) */}
           <Link href="/gruppe" title={`${user.name} – Gruppe & Konto`}>
             <Avatar user={user} size={30} ring />
@@ -173,6 +177,7 @@ export function AppShell() {
       )}
 
       <InstallPrompt />
+      <PushPrompt />
     </div>
   );
 }

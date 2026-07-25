@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { Avatar } from '@/components/Avatars';
 import { BlueprintEditor } from '@/components/BlueprintEditor';
+import { AnnouncementComposer } from '@/components/organizer/AnnouncementComposer';
 import {
   DaysEditor,
   SlotsEditor,
@@ -14,6 +16,8 @@ import {
   normalizeInviteCode,
   type Blueprint,
   type FestivalSummary,
+  type OrganizerInfo,
+  type SlotSelectionCounts,
   type Timetable,
 } from '@/lib/types';
 
@@ -21,16 +25,20 @@ interface OrganizerState {
   festivalId: string;
   timetable: Timetable;
   blueprints: Record<string, Blueprint>;
-  selectionCounts: Record<string, number>;
+  selectionCounts: Record<string, SlotSelectionCounts>;
+  organizers: OrganizerInfo[];
+  /** Eigene User-ID – markiert „(du)“ in der Team-Liste */
+  meId: string;
 }
 
-type Tab = 'meta' | 'days' | 'stages' | 'slots' | 'map';
+type Tab = 'meta' | 'days' | 'stages' | 'slots' | 'map' | 'message';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'slots', label: 'Timetable' },
   { id: 'stages', label: 'Bühnen' },
   { id: 'days', label: 'Tage' },
   { id: 'map', label: 'Bühnenplan' },
+  { id: 'message', label: 'Mitteilungen' },
   { id: 'meta', label: 'Festival' },
 ];
 
@@ -246,9 +254,9 @@ function VeranstalterInner() {
   const stage = state?.timetable.stages.find((s) => s.id === stageId) ?? null;
 
   return (
-    <main className="mx-auto max-w-lg px-4 pb-16 pt-[max(0.75rem,env(safe-area-inset-top))]">
+    <main className="mx-auto max-w-lg px-4 pb-16 pt-[max(0.75rem,env(safe-area-inset-top))] lg:max-w-5xl">
       <div className="flex items-center justify-between">
-        <h1 className="font-metal text-xl font-black uppercase">Veranstalter</h1>
+        <h1 className="font-metal text-xl font-black uppercase lg:text-2xl">Veranstalter</h1>
         <Link href="/app" className="text-sm text-ash underline">
           ← App
         </Link>
@@ -309,7 +317,7 @@ function VeranstalterInner() {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold uppercase ${
+            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold uppercase lg:px-4 lg:py-2 lg:text-sm ${
               t.id === tab
                 ? 'border-blood bg-blood/15 text-bone'
                 : 'border-rivet bg-steel text-ash'
@@ -328,13 +336,19 @@ function VeranstalterInner() {
           {tab === 'slots' && <SlotsEditor api={editorApi} />}
           {tab === 'days' && <DaysEditor api={editorApi} />}
           {tab === 'stages' && <StagesEditor api={editorApi} />}
+          {tab === 'message' && festivalId && (
+            <AnnouncementComposer festivalId={festivalId} />
+          )}
           {tab === 'meta' && festivalId && (
-            <MetaEditor
-              festivalId={festivalId}
-              timetable={editorApi.timetable}
-              onTimetable={editorApi.onTimetable}
-              onRenamed={() => void loadMe()}
-            />
+            <>
+              <MetaEditor
+                festivalId={festivalId}
+                timetable={editorApi.timetable}
+                onTimetable={editorApi.onTimetable}
+                onRenamed={() => void loadMe()}
+              />
+              <OrganizerTeam organizers={state!.organizers} meId={state!.meId} />
+            </>
           )}
           {tab === 'map' &&
             (state!.timetable.stages.length === 0 ? (
@@ -342,8 +356,9 @@ function VeranstalterInner() {
                 Für den Bühnenplan brauchst du zuerst eine Bühne (Tab „Bühnen“).
               </p>
             ) : (
-              <>
-                <div className="-mx-4 mt-3 flex gap-1.5 overflow-x-auto px-4 pb-1 scrollbar-thin">
+              // Desktop: Karte begrenzen, sonst wird das Quadrat riesig
+              <div className="lg:max-w-2xl">
+                <div className="-mx-4 mt-3 flex gap-1.5 overflow-x-auto px-4 pb-1 scrollbar-thin lg:mx-0 lg:px-0">
                   {state!.timetable.stages.map((s) => (
                     <button
                       key={s.id}
@@ -366,11 +381,60 @@ function VeranstalterInner() {
                     onSave={saveBlueprint}
                   />
                 )}
-              </>
+              </div>
             ))}
         </>
       )}
     </main>
+  );
+}
+
+/**
+ * Team-Liste im Tab „Festival“: Wer darf dieses Festival außer mir noch
+ * pflegen? Nur lesend – Zugänge entstehen per Einladungscode, entziehen
+ * kann sie nur der Betreiber (scripts/organizer-code.mjs).
+ */
+function OrganizerTeam({
+  organizers,
+  meId,
+}: {
+  organizers: OrganizerInfo[];
+  meId: string;
+}) {
+  return (
+    <section className="mt-8 lg:max-w-xl">
+      <div className="mb-2 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-ash/60">
+        <span className="h-px flex-1 bg-rivet" />
+        Veranstalter-Team
+        <span className="h-px flex-1 bg-rivet" />
+      </div>
+      <ul className="space-y-2">
+        {organizers.map((o) => (
+          <li
+            key={o.id}
+            className="flex items-center gap-2.5 rounded-xl border border-rivet bg-steel px-3 py-2.5"
+          >
+            <Avatar
+              user={{ id: o.id, name: o.name, color: o.color, createdAt: o.since }}
+              size={28}
+            />
+            <span className="min-w-0 flex-1 truncate text-sm font-bold text-bone">
+              {o.name}
+              {o.id === meId && (
+                <span className="ml-1.5 text-xs font-normal text-ash">(du)</span>
+              )}
+            </span>
+            <span className="shrink-0 text-[10px] text-ash/70">
+              seit {new Date(o.since).toLocaleDateString('de-DE')}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-[11px] leading-relaxed text-ash/70">
+        Weitere Veranstalter kommen per Einladungscode dazu; Zugänge entziehen
+        kann nur das Festival-Buddy-Team.
+      </p>
+    </section>
   );
 }
 
@@ -413,7 +477,7 @@ function MetaEditor({
   };
 
   return (
-    <form onSubmit={save} className="mt-4 space-y-3">
+    <form onSubmit={save} className="mt-4 space-y-3 lg:max-w-xl">
       <label className="block text-sm text-ash">
         Festival-Name
         <input

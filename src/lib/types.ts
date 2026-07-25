@@ -77,6 +77,19 @@ export function isGroupAdmin(role: GroupRole | null | undefined): boolean {
   return role === 'owner' || role === 'admin';
 }
 
+/**
+ * Veranstalter-Eintrag für die Team-Liste im Veranstalter-Bereich. Sichtbar
+ * nur für Veranstalter desselben Festivals; Zugänge vergibt/entzieht der
+ * Betreiber (scripts/organizer-code.mjs).
+ */
+export interface OrganizerInfo {
+  id: string;
+  name: string;
+  color: string;
+  /** Seit wann Veranstalter (ISO) */
+  since: string;
+}
+
 /** Eintrag aus GET /api/festivals – Auswahl bei der Gruppengründung */
 export interface FestivalSummary {
   id: string;
@@ -158,6 +171,36 @@ export function splitAttendees(
   return { going, interested };
 }
 
+/**
+ * Mitteilung an die Nutzer: von einem Veranstalter an alle Gruppen seines
+ * Festivals oder vom Betreiber app-weit (festivalId = null). Wird zusätzlich
+ * per Web Push zugestellt; hier im Payload sehen sie auch Nutzer ohne Push.
+ */
+export interface Announcement {
+  id: string;
+  /** null = app-weite Betreiber-Nachricht */
+  festivalId: string | null;
+  title: string;
+  body: string;
+  createdAt: string;
+}
+
+/**
+ * Mitteilung samt Absender-Namen – nur der Verlauf im Veranstalter-Bereich
+ * zeigt ihn. Besucher sehen als Absender weiterhin das Festival, nicht das
+ * einzelne Veranstalter-Konto.
+ */
+export interface AnnouncementWithAuthor extends Announcement {
+  /** null = app-weite Betreiber-Nachricht oder Konto gelöscht */
+  authorName: string | null;
+}
+
+/** Zusagen/Interessen eines Slots, getrennt – für den Veranstalter-Editor */
+export interface SlotSelectionCounts {
+  going: number;
+  interested: number;
+}
+
 export interface Position {
   userId: string;
   slotId: string;
@@ -224,6 +267,8 @@ export interface DataPayload {
   positions: Position[];
   blueprints: Record<string, Blueprint>;
   group: GroupInfo;
+  /** Neueste Mitteilungen (Festival + app-weit), absteigend nach Datum */
+  announcements: Announcement[];
   rev: number;
   serverTime: string;
 }
