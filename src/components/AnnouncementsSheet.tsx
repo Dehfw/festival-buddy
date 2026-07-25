@@ -132,6 +132,8 @@ const MAX_VISIBLE = 10;
 function AnnouncementsSheet({ onClose }: { onClose: () => void }) {
   const { data } = useApp();
   const [showOlder, setShowOlder] = useState(false);
+  // Angetippte Mitteilung – öffnet das Detail-Popup mit dem vollen Text
+  const [detail, setDetail] = useState<Announcement | null>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -202,7 +204,7 @@ function AnnouncementsSheet({ onClose }: { onClose: () => void }) {
         ) : (
           <ul className="flex flex-col gap-3 pb-2">
             {recent.map((a) => (
-              <AnnouncementItem key={a.id} announcement={a} />
+              <AnnouncementItem key={a.id} announcement={a} onSelect={() => setDetail(a)} />
             ))}
             {older.length > 0 && !showOlder && (
               <li>
@@ -216,33 +218,173 @@ function AnnouncementsSheet({ onClose }: { onClose: () => void }) {
                 </button>
               </li>
             )}
-            {showOlder && older.map((a) => <AnnouncementItem key={a.id} announcement={a} />)}
+            {showOlder &&
+              older.map((a) => (
+                <AnnouncementItem key={a.id} announcement={a} onSelect={() => setDetail(a)} />
+              ))}
           </ul>
         )}
       </div>
+
+      {detail && (
+        <AnnouncementDetailDialog announcement={detail} onClose={() => setDetail(null)} />
+      )}
     </div>
   );
 }
 
-function AnnouncementItem({ announcement: a }: { announcement: Announcement }) {
+// Mehr Zeilen pro Eintrag machen die Liste unüberschaubar – der volle
+// Text steht im Detail-Popup (Tippen auf die Karte).
+const BODY_CLAMP_CLASS = 'line-clamp-3';
+
+function AnnouncementItem({
+  announcement: a,
+  onSelect,
+}: {
+  announcement: Announcement;
+  onSelect: () => void;
+}) {
+  const bodyRef = useRef<HTMLSpanElement>(null);
+  const [clamped, setClamped] = useState(false);
+
+  // "Ganze Nachricht lesen" nur zeigen, wenn wirklich etwas abgeschnitten
+  // ist – gemessen statt an der Zeichenzahl geraten (Umbrüche!). Der
+  // ResizeObserver deckt Breitenänderungen (Rotation) und späte Fonts ab.
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const check = () => setClamped(el.scrollHeight > el.clientHeight + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
-    <li className="rounded-xl border border-rivet bg-steel-2 p-3.5">
-      <div className="flex items-baseline gap-2">
-        <span className="min-w-0 flex-1 text-sm font-bold text-bone">
-          {a.title}
+    <li>
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-haspopup="dialog"
+        className="w-full rounded-xl border border-rivet bg-steel-2 p-3.5 text-left transition active:scale-[0.99]"
+      >
+        <span className="flex items-baseline gap-2">
+          <span className="min-w-0 flex-1 text-sm font-bold text-bone">
+            {a.title}
+          </span>
+          <span className="shrink-0 text-[10px] text-ash/70">
+            {formatAgo(a.createdAt)}
+          </span>
         </span>
-        <span className="shrink-0 text-[10px] text-ash/70">
-          {formatAgo(a.createdAt)}
+        <span
+          ref={bodyRef}
+          className={`mt-1 block whitespace-pre-line text-xs leading-relaxed text-ash ${BODY_CLAMP_CLASS}`}
+        >
+          {a.body}
         </span>
-      </div>
-      <p className="mt-1 whitespace-pre-line text-xs leading-relaxed text-ash">
-        {a.body}
-      </p>
-      {a.festivalId === null && (
-        <span className="mt-2 inline-block rounded-full bg-rivet px-2 py-0.5 text-[10px] font-bold text-ash">
-          Festival Buddy Team
-        </span>
-      )}
+        {clamped && (
+          <span className="mt-1.5 block text-[11px] font-bold text-blood">
+            Ganze Nachricht lesen
+          </span>
+        )}
+        {a.festivalId === null && (
+          <span className="mt-2 inline-block rounded-full bg-rivet px-2 py-0.5 text-[10px] font-bold text-ash">
+            Festival Buddy Team
+          </span>
+        )}
+      </button>
     </li>
+  );
+}
+
+/**
+ * Zentriertes Popup mit dem vollen Text einer Mitteilung. Liegt als
+ * Geschwister ÜBER dem Sheet im selben Overlay: useModalDialog schaltet
+ * das Sheet dahinter inert, der Dialog-Stack sorgt dafür, dass Escape
+ * nur das Popup schließt (nicht das Sheet gleich mit). Gleiches gilt für
+ * den Android-Back-Button über den Ebenen-Stack von useSheetHistory.
+ */
+function AnnouncementDetailDialog({
+  announcement: a,
+  onClose,
+}: {
+  announcement: Announcement;
+  onClose: () => void;
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const titleId = useId();
+
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Eigener History-Eintrag: "Zurück" schließt nur das Popup, nicht das
+  // Sheet darunter.
+  useSheetHistory(onCloseRef);
+
+  useModalDialog({
+    onClose,
+    dialogRef,
+    containerRef,
+    initialFocusRef: titleRef,
+    enabled: true,
+  });
+
+  // In der Liste reicht "vor X Min." – hier gibt es Platz fürs volle Datum
+  const createdLabel = new Date(a.createdAt).toLocaleString('de-DE', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  return (
+    <div
+      ref={containerRef}
+      className="absolute inset-0 z-10 flex items-center justify-center p-4"
+    >
+      <div aria-hidden="true" className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative flex max-h-[80dvh] w-full max-w-md flex-col rounded-2xl border border-rivet bg-steel p-4 shadow-2xl shadow-black/60"
+      >
+        <div className="flex items-start gap-2">
+          <h3
+            ref={titleRef}
+            id={titleId}
+            tabIndex={-1}
+            className="min-w-0 flex-1 text-base font-bold leading-snug text-bone outline-none"
+          >
+            {a.title}
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Schließen"
+            className="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-rivet bg-steel-2 text-sm text-ash transition active:scale-[0.97]"
+          >
+            ✕
+          </button>
+        </div>
+        <p className="mt-0.5 text-[11px] text-ash/70">{createdLabel} Uhr</p>
+        <div className="mt-3 min-h-0 overflow-y-auto overscroll-contain">
+          <p className="whitespace-pre-line text-sm leading-relaxed text-ash">
+            {a.body}
+          </p>
+          {a.festivalId === null && (
+            <span className="mt-3 inline-block rounded-full bg-rivet px-2 py-0.5 text-[10px] font-bold text-ash">
+              Festival Buddy Team
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
