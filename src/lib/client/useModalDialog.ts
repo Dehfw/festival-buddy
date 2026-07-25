@@ -48,6 +48,15 @@ function inertSiblings(el: HTMLElement): () => void {
 }
 
 /**
+ * Modulweiter Stack der offenen Dialoge: Bei verschachtelten Overlays
+ * (z. B. Mitteilungs-Detail über dem AnnouncementsSheet) feuern beide
+ * document-Keydown-Listener – ohne Stack würde Escape beide Ebenen auf
+ * einmal schließen und der Focus Trap der unteren Ebene dazwischenfunken.
+ * Deshalb reagiert nur der zuletzt geöffnete (oberste) Dialog auf Tasten.
+ */
+const openDialogs: object[] = [];
+
+/**
  * Gemeinsames Verhalten für modale Overlays (WAI-ARIA Modal-Dialog-Pattern):
  *
  * - merkt sich den Auslöser (document.activeElement) und gibt ihm beim
@@ -57,7 +66,7 @@ function inertSiblings(el: HTMLElement): () => void {
  * - setzt den initialen Fokus in den Dialog (initialFocusRef, sonst das
  *   erste fokussierbare Element, sonst der Dialog selbst);
  * - hält Tab/Shift+Tab innerhalb des Dialogs (Focus Trap);
- * - schließt per Escape;
+ * - schließt per Escape (nur der oberste Dialog, siehe openDialogs);
  * - schaltet den Hintergrund inert (nicht fokussier-/klickbar);
  * - sperrt das Scrollen des <body>.
  *
@@ -109,8 +118,13 @@ export function useModalDialog({
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
+    const stackToken = {};
+    openDialogs.push(stackToken);
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.isComposing) return;
+      // Tasten gehören dem obersten Dialog – darunterliegende halten still.
+      if (openDialogs[openDialogs.length - 1] !== stackToken) return;
       if (e.key === 'Escape') {
         e.preventDefault();
         onCloseRef.current();
@@ -152,6 +166,8 @@ export function useModalDialog({
 
     return () => {
       document.removeEventListener('keydown', onKeyDown);
+      const idx = openDialogs.indexOf(stackToken);
+      if (idx !== -1) openDialogs.splice(idx, 1);
       // Erst den Hintergrund reaktivieren, dann fokussieren –
       // inerte Elemente können keinen Fokus annehmen.
       restoreInert();
