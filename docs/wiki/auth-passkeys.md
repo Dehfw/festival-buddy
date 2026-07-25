@@ -77,8 +77,30 @@ Passkey-Support, fremde Geräte oder als Fallback bei Geräteverlust.
   eigentliche Brute-Force-Härte kommt aus den scrypt-Kosten.
 - **UI:** Umschalter in beiden Login-Gates (`PasswordAuth`-Komponente),
   Reset-Seite `/passwort-reset`, und unter *Gruppe → Konto → „Login &
-  Sicherheit“* können Passkey-Nutzer nachträglich E-Mail+Passwort
-  hinterlegen (`PasswordSettings`).
+  Sicherheit“* verwaltet man beide Wege (`PasswordSettings`).
+
+## Login-Wege verwalten (Login & Sicherheit)
+
+Beide Verfahren lassen sich nachträglich hinzufügen UND wieder
+entfernen – unter *Gruppe → Konto → „Login & Sicherheit“*:
+
+- **Passkeys auflisten/löschen:** `GET /api/webauthn/credentials`,
+  `DELETE /api/webauthn/credentials/<id>`.
+- **Passkey zum bestehenden Konto hinzufügen** (eingeloggt, typisch:
+  Passwort-Nutzer steigt auf Passkey um): `POST /api/webauthn/add/
+  options` + `add/verify`. Eigenes Challenge-Cookie `fb_wa_add`, an die
+  Session gebunden – es entsteht KEIN neuer Nutzer; bereits registrierte
+  Credentials werden per `excludeCredentials` ausgeschlossen.
+- **E-Mail+Passwort einrichten/ändern:** `POST /api/password/set`
+  (Ändern verlangt das aktuelle Passwort); **entfernen:**
+  `DELETE /api/password/set`.
+- **Aussperr-Schutz:** Der letzte verbliebene Login-Weg ist nie
+  entfernbar. Der Check steckt jeweils im DELETE-Statement selbst
+  (`deleteWebauthnCredentialGuarded` / `deletePasswordCredentialGuarded`
+  in `src/lib/db.ts`) – ein Passkey fällt nur, wenn ein Passwort oder
+  ein weiterer Passkey bleibt; das Passwort nur, wenn mindestens ein
+  Passkey existiert. Die UI blendet die Entfernen-Aktion in diesen
+  Fällen aus („einziger Login-Weg“), der Server antwortet sonst 409.
 
 ## Alt-Account-Übernahme (Legacy-Adoption)
 

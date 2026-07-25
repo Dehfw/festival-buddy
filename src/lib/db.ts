@@ -1090,6 +1090,70 @@ export async function updateCredentialCounter(
   ]);
 }
 
+export interface CredentialSummary {
+  id: string;
+  createdAt: string;
+}
+
+/** Eigene Passkeys für den Bereich "Login & Sicherheit" auflisten */
+export async function getWebauthnCredentialsForUser(
+  userId: string
+): Promise<CredentialSummary[]> {
+  const res = await query<{ id: string; created_at: Date }>(
+    'SELECT id, created_at FROM webauthn_credentials WHERE user_id = $1 ORDER BY created_at',
+    [userId]
+  );
+  return res.rows.map((r) => ({
+    id: r.id,
+    createdAt: new Date(r.created_at).toISOString(),
+  }));
+}
+
+/**
+ * Weiteren Passkey an ein bestehendes (eingeloggtes) Konto hängen.
+ * false = Credential-ID ist schon vergeben (z. B. an ein anderes Konto).
+ */
+export async function addCredentialToUser(
+  userId: string,
+  credential: { id: string; publicKey: Uint8Array; counter: number; transports: string[] }
+): Promise<boolean> {
+  const res = await query(
+    `INSERT INTO webauthn_credentials (id, user_id, public_key, counter, transports)
+     VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`,
+    [
+      credential.id,
+      userId,
+      Buffer.from(credential.publicKey),
+      credential.counter,
+      JSON.stringify(credential.transports),
+    ]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+/**
+ * Eigenen Passkey löschen – aber nie den letzten Login-Weg: Der Passkey
+ * fällt nur, wenn ein Passwort hinterlegt ist ODER ein weiterer Passkey
+ * bleibt. Der Check steckt im selben Statement (kein Race, das ein Konto
+ * aussperren könnte). false = unbekanntes Credential oder wäre der
+ * letzte Login-Weg.
+ */
+export async function deleteWebauthnCredentialGuarded(
+  userId: string,
+  credentialId: string
+): Promise<boolean> {
+  const res = await query(
+    `DELETE FROM webauthn_credentials
+      WHERE id = $2 AND user_id = $1
+        AND (
+          EXISTS (SELECT 1 FROM password_credentials pc WHERE pc.user_id = $1)
+          OR (SELECT count(*) FROM webauthn_credentials c WHERE c.user_id = $1) > 1
+        )`,
+    [userId, credentialId]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
 /* ------------------------------------------------------------------ */
 /* Passwort-Login (E-Mail + Passwort, optional zusätzlich zum Passkey) */
 /* ------------------------------------------------------------------ */
@@ -1215,6 +1279,21 @@ export async function upsertPasswordCredential(
     if ((err as { code?: string }).code === '23505') return 'email-taken';
     throw err;
   }
+}
+
+/**
+ * Passwort-Login entfernen – aber nie den letzten Login-Weg: fällt nur,
+ * wenn mindestens ein Passkey am Konto hängt (Check im selben Statement,
+ * kein Aussperr-Race). false = kein Credential oder kein Passkey da.
+ */
+export async function deletePasswordCredentialGuarded(userId: string): Promise<boolean> {
+  const res = await query(
+    `DELETE FROM password_credentials
+      WHERE user_id = $1
+        AND EXISTS (SELECT 1 FROM webauthn_credentials c WHERE c.user_id = $1)`,
+    [userId]
+  );
+  return (res.rowCount ?? 0) > 0;
 }
 
 /** Neues Passwort nach Reset setzen; false = kein Credential (mehr) da */

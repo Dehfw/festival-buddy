@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { readSessionUserId } from '@/lib/auth';
-import { getPasswordCredentialForUser, upsertPasswordCredential } from '@/lib/db';
+import {
+  deletePasswordCredentialGuarded,
+  getPasswordCredentialForUser,
+  upsertPasswordCredential,
+} from '@/lib/db';
 import {
   hashPassword,
   normalizeEmail,
@@ -66,4 +70,28 @@ export async function POST(req: Request) {
     );
   }
   return NextResponse.json({ email });
+}
+
+/**
+ * Passwort-Login wieder entfernen. Der letzte Login-Weg ist tabu: Die DB
+ * löscht nur, wenn mindestens ein Passkey am Konto hängt – sonst 409.
+ * Kein currentPassword nötig: Entfernen verkleinert nur die
+ * Angriffsfläche, und der Passkey-Zwang verhindert das Aussperren.
+ */
+export async function DELETE(req: Request) {
+  const userId = readSessionUserId(req);
+  if (!userId) {
+    return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
+  }
+  const deleted = await deletePasswordCredentialGuarded(userId);
+  if (!deleted) {
+    return NextResponse.json(
+      {
+        error:
+          'Kein Passwort hinterlegt – oder es ist dein einziger Login-Weg. Leg erst einen Passkey an.',
+      },
+      { status: 409 }
+    );
+  }
+  return NextResponse.json({ ok: true });
 }

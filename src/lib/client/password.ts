@@ -68,3 +68,14 @@ export async function setPassword(opts: {
   const { email } = await post<{ email: string }>('/api/password/set', opts);
   return email;
 }
+
+/** Passwort-Login entfernen; der Server schützt den letzten Login-Weg */
+export async function removePassword(): Promise<void> {
+  const res = await fetch('/api/password/set', { method: 'DELETE' });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(
+      typeof data?.error === 'string' ? data.error : `Serverfehler (${res.status})`
+    );
+  }
+}

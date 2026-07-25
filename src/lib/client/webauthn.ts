@@ -56,6 +56,44 @@ export async function loginWithPasskey(
   return user;
 }
 
+/* --------------- Passkey-Verwaltung (Login & Sicherheit) ------------ */
+
+export interface PasskeySummary {
+  id: string;
+  createdAt: string;
+}
+
+export async function listPasskeys(): Promise<PasskeySummary[]> {
+  const res = await fetch('/api/webauthn/credentials', { cache: 'no-store' });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(
+      typeof data?.error === 'string' ? data.error : `Serverfehler (${res.status})`
+    );
+  }
+  return (data as { credentials: PasskeySummary[] }).credentials;
+}
+
+/** Weiteren Passkey ans eingeloggte Konto hängen (kein neuer Nutzer) */
+export async function addPasskey(): Promise<void> {
+  const { options } = await post<{ options: never }>('/api/webauthn/add/options');
+  const response = await startRegistration({ optionsJSON: options });
+  await post('/api/webauthn/add/verify', { response });
+}
+
+/** Eigenen Passkey löschen; der Server schützt den letzten Login-Weg */
+export async function deletePasskey(id: string): Promise<void> {
+  const res = await fetch(`/api/webauthn/credentials/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(
+      typeof data?.error === 'string' ? data.error : `Serverfehler (${res.status})`
+    );
+  }
+}
+
 /**
  * Für die Hintergrund-Conditional-UI (Autofill am Namensfeld): dort feuert
  * ständig ein `AbortError` (neuer Request bricht den alten ab) oder ein
