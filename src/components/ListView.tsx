@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type Ref } from 'react';
 import { useApp } from '@/lib/client/store';
 import {
   DEFAULT_HOT_THRESHOLD,
@@ -13,6 +13,9 @@ import {
 import { AvatarStack } from './Avatars';
 import { FireFrame } from './FireFrame';
 
+/** Bands, die länger als 3 h vorbei sind, werden pro Tag eingeklappt */
+const PAST_HIDE_MIN = 180;
+
 /**
  * Hauptansicht 2: Kompakte Liste – nur Bands, bei denen mindestens
  * ein Crew-Mitglied eingetragen oder interessiert ist, mit Personenanzahl.
@@ -21,6 +24,10 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
   const { data, user } = useApp();
   const [query, setQuery] = useState('');
   const [nowMs, setNowMs] = useState<number | null>(null);
+  // Tage, deren eingeklappte vergangene Bands gerade aufgeklappt sind
+  const [expandedPast, setExpandedPast] = useState<Set<string>>(new Set());
+  const nowRef = useRef<HTMLLIElement | null>(null);
+  const autoScrolled = useRef(false);
 
   // "Jetzt"-Linie alle 30 s nachführen (wie im Timetable-Grid)
   useEffect(() => {
@@ -29,6 +36,21 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
     const t = setInterval(update, 30_000);
     return () => clearInterval(t);
   }, []);
+
+  // Beim Öffnen des Tabs einmal automatisch zur Jetzt-Linie scrollen
+  useEffect(() => {
+    if (autoScrolled.current || !nowRef.current) return;
+    autoScrolled.current = true;
+    nowRef.current.scrollIntoView({ block: 'center' });
+  });
+
+  const togglePast = (dayId: string) =>
+    setExpandedPast((prev) => {
+      const next = new Set(prev);
+      if (next.has(dayId)) next.delete(dayId);
+      else next.add(dayId);
+      return next;
+    });
 
   const grouped = useMemo(() => {
     if (!data) return [];
@@ -122,14 +144,27 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
             nowMs === null
               ? null
               : (nowMs - new Date(`${day.date}T00:00:00`).getTime()) / 60000;
-          // Sichtbar nur zwischen erster und letzter angezeigter Band des Tages
+          const isLongPast = (s: Slot) =>
+            nowMin !== null && toMinutes(s.end) < nowMin - PAST_HIDE_MIN;
+          // Länger vergangene Bands einklappen – außer die Suche ist aktiv,
+          // dann soll jeder Treffer sichtbar bleiben
+          const pastCount =
+            query.trim() === '' ? slots.filter(isLongPast).length : 0;
+          const expanded = expandedPast.has(day.id);
+          const shown =
+            pastCount > 0 && !expanded
+              ? slots.filter((s) => !isLongPast(s))
+              : slots;
+          // Sichtbar nur zwischen erster und letzter angezeigter Band des Tages;
+          // sind vergangene Bands eingeklappt, läuft der Tag bereits
           const inDay =
             nowMin !== null &&
-            nowMin >= toMinutes(slots[0].start) &&
-            nowMin <= Math.max(...slots.map((s) => toMinutes(s.end)));
+            shown.length > 0 &&
+            (pastCount > 0 || nowMin >= toMinutes(shown[0].start)) &&
+            nowMin <= Math.max(...shown.map((s) => toMinutes(s.end)));
           // Die Linie steht vor der ersten Band, die noch nicht angefangen hat
           const nowIdx = inDay
-            ? slots.findIndex((s) => toMinutes(s.start) > nowMin)
+            ? shown.findIndex((s) => toMinutes(s.start) > nowMin!)
             : -2;
           return (
         <section key={day.id} className="mt-5">
@@ -143,7 +178,21 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
             </span>
           </h2>
           <ul className="space-y-2">
-            {slots.map((slot, i) => {
+            {/* Einklapp-Zeile: vergangene Bands verstecken sich dahinter */}
+            {pastCount > 0 && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => togglePast(day.id)}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-rivet px-3 py-2 text-[11px] font-semibold text-ash transition active:scale-[0.99] hover:text-bone"
+                >
+                  {expanded
+                    ? '▴ Vergangene Bands ausblenden'
+                    : `▾ ${pastCount} vergangene ${pastCount === 1 ? 'Band' : 'Bands'} anzeigen`}
+                </button>
+              </li>
+            )}
+            {shown.map((slot, i) => {
               const stage = data.timetable.stages.find((s) => s.id === slot.stageId)!;
               const { going, interested } = attendeesOf(slot.id);
               const attendees = [...going, ...interested];
@@ -155,13 +204,17 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
                 going.length,
                 data.group?.hotThreshold ?? DEFAULT_HOT_THRESHOLD
               );
+              // Schon vorbei: leicht ausgegraut, damit "jetzt" sofort ins Auge fällt
+              const over = nowMin !== null && toMinutes(slot.end) < nowMin;
               return (
                 <Fragment key={slot.id}>
-                {i === nowIdx && <NowLine nowMin={nowMin!} />}
+                {i === nowIdx && <NowLine nowMin={nowMin!} ref={nowRef} />}
                 <li>
                   <button
                     onClick={() => onSlotTap(slot)}
                     className={`relative flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition active:scale-[0.99] ${
+                      over ? 'opacity-60 ' : ''
+                    }${
                       iGo
                         ? 'border-blood/60 bg-blood/10'
                         : iAmInterested
@@ -210,7 +263,7 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
               );
             })}
             {/* Alle Bands des Tages laufen schon / sind vorbei: Linie ans Ende */}
-            {nowIdx === -1 && <NowLine nowMin={nowMin!} />}
+            {nowIdx === -1 && <NowLine nowMin={nowMin!} ref={nowRef} />}
           </ul>
         </section>
           );
@@ -222,11 +275,11 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
 }
 
 /** Pulsierende "Jetzt"-Linie mit Uhrzeit-Badge – wie im Timetable-Grid */
-function NowLine({ nowMin }: { nowMin: number }) {
+function NowLine({ nowMin, ref }: { nowMin: number; ref?: Ref<HTMLLIElement> }) {
   const hh = String(Math.floor(nowMin / 60) % 24).padStart(2, '0');
   const mm = String(Math.floor(nowMin % 60)).padStart(2, '0');
   return (
-    <li aria-hidden className="now-line flex items-center gap-1.5">
+    <li ref={ref} aria-hidden className="now-line flex items-center gap-1.5">
       <span className="rounded bg-blood px-1 py-px text-[9px] font-black leading-3 text-black">
         {hh}:{mm}
       </span>
