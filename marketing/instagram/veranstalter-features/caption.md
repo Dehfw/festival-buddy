@@ -1,6 +1,21 @@
 # Instagram-Post: Festival Buddy für Veranstalter
 
-## Caption
+## Caption (kurz)
+
+🎪 Dein Festival. Live beim Publikum.
+
+Mit Festival Buddy pflegst du Timetable, Bühnenpläne und
+Push-Mitteilungen deines Festivals selbst – jede Änderung ist in
+Sekunden bei allen Besuchern. Deine Reichweite siehst du als anonyme
+Zahlen, Besucherdaten nie. Und das Ganze: kostenlos. 🤘
+
+📩 Zugang anfragen: moin@festivalbuddy.app
+🔗 festivalbuddy.app/fuer-veranstalter (Link in Bio)
+
+#festival #veranstalter #eventmanagement #festivalapp #festivalbuddy
+#timetable #runningorder #openair
+
+## Caption (lang)
 
 🎪 Veranstalter aufgepasst: Euer Timetable hängt noch als PDF am Bauzaun?
 
