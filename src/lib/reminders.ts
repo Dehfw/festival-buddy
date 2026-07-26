@@ -3,6 +3,7 @@ import {
   getFestivals,
   getReminderCandidates,
   getTimetable,
+  type ReminderTarget,
 } from './db';
 import { isPushConfigured, sendPushToUsers, type PushSendResult } from './push';
 import { formatTime, toMinutes, type Slot, type Timetable } from './types';
@@ -10,13 +11,27 @@ import { formatTime, toMinutes, type Slot, type Timetable } from './types';
 /**
  * Band-Erinnerungen: Ein Cron (alle ~5 Min.) pusht "Band startet gleich" an
  * Nutzer, die den Slot als Favorit markiert haben ('going'/'interested')
- * und Push aktiviert haben. Pro (Nutzer, Festival, Slot) genau eine
- * Erinnerung – geclaimt über push_reminders_sent, damit parallele Läufe
- * nie doppelt senden.
+ * und Push aktiviert haben. Der Vorlauf ist pro Nutzer dynamisch (Anreise
+ * vom Camp vs. schon auf dem Gelände, s. Konstanten). Pro (Nutzer,
+ * Festival, Slot) genau eine Erinnerung – geclaimt über
+ * push_reminders_sent, damit parallele Läufe nie doppelt senden.
  */
 
-/** Vorlauf: so viele Minuten vor Slot-Start wird erinnert. */
-const REMINDER_LEAD_MIN = 30;
+/**
+ * Vorlauf, wenn der Nutzer vor dieser Band keine andere markiert hatte:
+ * vermutlich Anreise vom Camp, also früh erinnern.
+ */
+const REMINDER_LEAD_FAR_MIN = 45;
+/**
+ * Vorlauf, wenn im Fenster davor schon eine andere markierte Band lief
+ * bzw. läuft: Nutzer steht vermutlich schon auf dem Gelände.
+ */
+const REMINDER_LEAD_NEAR_MIN = 15;
+/**
+ * So viele Minuten vor Slot-Start zählt eine andere markierte Band als
+ * "Nutzer ist schon vor Ort" (Überlappung reicht, Start dort egal).
+ */
+const NEARBY_WINDOW_MIN = 60;
 /** Karenz nach hinten, falls ein Cron-Lauf ausfiel (Slot lief gerade an). */
 const REMINDER_GRACE_MIN = 5;
 
@@ -86,24 +101,59 @@ export async function runReminderSweep(now: Date): Promise<ReminderRunResult> {
   if (!result.configured) return result;
 
   const windowStart = now.getTime() - REMINDER_GRACE_MIN * 60_000;
-  const windowEnd = now.getTime() + REMINDER_LEAD_MIN * 60_000;
+  const windowEnd = now.getTime() + REMINDER_LEAD_FAR_MIN * 60_000;
 
   for (const festival of await getFestivals()) {
     const timetable = await getTimetable(festival.id);
     if (!timetable || timetable.slots.length === 0) continue;
 
-    const due = new Map<string, { slot: Slot; start: Date }>();
+    // Start/Ende aller Slots als UTC-Millisekunden; Ende über die Dauer aus
+    // den Wandzeiten (negative/fehlende Dauer zählt als 0).
+    const times = new Map<string, { startMs: number; endMs: number }>();
     for (const slot of timetable.slots) {
       const start = slotStartDate(timetable, slot);
       if (!start) continue;
-      const t = start.getTime();
-      if (t >= windowStart && t <= windowEnd) due.set(slot.id, { slot, start });
+      const startMs = start.getTime();
+      const durMin = Math.max(0, toMinutes(slot.end) - toMinutes(slot.start));
+      times.set(slot.id, { startMs, endMs: startMs + durMin * 60_000 });
+    }
+
+    // Potenziell fällige Slots samt der Slots, die im NEARBY-Fenster davor
+    // (noch) laufen – egal auf welcher Bühne.
+    const due = new Map<string, { slot: Slot; start: Date; nearby: string[] }>();
+    for (const slot of timetable.slots) {
+      const t = times.get(slot.id);
+      if (!t || t.startMs < windowStart || t.startMs > windowEnd) continue;
+      const nearbyFrom = t.startMs - NEARBY_WINDOW_MIN * 60_000;
+      const nearby: string[] = [];
+      for (const other of timetable.slots) {
+        if (other.id === slot.id) continue;
+        const o = times.get(other.id);
+        if (o && o.startMs < t.startMs && o.endMs > nearbyFrom) nearby.push(other.id);
+      }
+      due.set(slot.id, { slot, start: new Date(t.startMs), nearby });
     }
     if (due.size === 0) continue;
     result.dueSlots += due.size;
 
-    const candidates = await getReminderCandidates(festival.id, [...due.keys()]);
-    const claimed = await claimReminders(candidates);
+    // Auswahl-Paare für fällige und Nachbar-Slots in einer Abfrage holen:
+    // Paare auf fälligen Slots sind die Kandidaten, Paare auf Nachbar-Slots
+    // entscheiden über den Vorlauf des jeweiligen Nutzers.
+    const lookupIds = new Set(due.keys());
+    for (const entry of due.values()) for (const id of entry.nearby) lookupIds.add(id);
+    const pairs = await getReminderCandidates(festival.id, [...lookupIds]);
+    const selected = new Set(pairs.map((p) => `${p.userId}:${p.slotId}`));
+
+    const toClaim: ReminderTarget[] = [];
+    for (const p of pairs) {
+      const entry = due.get(p.slotId);
+      if (!entry) continue; // Paar nur für den Nachbar-Lookup geholt
+      const onSite = entry.nearby.some((id) => selected.has(`${p.userId}:${id}`));
+      const leadMin = onSite ? REMINDER_LEAD_NEAR_MIN : REMINDER_LEAD_FAR_MIN;
+      if (now.getTime() >= entry.start.getTime() - leadMin * 60_000) toClaim.push(p);
+    }
+
+    const claimed = await claimReminders(toClaim);
     result.claimed += claimed.length;
 
     // Pro Slot ein Payload (Band/Bühne/Restzeit), gesendet an alle Nutzer,

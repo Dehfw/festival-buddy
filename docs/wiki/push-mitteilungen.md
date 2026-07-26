@@ -86,10 +86,14 @@ Vercel-Hobby-Plan erlaubt nur tägliche Crons; dann einen externen Dienst
 (cron-job.org, GitHub Actions) auf die Route zeigen lassen.
 
 Ein Lauf: Für jedes Festival werden Slots gesucht, die in den nächsten
-30 Minuten starten (Zeitzone `Europe/Berlin`; Stunden < 8 zählen via
+45 Minuten starten (Zeitzone `Europe/Berlin`; Stunden < 8 zählen via
 `toMinutes()` als nach Mitternacht). Empfänger sind Nutzer mit einer
 Auswahl (`going` **und** `interested`) auf dem Slot und mindestens einem
-Push-Abo. Vor dem Senden claimt der Lauf die Paare per
+Push-Abo. Der Vorlauf ist pro Nutzer dynamisch: normal 45 Minuten
+(Anreise vom Camp einplanen); hat der Nutzer aber eine andere markierte
+Band, die in den 60 Minuten vor dem Slot-Start (noch) läuft – egal auf
+welcher Bühne –, sind es 15 Minuten, weil er vermutlich schon auf dem
+Gelände steht. Vor dem Senden claimt der Lauf die Paare per
 `INSERT … ON CONFLICT DO NOTHING RETURNING` in `push_reminders_sent` –
 parallele Cron-Läufe senden dadurch nie doppelt. Bewusste
 Vereinfachungen: genau eine Erinnerung pro (Nutzer, Slot), keine neue
