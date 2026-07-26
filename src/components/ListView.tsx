@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import {
   DEFAULT_HOT_THRESHOLD,
@@ -20,6 +20,15 @@ import { FireFrame } from './FireFrame';
 export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
   const { data, user } = useApp();
   const [query, setQuery] = useState('');
+  const [nowMs, setNowMs] = useState<number | null>(null);
+
+  // "Jetzt"-Linie alle 30 s nachführen (wie im Timetable-Grid)
+  useEffect(() => {
+    const update = () => setNowMs(Date.now());
+    update();
+    const t = setInterval(update, 30_000);
+    return () => clearInterval(t);
+  }, []);
 
   const grouped = useMemo(() => {
     if (!data) return [];
@@ -106,7 +115,23 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
             </p>
           </div>
         )}
-        {grouped.map(({ day, slots }) => (
+        {grouped.map(({ day, slots }) => {
+          // Minuten seit 00:00 dieses Festivaltags – Nacht-Sets liegen bei > 24 h,
+          // dadurch landet die Linie um 01:30 noch im Abschnitt des Vortags
+          const nowMin =
+            nowMs === null
+              ? null
+              : (nowMs - new Date(`${day.date}T00:00:00`).getTime()) / 60000;
+          // Sichtbar nur zwischen erster und letzter angezeigter Band des Tages
+          const inDay =
+            nowMin !== null &&
+            nowMin >= toMinutes(slots[0].start) &&
+            nowMin <= Math.max(...slots.map((s) => toMinutes(s.end)));
+          // Die Linie steht vor der ersten Band, die noch nicht angefangen hat
+          const nowIdx = inDay
+            ? slots.findIndex((s) => toMinutes(s.start) > nowMin)
+            : -2;
+          return (
         <section key={day.id} className="mt-5">
           <h2 className="font-metal mb-2 text-sm font-black uppercase tracking-wider text-ash">
             {day.longLabel}{' '}
@@ -118,7 +143,7 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
             </span>
           </h2>
           <ul className="space-y-2">
-            {slots.map((slot) => {
+            {slots.map((slot, i) => {
               const stage = data.timetable.stages.find((s) => s.id === slot.stageId)!;
               const { going, interested } = attendeesOf(slot.id);
               const attendees = [...going, ...interested];
@@ -131,7 +156,9 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
                 data.group?.hotThreshold ?? DEFAULT_HOT_THRESHOLD
               );
               return (
-                <li key={slot.id}>
+                <Fragment key={slot.id}>
+                {i === nowIdx && <NowLine nowMin={nowMin!} />}
+                <li>
                   <button
                     onClick={() => onSlotTap(slot)}
                     className={`relative flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition active:scale-[0.99] ${
@@ -179,13 +206,31 @@ export function ListView({ onSlotTap }: { onSlotTap: (slot: Slot) => void }) {
                     </div>
                   </button>
                 </li>
+                </Fragment>
               );
             })}
+            {/* Alle Bands des Tages laufen schon / sind vorbei: Linie ans Ende */}
+            {nowIdx === -1 && <NowLine nowMin={nowMin!} />}
           </ul>
         </section>
-      ))}
+          );
+        })}
         </div>
       </div>
     </div>
+  );
+}
+
+/** Pulsierende "Jetzt"-Linie mit Uhrzeit-Badge – wie im Timetable-Grid */
+function NowLine({ nowMin }: { nowMin: number }) {
+  const hh = String(Math.floor(nowMin / 60) % 24).padStart(2, '0');
+  const mm = String(Math.floor(nowMin % 60)).padStart(2, '0');
+  return (
+    <li aria-hidden className="now-line flex items-center gap-1.5">
+      <span className="rounded bg-blood px-1 py-px text-[9px] font-black leading-3 text-black">
+        {hh}:{mm}
+      </span>
+      <span className="h-0 flex-1 border-t-2 border-blood" />
+    </li>
   );
 }
