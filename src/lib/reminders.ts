@@ -16,7 +16,7 @@ import { formatTime, toMinutes, type Slot, type Timetable } from './types';
  */
 
 /** Vorlauf: so viele Minuten vor Slot-Start wird erinnert. */
-const REMINDER_LEAD_MIN = 15;
+const REMINDER_LEAD_MIN = 30;
 /** Karenz nach hinten, falls ein Cron-Lauf ausfiel (Slot lief gerade an). */
 const REMINDER_GRACE_MIN = 5;
 

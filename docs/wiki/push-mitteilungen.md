@@ -86,7 +86,7 @@ Vercel-Hobby-Plan erlaubt nur tägliche Crons; dann einen externen Dienst
 (cron-job.org, GitHub Actions) auf die Route zeigen lassen.
 
 Ein Lauf: Für jedes Festival werden Slots gesucht, die in den nächsten
-15 Minuten starten (Zeitzone `Europe/Berlin`; Stunden < 8 zählen via
+30 Minuten starten (Zeitzone `Europe/Berlin`; Stunden < 8 zählen via
 `toMinutes()` als nach Mitternacht). Empfänger sind Nutzer mit einer
 Auswahl (`going` **und** `interested`) auf dem Slot und mindestens einem
 Push-Abo. Vor dem Senden claimt der Lauf die Paare per
