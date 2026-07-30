@@ -74,8 +74,13 @@ export function PushPrompt() {
 
   if (!show) return null;
 
+  // eligible muss mit zurück auf false: Der Anzeige-Effekt oben feuert bei
+  // eligible && !show erneut und würde das Banner nach der Schonfrist
+  // wieder einblenden – der Dismiss-Merker wird nur solange geprüft, wie
+  // eligible noch nicht gesetzt ist.
   const dismiss = () => {
     localStorage.setItem(DISMISS_KEY, new Date().toISOString());
+    setEligible(false);
     setShow(false);
   };
 
@@ -86,6 +91,7 @@ export function PushPrompt() {
     // jederzeit unter Gruppe & Konto erreichbar.
     localStorage.setItem(DISMISS_KEY, new Date().toISOString());
     setBusy(false);
+    setEligible(false);
     setShow(false);
   };
 
