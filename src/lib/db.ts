@@ -615,6 +615,18 @@ export async function getMemberRole(
   return role === undefined ? null : parseRole(role);
 }
 
+/** Alle Mitglieder der Gruppe außer dem genannten Nutzer (Push-Zielgruppe). */
+export async function getGroupMemberUserIdsExcept(
+  groupId: string,
+  exceptUserId: string
+): Promise<string[]> {
+  const res = await query<{ user_id: string }>(
+    'SELECT user_id FROM group_members WHERE group_id = $1 AND user_id <> $2',
+    [groupId, exceptUserId]
+  );
+  return res.rows.map((r) => r.user_id);
+}
+
 export async function createGroup(
   userId: string,
   name: string,
@@ -1431,6 +1443,19 @@ export async function setPosition(
   if (res.rowCount === 0) return 'not-attending';
   await bumpRev();
   return 'ok';
+}
+
+/** Zeitstempel der aktuellen Positionsmarkierung (null = kein Marker). */
+export async function getPositionUpdatedAt(
+  userId: string,
+  festivalId: string,
+  slotId: string
+): Promise<Date | null> {
+  const res = await query<{ updated_at: Date }>(
+    'SELECT updated_at FROM positions WHERE user_id = $1 AND festival_id = $2 AND slot_id = $3',
+    [userId, festivalId, slotId]
+  );
+  return res.rows[0]?.updated_at ?? null;
 }
 
 /* ------------------------------------------------------------------ */

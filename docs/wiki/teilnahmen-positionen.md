@@ -39,6 +39,9 @@ Gruppe.
 - Jede Position trägt `updated_at`. Die UI zeigt das relativ an
   („vor 5 Min.") und markiert Marker **älter als 90 Minuten** als
   veraltet („vielleicht längst weitergezogen", `isStalePosition`).
+- Beim Setzen bekommen **alle anderen Gruppenmitglieder einen Push**
+  („📍 Max steht bei <Band>“), mit 30 Minuten Karenz gegen Spam beim
+  Nachjustieren – Details in [Push & Mitteilungen](push-mitteilungen.md).
 
 ## Feuerrahmen 🔥
 
