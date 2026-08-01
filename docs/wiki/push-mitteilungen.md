@@ -95,8 +95,12 @@ nicht – der bleibt unbehelligt. Details:
 - Das **Entfernen** der Markierung pusht nie.
 - Gleicher Notification-`tag` pro (Gruppe, Nutzer, Slot): erneutes
   Teilen ersetzt eine noch sichtbare Notification statt zu stapeln.
-- Best effort: Die Position ist zu dem Zeitpunkt gespeichert, ein
-  Fehler beim Push-Versand macht die Anfrage nicht kaputt.
+- Best effort und **entkoppelt**: Der Versand läuft NACH der Antwort
+  (`after()` aus `next/server`) – das Eintragen der Position wartet nie
+  auf den Push-Fan-out, ein langsamer Push-Dienst oder Versand-Fehler
+  kann das Speichern weder verzögern noch scheitern lassen. Zusätzlich
+  hat jeder einzelne Push-Request 10 s Socket-Timeout (web-push hat
+  sonst keinen – gilt auch für Mitteilungen und Band-Erinnerungen).
 
 ## Band-Erinnerungen
 
