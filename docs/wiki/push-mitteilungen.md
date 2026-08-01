@@ -82,9 +82,11 @@ Erinnerungen kommt `CRON_SECRET` dazu (siehe unten).
 ## Standort-Benachrichtigungen
 
 Markiert jemand seine Position auf dem Blueprint („Hier stehe ich“,
-`POST /api/position`), bekommen **alle anderen Mitglieder der Gruppe**
-sofort einen Push: „📍 Max steht bei <Band>“ mit Bühne im Text; Klick
-öffnet die App. Details:
+`POST /api/position`), bekommen die Gruppenmitglieder, die **bei der Band
+selbst eingetragen sind** (`going` oder `interested`), sofort einen Push:
+„📍 Max steht bei <Band>“ mit Bühne im Text; Klick öffnet die App. Wen
+die Band nicht interessiert, den interessiert auch der Standort dort
+nicht – der bleibt unbehelligt. Details:
 
 - **Karenzzeit 30 Minuten** pro (Nutzer, Slot): Wer sein ✕ nur
   nachjustiert, spammt die Gruppe nicht – erst wenn der Marker länger

@@ -615,14 +615,24 @@ export async function getMemberRole(
   return role === undefined ? null : parseRole(role);
 }
 
-/** Alle Mitglieder der Gruppe außer dem genannten Nutzer (Push-Zielgruppe). */
-export async function getGroupMemberUserIdsExcept(
+/**
+ * Push-Zielgruppe fürs Standort-Teilen: Gruppenmitglieder, die beim Slot
+ * selbst eingetragen sind – eine Zeile in selections heißt 'going' oder
+ * 'interested' – ohne den Teilenden selbst.
+ */
+export async function getSlotAttendeeUserIdsInGroup(
   groupId: string,
+  festivalId: string,
+  slotId: string,
   exceptUserId: string
 ): Promise<string[]> {
   const res = await query<{ user_id: string }>(
-    'SELECT user_id FROM group_members WHERE group_id = $1 AND user_id <> $2',
-    [groupId, exceptUserId]
+    `SELECT DISTINCT m.user_id
+       FROM group_members m
+       JOIN selections s ON s.user_id = m.user_id
+      WHERE m.group_id = $1 AND s.festival_id = $2 AND s.slot_id = $3
+        AND m.user_id <> $4`,
+    [groupId, festivalId, slotId, exceptUserId]
   );
   return res.rows.map((r) => r.user_id);
 }

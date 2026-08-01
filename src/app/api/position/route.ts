@@ -3,8 +3,8 @@ import { readSessionUserId } from '@/lib/auth';
 import {
   getFirstGroupIdForUser,
   getGroupContextForUser,
-  getGroupMemberUserIdsExcept,
   getPositionUpdatedAt,
+  getSlotAttendeeUserIdsInGroup,
   getTimetable,
   getUserById,
   setPosition,
@@ -29,8 +29,10 @@ export const maxDuration = 60;
 const NOTIFY_COOLDOWN_MIN = 30;
 
 /**
- * „📍 Max steht bei <Band>“ an alle anderen Gruppenmitglieder pushen.
- * null = nichts gesendet (Slot unbekannt oder niemand sonst in der Gruppe).
+ * „📍 Max steht bei <Band>“ an die Gruppenmitglieder pushen, die bei der
+ * Band selbst eingetragen sind ('going' oder 'interested') – wen die Band
+ * nicht interessiert, den interessiert auch der Standort dort nicht.
+ * null = nichts gesendet (Slot unbekannt oder niemand eingetragen).
  */
 async function notifyGroup(
   groupId: string,
@@ -41,7 +43,7 @@ async function notifyGroup(
   const [user, timetable, audience] = await Promise.all([
     getUserById(userId),
     getTimetable(festivalId),
-    getGroupMemberUserIdsExcept(groupId, userId),
+    getSlotAttendeeUserIdsInGroup(groupId, festivalId, slotId, userId),
   ]);
   const slot = timetable?.slots.find((s) => s.id === slotId);
   if (!user || !slot || audience.length === 0) return null;
@@ -60,8 +62,9 @@ async function notifyGroup(
 /**
  * Position im Publikum markieren: { group, slotId, x, y } (Prozent 0..100).
  * x/y = null entfernt die Markierung. Der Nutzer kommt aus der
- * Passkey-Session, das Festival aus der Gruppe. Beim Setzen bekommen alle
- * anderen Gruppenmitglieder eine Push-Benachrichtigung (mit Karenzzeit).
+ * Passkey-Session, das Festival aus der Gruppe. Beim Setzen bekommen die
+ * bei der Band eingetragenen Gruppenmitglieder eine Push-Benachrichtigung
+ * (mit Karenzzeit).
  */
 export async function POST(req: Request) {
   const userId = readSessionUserId(req);
@@ -117,7 +120,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // Standort geteilt -> alle anderen in der Gruppe benachrichtigen. Best
+  // Standort geteilt -> die bei der Band Eingetragenen benachrichtigen. Best
   // effort: Die Position ist gespeichert, ein Push-Fehler ändert daran nichts.
   let push: PushSendResult | null = null;
   if (shouldNotify) {
