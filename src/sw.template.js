@@ -211,7 +211,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 /* ------------------------------------------------------------------ */
-/* Web Push (Mitteilungen & Band-Erinnerungen)                         */
+/* Web Push (Mitteilungen, Band-Erinnerungen & Standort der Gruppe)    */
 /* ------------------------------------------------------------------ */
 
 // Payload: { type, title, body, url, tag? } – siehe src/lib/push.ts.

@@ -21,7 +21,7 @@ export const PUSH_BODY_MAX = 500;
 const SEND_CONCURRENCY = 10;
 
 export interface PushPayload {
-  type: 'announcement' | 'reminder';
+  type: 'announcement' | 'reminder' | 'position';
   title: string;
   body: string;
   /** Deep-Link, den der SW bei Klick öffnet (z. B. /app?announcement=…) */

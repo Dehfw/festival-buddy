@@ -1,8 +1,9 @@
 # Push & Mitteilungen
 
-Zwei Dinge, ein Unterbau: **Mitteilungen** (Durchsagen von Veranstaltern
-bzw. dem Betreiber) und **Band-Erinnerungen** („Deine Band startet
-gleich“). Zugestellt wird per **Web Push (VAPID)** – Standard-Browser-Push
+Drei Dinge, ein Unterbau: **Mitteilungen** (Durchsagen von Veranstaltern
+bzw. dem Betreiber), **Band-Erinnerungen** („Deine Band startet
+gleich“) und **Standort-Benachrichtigungen** („Max steht bei …“, siehe
+unten). Zugestellt wird per **Web Push (VAPID)** – Standard-Browser-Push
 ohne Firebase, Server-seitig über das npm-Paket `web-push`. Wer kein Push
 erlaubt (oder es verpasst), sieht Mitteilungen trotzdem in der App: Sie
 reiten im `/api/data`-Payload auf dem normalen 7-Sekunden-Polling mit,
@@ -77,6 +78,25 @@ Erinnerungen kommt `CRON_SECRET` dazu (siehe unten).
   ```
 
   Ohne `--festival` app-weit an alle Abos (`festival_id NULL`).
+
+## Standort-Benachrichtigungen
+
+Markiert jemand seine Position auf dem Blueprint („Hier stehe ich“,
+`POST /api/position`), bekommen die Gruppenmitglieder, die **bei der Band
+selbst eingetragen sind** (`going` oder `interested`), sofort einen Push:
+„📍 Max steht bei <Band>“ mit Bühne im Text; Klick öffnet die App. Wen
+die Band nicht interessiert, den interessiert auch der Standort dort
+nicht – der bleibt unbehelligt. Details:
+
+- **Karenzzeit 30 Minuten** pro (Nutzer, Slot): Wer sein ✕ nur
+  nachjustiert, spammt die Gruppe nicht – erst wenn der Marker länger
+  nicht angefasst wurde, gibt es beim nächsten Setzen wieder einen Push.
+  Geprüft wird gegen `positions.updated_at` **vor** dem Schreiben.
+- Das **Entfernen** der Markierung pusht nie.
+- Gleicher Notification-`tag` pro (Gruppe, Nutzer, Slot): erneutes
+  Teilen ersetzt eine noch sichtbare Notification statt zu stapeln.
+- Best effort: Die Position ist zu dem Zeitpunkt gespeichert, ein
+  Fehler beim Push-Versand macht die Anfrage nicht kaputt.
 
 ## Band-Erinnerungen
 
