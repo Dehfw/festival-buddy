@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { readSessionUserId } from '@/lib/auth';
 import {
   getFirstGroupIdForUser,
@@ -17,7 +17,8 @@ import {
 } from '@/lib/push';
 
 export const dynamic = 'force-dynamic';
-// Push an die Gruppe muss vor der Response fertig ge-awaitet sein (Serverless).
+// Der Push-Fan-out läuft NACH der Antwort (next/server after) – maxDuration
+// gibt ihm den nötigen Spielraum, die Antwort selbst bleibt sofort.
 export const maxDuration = 60;
 
 /**
@@ -97,9 +98,11 @@ export async function POST(req: Request) {
   }
 
   // Karenz-Check VOR dem Schreiben – setPosition überschreibt updated_at.
+  // Best effort: Schlägt der Check fehl, gilt der Marker als frisch geteilt;
+  // das Speichern der Position scheitert daran nie.
   const prev =
     !remove && isPushConfigured()
-      ? await getPositionUpdatedAt(userId, ctx.festivalId, slotId)
+      ? await getPositionUpdatedAt(userId, ctx.festivalId, slotId).catch(() => null)
       : null;
   const shouldNotify =
     !remove &&
@@ -120,11 +123,14 @@ export async function POST(req: Request) {
     );
   }
 
-  // Standort geteilt -> die bei der Band Eingetragenen benachrichtigen. Best
-  // effort: Die Position ist gespeichert, ein Push-Fehler ändert daran nichts.
-  let push: PushSendResult | null = null;
+  // Standort geteilt -> die bei der Band Eingetragenen benachrichtigen.
+  // Bewusst NACH der Antwort (after): Das Eintragen wartet nie auf den
+  // Push-Fan-out – ein langsamer oder hängender Push-Dienst kann das
+  // Speichern der Position weder verzögern noch scheitern lassen.
   if (shouldNotify) {
-    push = await notifyGroup(groupId, ctx.festivalId, userId, slotId).catch(() => null);
+    after(async () => {
+      await notifyGroup(groupId, ctx.festivalId, userId, slotId).catch(() => {});
+    });
   }
-  return NextResponse.json(push ? { ok: true, push } : { ok: true });
+  return NextResponse.json({ ok: true });
 }

@@ -71,10 +71,13 @@ async function sendToSubscription(
   json: string
 ): Promise<'sent' | 'gone' | 'failed'> {
   try {
+    // timeout: web-push hat sonst KEINEN Socket-Timeout – ein hängender
+    // Push-Dienst würde den ganzen Versand (und damit die wartende
+    // API-Antwort) bis zum Funktions-Timeout blockieren.
     await webpush.sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       json,
-      { TTL: 3600, urgency: 'high' }
+      { TTL: 3600, urgency: 'high', timeout: 10_000 }
     );
     return 'sent';
   } catch (err) {
