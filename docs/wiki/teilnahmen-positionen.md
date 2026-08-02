@@ -36,6 +36,10 @@ Gruppe.
 - Eine Position gibt es **nur mit Teilnahme**: `setPosition` schreibt
   per `INSERT … WHERE EXISTS (SELECT … FROM selections …)` – ohne
   Eintragung antwortet die API mit `not-attending`.
+- **Ansehen können alle**: Die Karte samt Crew-Markern öffnet jedes
+  Gruppenmitglied im Band-Sheet („Karte ansehen – wo steht die Crew?“)
+  – ganz ohne Eintragung; ohne Teilnahme ist sie read-only (kein
+  `onTap`). Nur das Setzen des eigenen ✕ verlangt die Eintragung.
 - Jede Position trägt `updated_at`. Die UI zeigt das relativ an
   („vor 5 Min.") und markiert Marker **älter als 90 Minuten** als
   veraltet („vielleicht längst weitergezogen", `isStalePosition`).

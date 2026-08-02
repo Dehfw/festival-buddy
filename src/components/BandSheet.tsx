@@ -258,12 +258,14 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
                   ? 'Interesse zurückziehen'
                   : '🤔 Ich bin interessiert (unverbindlich)'}
               </button>
-              {iGo && blueprint && (
+              {blueprint && (
                 <button
                   onClick={() => setMapMode(true)}
                   className="w-full rounded-xl border border-rivet bg-steel-2 px-4 py-3.5 text-sm font-semibold text-bone transition active:scale-[0.98]"
                 >
-                  📍 {myPosition ? 'Meine Position ändern' : 'Meine Position im Publikum markieren'}
+                  {iGo
+                    ? `📍 ${myPosition ? 'Meine Position ändern' : 'Meine Position im Publikum markieren'}`
+                    : '🗺️ Karte ansehen – wo steht die Crew?'}
                 </button>
               )}
             </div>
@@ -273,14 +275,24 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
         {mapMode && blueprint && (
           <div className="mt-4">
             <p className="mb-2 text-sm text-ash">
-              Tippe auf die Karte, um dein <b className="text-bone">X</b> zu setzen –
-              deine Crew sieht, wo du stehst.
+              {iGo ? (
+                <>
+                  Tippe auf die Karte, um dein <b className="text-bone">X</b> zu
+                  setzen – deine Crew sieht, wo du stehst.
+                </>
+              ) : (
+                <>
+                  Hier steht deine Crew. Trag dich bei der Band ein, um deine
+                  eigene Position zu markieren.
+                </>
+              )}
             </p>
+            {/* Ohne Eintragung nur ansehen: kein onTap = Karte ist read-only */}
             <StageMap
               blueprint={blueprint}
               stageColor={stage.color}
               markers={markers}
-              onTap={(x, y) => setPosition(slot.id, x, y)}
+              onTap={iGo ? (x, y) => setPosition(slot.id, x, y) : undefined}
             />
             <div className="mt-3 flex gap-2">
               <button
