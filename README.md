@@ -51,7 +51,9 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
 - **„Unsere Bands“-Liste** – kompakte Ansicht nur mit Bands, bei denen
   mindestens ein Crew-Mitglied dabei ist, inkl. Personenanzahl.
 - **Positions-Markierung** – wer bei einer Band eingetragen ist, kann auf dem
-  schematischen Bühnen-Blueprint ein ✕ setzen: „Hier stehe ich.“
+  schematischen Bühnen-Blueprint ein ✕ setzen: „Hier stehe ich.“ Ansehen
+  kann die Karte mit allen Markern jedes Gruppenmitglied – auch ohne
+  Eintragung.
 - **Bühnen-Karten mit POIs** – Toiletten 🚻, Wasser 💧, Merch 🛍️,
   Erste Hilfe ⛑️ und Eingänge 🚪 auf jedem Blueprint, für alle sichtbar.
 - **Veranstalter-Bereich** (`/veranstalter`) – Veranstalter pflegen den
