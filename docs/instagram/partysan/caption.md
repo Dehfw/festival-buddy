@@ -4,25 +4,26 @@
 >
 > Mit **Festival Buddy** plant ihr das Party.San als Crew:
 >
-> 🗓️ Kompletter Timetable – ein Tap und du bist bei einer Band eingetragen
+> 🗓️ Die komplette Running Order – ein Tap und du bist bei einer Band eingetragen
 > 🔥 Hot Slots – wenn genug fest zusagen, brennt der Slot: Pflichttermin für alle
 > 🗺️ ✕ auf dem Bühnenplan – „Hier steh ich" – so findet ihr euch im Getümmel
+> 🔔 Weckruf kurz vor der Show – vom Camp aus sogar mit extra Vorlauf
 > 📴 Läuft auch im Funkloch – Eintragungen syncen, sobald wieder Netz da ist
-> 🔑 Kein Passwort – Login per Face ID / Fingerabdruck
 >
 > Kostenlos im Browser, ohne App-Store: Link in Bio öffnen, Gruppe gründen,
 > Invite-Link in den Crew-Chat werfen – fertig.
 >
-> Wir sehen uns im Pit. 🤘
+> Wir sehen uns in Obermehler. 🤘
 >
-> (Die Screens zeigen eine Demo-Ansicht mit Beispieldaten.)
+> (Spielzeiten auf den Screens sind beispielhaft – die finale Running Order
+> gibt's wie immer auf party-san.de.)
 >
-> #partysan #partysanopenair #psoa #festivalbuddy #metalfestival
-> #deathmetal #blackmetal #festivalcrew #runningorder #festivalplanung
+> #partysan #partysanopenair #psoa #psoa2026 #festivalbuddy #metalfestival
+> #deathmetal #blackmetal #festivalcrew #runningorder #obermehler
 
 Kurzvariante:
 
 > Wer geht zu welcher Band? 🤘 Mit Festival Buddy plant ihr das Party.San
-> als Crew: Timetable antippen, Hot Slots sehen, Leute im Pit finden –
-> läuft sogar im Funkloch. Kostenlos im Browser, Link in Bio.
-> (Screens: Demo-Ansicht mit Beispieldaten.)
+> als Crew: Running Order antippen, Hot Slots sehen, Leute im Pit finden,
+> Weckruf vor der Show – läuft sogar im Funkloch. Kostenlos im Browser,
+> Link in Bio. (Spielzeiten auf den Screens beispielhaft.)

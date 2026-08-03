@@ -11,21 +11,26 @@ vorzustellen.
 | 2     | Timetable-Grid: alle Bühnen, ein Tap = eingetragen |
 | 3     | „Unsere Bands"-Liste: wer ist wo dabei + Hot Slot 🔥 |
 | 4     | Bühnenplan: ✕-Standort-Marker + POIs (Toiletten, Wasser, Merch, Erste Hilfe) |
-| 5     | Offline/Funkloch, Passkey-Login, Veranstalter-Durchsagen |
+| 5     | Band-Erinnerungen (Push), Offline/Funkloch, Veranstalter-Durchsagen |
 | 6     | CTA: in drei Schritten dabei, „Link in Bio" |
 
 Die fertigen PNGs liegen in [`out/`](out/), ein Caption-Vorschlag in
 [`caption.md`](caption.md).
 
-## Wichtig: Beispieldaten
+## Wichtig: echte Bands, beispielhafte Zeiten
 
 Die Handy-Mockups sind **keine Screenshots**, sondern im App-Design
 nachgebaute Ansichten (analog zu `src/components/AppScreenshot.tsx`).
-Timetable-Inhalte (Bands, Zeiten, Bühnen, Tage) sind **erfundene
-Demo-Daten** – kein angekündigtes Lineup. Jeder Slide trägt deshalb den
-Randvermerk „Demo-Ansicht · Beispieldaten". Vor dem Posten prüfen, ob die
-gezeigten Bandnamen fürs Party.San unproblematisch sind, oder sie in
-`slides.html` austauschen.
+Die gezeigten Bands, Tage (Do 6.8. – Sa 8.8.2026) und Bühnen
+(Mainstage/Tentstage) entsprechen der **offiziellen Running Order 2026**
+(party-san.de/bands-2026/running-order, abgerufen über Presse-Spiegel am
+03.08.2026, u. a. vampster.com und time-for-metal.eu, da die Seite selbst
+Bot-Zugriffe blockt). Die **Uhrzeiten sind beispielhaft** gesetzt – exakte
+Set-Zeiten waren nicht maschinenlesbar verfügbar, und die Slot-Reihenfolge
+am Freitagabend (Sacred Reich → Dark Funeral → Alcest → Amorphis) ist
+plausibel geschätzt. Jeder Mockup-Slide trägt deshalb den Randvermerk
+„Lineup 2026 · Zeiten beispielhaft". Vor dem Posten idealerweise die
+Zeiten in `slides.html` mit der finalen Running Order abgleichen.
 
 ## Neu rendern
 
