@@ -4,8 +4,16 @@ Timetable-Planer für Festival-Crews: Wer geht zu welcher Band – und wo
 steht ihr im Publikum? Mandantenfähig über **Gruppen**: Nach dem Login
 gründet man eine Gruppe (mit Festival-Auswahl, Name und Gruppenbild) oder
 tritt per **Einladungscode** bei – als Link (`/join/<code>`) oder zum
-Abtippen. Aktuell angelegte Festivals: **Wacken Open Air 2026** und
-**Summer Breeze 2026** (Lineup folgt per Import).
+Abtippen. Aktuell angelegte Festivals: **Wacken Open Air 2026**,
+**Summer Breeze 2026** und **Party.San Metal Open Air 2026** (Lineups
+folgen per Import).
+
+Festival-Landingpages: Unter `/partysan` gibt es eine eigene Startseite
+fürs Party.San. Ihre CTAs zeigen auf `/app?festival=psoa2026` – die
+Vorauswahl überlebt den Passkey-Login (sessionStorage) und die
+Gruppengründung überspringt dann die Festival-Auswahl; das Festival ist
+fest vorausgewählt („Anderes Festival wählen“ holt die Liste zurück).
+Weitere Landingpages brauchen nur einen Link mit ihrer Festival-ID.
 
 Login per **Passkey** (Face ID / Fingerabdruck): Beim ersten Mal Namen
 eintippen und Passkey anlegen, danach bietet das Gerät den Passkey beim

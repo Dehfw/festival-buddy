@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 import { PasswordAuth } from '@/components/PasswordAuth';
-import { saveUser } from '@/lib/client/sync';
+import { savePendingFestival, saveUser } from '@/lib/client/sync';
 import { useModalDialog } from '@/lib/client/useModalDialog';
 import type { User } from '@/lib/types';
 import {
@@ -23,8 +23,16 @@ import {
  * als Ausweg für Browser ohne Passkey-Support. Nach Erfolg wird der
  * Nutzer lokal übernommen und es geht in die App unter /app – deren
  * AppProvider liest die Session dann weiter.
+ *
+ * preselectFestivalId: Festival-Landingpages (z. B. /partysan) merken damit
+ * ihr Festival für die Gruppengründung vor – die GroupGate überspringt
+ * dann die Festival-Auswahl.
  */
-export function LandingLogin() {
+export function LandingLogin({
+  preselectFestivalId,
+}: {
+  preselectFestivalId?: string;
+} = {}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
@@ -100,6 +108,7 @@ export function LandingLogin() {
 
   const enter = (user: User) => {
     saveUser(user);
+    if (preselectFestivalId) savePendingFestival(preselectFestivalId);
     router.push('/app');
   };
 

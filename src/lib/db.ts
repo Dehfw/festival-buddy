@@ -334,8 +334,9 @@ async function createSchema(): Promise<void> {
     `);
 
     // Festivals seeden: Wacken aus dem gebundelten Timetable-JSON, Summer
-    // Breeze als Gerüst (Lineup kommt später per scripts/import-festival.mjs).
-    // Nur einfügen, wenn die Zeile fehlt – danach ist die DB die Wahrheit.
+    // Breeze und Party.San als Gerüst (Lineup kommt später per
+    // scripts/import-festival.mjs). Nur einfügen, wenn die Zeile fehlt –
+    // danach ist die DB die Wahrheit.
     await client.query(
       `INSERT INTO festivals (id, name, edition, data_version, timetable)
        VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`,
@@ -365,6 +366,26 @@ async function createSchema(): Promise<void> {
             { id: 'thu', label: 'Do', longLabel: 'Donnerstag', date: '2026-08-13' },
             { id: 'fri', label: 'Fr', longLabel: 'Freitag', date: '2026-08-14' },
             { id: 'sat', label: 'Sa', longLabel: 'Samstag', date: '2026-08-15' },
+          ],
+          stages: [],
+          slots: [],
+        }),
+      ]
+    );
+    await client.query(
+      `INSERT INTO festivals (id, name, edition, data_version, timetable)
+       VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`,
+      [
+        'psoa2026',
+        'Party.San Metal Open Air 2026',
+        '06.–08.08.2026 · Flugplatz Obermehler-Schlotheim',
+        '',
+        JSON.stringify({
+          days: [
+            { id: 'wed', label: 'Mi', longLabel: 'Mittwoch (Warm-Up)', date: '2026-08-05' },
+            { id: 'thu', label: 'Do', longLabel: 'Donnerstag', date: '2026-08-06' },
+            { id: 'fri', label: 'Fr', longLabel: 'Freitag', date: '2026-08-07' },
+            { id: 'sat', label: 'Sa', longLabel: 'Samstag', date: '2026-08-08' },
           ],
           stages: [],
           slots: [],
