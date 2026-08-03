@@ -22,7 +22,7 @@ import type {
   Timetable,
   User,
 } from './types';
-import { toMinutes } from './types';
+import { FESTIVAL_TZ, toMinutes } from './types';
 
 /**
  * Datenschicht: Festivals (inkl. Timetable), Gruppen, Nutzer, Band-
@@ -499,6 +499,30 @@ export async function getTimetableFresh(festivalId: string): Promise<Timetable |
   return getTimetable(festivalId);
 }
 
+/** en-CA formatiert als JJJJ-MM-TT */
+const todayFormat = new Intl.DateTimeFormat('en-CA', {
+  timeZone: FESTIVAL_TZ,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+/**
+ * Heutiges Datum (JJJJ-MM-TT) in der Festival-Zeitzone – Stichtag dafür,
+ * ob ein Festival schon vorbei ist.
+ */
+function festivalTodayISO(): string {
+  return todayFormat.format(new Date());
+}
+
+/**
+ * Letzter Festivaltag als max(days.date) – Tage sind per upsertDay/Import
+ * garantiert JJJJ-MM-TT, der Textvergleich ist also chronologisch.
+ */
+const LAST_DAY_SQL = `(SELECT max(day->>'date')
+                         FROM jsonb_array_elements(timetable->'days') day)`;
+
+/** Alle Festivals, auch vergangene (Reminder-Cron braucht den Vollbestand). */
 export async function getFestivals(): Promise<FestivalSummary[]> {
   const res = await query<{ id: string; name: string; edition: string; has_lineup: boolean }>(
     `SELECT id, name, edition,
@@ -513,9 +537,39 @@ export async function getFestivals(): Promise<FestivalSummary[]> {
   }));
 }
 
-export async function festivalExists(festivalId: string): Promise<boolean> {
-  const res = await query('SELECT 1 FROM festivals WHERE id = $1', [festivalId]);
-  return (res.rowCount ?? 0) > 0;
+/**
+ * Festivals für die Auswahl bei der Gruppengründung: beendete Festivals
+ * (letzter Tag vor heute) fliegen raus, Festivals ohne importierte Tage
+ * ("Lineup folgt") bleiben wählbar.
+ */
+export async function getSelectableFestivals(): Promise<FestivalSummary[]> {
+  const res = await query<{ id: string; name: string; edition: string; has_lineup: boolean }>(
+    `SELECT id, name, edition,
+            jsonb_array_length(timetable->'slots') > 0 AS has_lineup
+       FROM festivals
+      WHERE COALESCE(${LAST_DAY_SQL}, '9999-12-31') >= $1
+      ORDER BY id`,
+    [festivalTodayISO()]
+  );
+  return res.rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    edition: r.edition,
+    hasLineup: r.has_lineup,
+  }));
+}
+
+export type FestivalStatus = 'ok' | 'past' | 'missing';
+
+/** Für die Gruppengründung: existiert das Festival, und ist es noch nicht vorbei? */
+export async function getFestivalStatus(festivalId: string): Promise<FestivalStatus> {
+  const res = await query<{ last_day: string | null }>(
+    `SELECT ${LAST_DAY_SQL} AS last_day FROM festivals WHERE id = $1`,
+    [festivalId]
+  );
+  const row = res.rows[0];
+  if (!row) return 'missing';
+  return row.last_day !== null && row.last_day < festivalTodayISO() ? 'past' : 'ok';
 }
 
 /* ------------------------------------------------------------------ */

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readSessionUserId } from '@/lib/auth';
-import { createGroup, festivalExists, getUserById } from '@/lib/db';
+import { createGroup, getFestivalStatus, getUserById } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,8 +23,15 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-  if (!(await festivalExists(festivalId))) {
+  const festivalStatus = await getFestivalStatus(festivalId);
+  if (festivalStatus === 'missing') {
     return NextResponse.json({ error: 'Unbekanntes Festival' }, { status: 400 });
+  }
+  if (festivalStatus === 'past') {
+    return NextResponse.json(
+      { error: 'Das Festival ist schon vorbei – dafür lässt sich keine Gruppe mehr gründen' },
+      { status: 400 }
+    );
   }
 
   const group = await createGroup(userId, name, festivalId);
