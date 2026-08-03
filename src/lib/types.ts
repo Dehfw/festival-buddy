@@ -283,6 +283,13 @@ export interface DataPayload {
   serverTime: string;
 }
 
+/**
+ * Alle Datums-/Zeitangaben der Timetable sind lokale Festival-Zeiten; die
+ * unterstützten Festivals liegen in Deutschland. Sollte je ein Festival in
+ * einer anderen Zeitzone dazukommen, gehört die Zone ans Festival (Phase 2).
+ */
+export const FESTIVAL_TZ = 'Europe/Berlin';
+
 /** "HH:MM" (auch 24:30 etc.) -> Minuten seit 00:00 des Festivaltags */
 export function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(':').map(Number);

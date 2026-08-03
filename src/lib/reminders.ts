@@ -6,7 +6,7 @@ import {
   type ReminderTarget,
 } from './db';
 import { isPushConfigured, sendPushToUsers, type PushSendResult } from './push';
-import { formatTime, toMinutes, type Slot, type Timetable } from './types';
+import { FESTIVAL_TZ, formatTime, toMinutes, type Slot, type Timetable } from './types';
 
 /**
  * Band-Erinnerungen: Ein Cron (alle ~5 Min.) pusht "Band startet gleich" an
@@ -34,13 +34,6 @@ const REMINDER_LEAD_NEAR_MIN = 15;
 const NEARBY_WINDOW_MIN = 60;
 /** Karenz nach hinten, falls ein Cron-Lauf ausfiel (Slot lief gerade an). */
 const REMINDER_GRACE_MIN = 5;
-
-/**
- * Alle Slot-Zeiten sind lokale Festival-Zeiten; die unterstützten Festivals
- * liegen in Deutschland. Sollte je ein Festival in einer anderen Zeitzone
- * dazukommen, gehört die Zone ans Festival (Phase 2).
- */
-const FESTIVAL_TZ = 'Europe/Berlin';
 
 const tzFormat = new Intl.DateTimeFormat('en-US', {
   timeZone: FESTIVAL_TZ,
