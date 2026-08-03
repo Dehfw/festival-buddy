@@ -13,8 +13,21 @@ const DESCRIPTION =
 /** Deep-Link in die App: merkt das Party.San als Festival-Vorauswahl vor */
 const APP_LINK = '/app?festival=psoa2026';
 
-/** Party.San-Rot als Akzent; die Basis bleibt das dunkle DEFƎKT-Theme */
-const RED_GLOW = { textShadow: '0 0 40px rgba(227,6,19,.55)' };
+/**
+ * Akzente monochrom in Silber/Bone – wie das Party.San-Logo selbst
+ * (die PSD kennt nur Schwarz, Grau und Weiß). Überschriften-Highlights
+ * bekommen einen metallischen Verlauf mit weichem weißen Glow.
+ */
+const SILVER_TEXT = {
+  backgroundImage:
+    'linear-gradient(180deg, #ffffff 0%, #d9d6cf 45%, #8f8c86 100%)',
+  WebkitBackgroundClip: 'text',
+  backgroundClip: 'text',
+  color: 'transparent',
+  filter: 'drop-shadow(0 0 18px rgba(244,241,234,0.3))',
+} as const;
+
+const BONE_GLOW = { textShadow: '0 0 30px rgba(244,241,234,.15)' };
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -144,14 +157,14 @@ export default function PartySanLandingPage() {
 
       {/* Hero: Logo groß, Claim, CTA */}
       <section className="relative mx-auto max-w-4xl px-6 pt-14 pb-16 text-center sm:pt-20 sm:pb-20">
-        {/* Rote Glut hinter dem Logo */}
+        {/* Silbriger Schein hinter dem Logo */}
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-24 h-64 w-[80%] -translate-x-1/2 rounded-full bg-[#e30613]/15 blur-[110px]"
+          className="pointer-events-none absolute left-1/2 top-24 h-64 w-[80%] -translate-x-1/2 rounded-full bg-bone/10 blur-[110px]"
         />
 
         <div className="relative">
-          <div className="mb-8 inline-flex items-center gap-2 border border-[#e30613]/30 bg-[#e30613]/10 px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-[#ff4d55]">
+          <div className="mb-8 inline-flex items-center gap-2 border border-bone/25 bg-bone/5 px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-bone/80">
             <span className="opacity-50">//</span> 06.–08.08.2026 · Flugplatz
             Obermehler-Schlotheim
           </div>
@@ -162,11 +175,9 @@ export default function PartySanLandingPage() {
             className="mx-auto w-full max-w-xl select-none drop-shadow-[0_12px_40px_rgba(0,0,0,0.8)]"
           />
 
-          <h1 className="mt-10 font-metal text-4xl uppercase leading-[0.95] text-bone sm:text-5xl">
+          <h1 className="mt-10 font-metal text-4xl uppercase leading-[0.95] text-ash sm:text-5xl">
             Wer geht zu{' '}
-            <span className="text-[#ff2f3d]" style={RED_GLOW}>
-              welcher Band?
-            </span>
+            <span style={SILVER_TEXT}>welcher Band?</span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-ash sm:text-lg">
@@ -178,7 +189,7 @@ export default function PartySanLandingPage() {
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href={APP_LINK}
-              className="w-full rounded-xl bg-[#e30613] px-8 py-4 font-metal text-lg uppercase tracking-wide text-bone transition active:scale-[0.98] sm:w-auto"
+              className="w-full rounded-xl bg-bone px-8 py-4 font-metal text-lg uppercase tracking-wide text-pit shadow-[0_0_30px_rgba(244,241,234,0.15)] transition active:scale-[0.98] sm:w-auto"
             >
               Party.San-Crew starten
             </Link>
@@ -201,10 +212,7 @@ export default function PartySanLandingPage() {
       <section className="border-t border-rivet/40 bg-pit/60">
         <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <h2 className="text-center font-metal text-3xl uppercase text-bone sm:text-4xl">
-            Alles fürs{' '}
-            <span className="text-[#ff2f3d]" style={RED_GLOW}>
-              Party.San
-            </span>
+            Alles fürs <span style={SILVER_TEXT}>Party.San</span>
           </h2>
           <p className="mx-auto mt-3 max-w-md text-center text-sm text-ash">
             Kein Excel, kein Gruppenchat-Scrollen. Ein Ort für die ganze Crew.
@@ -218,7 +226,7 @@ export default function PartySanLandingPage() {
               <div
                 key={f.title}
                 className={`relative rounded-2xl border bg-steel p-7 ${
-                  f.hot ? 'border-[#e30613]/40' : 'border-rivet/60'
+                  f.hot ? 'border-blood/40' : 'border-rivet/60'
                 }`}
               >
                 {f.hot && <FireFrame className="inset-0 rounded-2xl" />}
@@ -237,19 +245,15 @@ export default function PartySanLandingPage() {
       <section id="so-gehts" className="scroll-mt-20 border-t border-rivet/40">
         <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <h2 className="text-center font-metal text-3xl uppercase text-bone sm:text-4xl">
-            In{' '}
-            <span className="text-[#ff2f3d]" style={RED_GLOW}>
-              drei Schritten
-            </span>{' '}
-            dabei
+            In <span style={SILVER_TEXT}>drei Schritten</span> dabei
           </h2>
 
           <div className="mt-12 grid gap-8 sm:grid-cols-3">
             {STEPS.map((s) => (
               <div key={s.n} className="relative">
                 <div
-                  className="font-metal text-6xl leading-none text-[#e30613]/30"
-                  style={{ textShadow: '0 0 30px rgba(227,6,19,.2)' }}
+                  className="font-metal text-6xl leading-none text-bone/25"
+                  style={BONE_GLOW}
                 >
                   {s.n}
                 </div>
@@ -278,7 +282,7 @@ export default function PartySanLandingPage() {
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href={APP_LINK}
-              className="w-full rounded-xl bg-[#e30613] px-10 py-4 font-metal text-lg uppercase tracking-wide text-bone transition active:scale-[0.98] sm:w-auto"
+              className="w-full rounded-xl bg-bone px-10 py-4 font-metal text-lg uppercase tracking-wide text-pit shadow-[0_0_30px_rgba(244,241,234,0.15)] transition active:scale-[0.98] sm:w-auto"
             >
               Jetzt Crew gründen
             </Link>
