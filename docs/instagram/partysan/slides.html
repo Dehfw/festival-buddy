@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<title>Festival Buddy × Party.San – Instagram-Bilderstrecke</title>
+<style>
+  /* ---------- Fonts (lokal, damit der Render offline funktioniert) ---------- */
+  @font-face {
+    font-family: 'Anton';
+    src: url('fonts/anton-latin.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Inter';
+    src: url('fonts/inter-latin.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+  }
+
+  /* ---------- Design-Tokens aus src/app/globals.css ---------- */
+  :root {
+    --pit: #0a0a0a;
+    --steel: #141414;
+    --steel-2: #1c1c1c;
+    --rivet: #2a2622;
+    --ash: #8a8682;
+    --bone: #f4f1ea;
+    --blood: #ff5a17;
+    --ember: #ff7a2a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: #000; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--bone);
+    -webkit-font-smoothing: antialiased;
+  }
+  .metal {
+    font-family: 'Anton', Impact, sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .mono { font-family: 'DejaVu Sans Mono', ui-monospace, monospace; }
+
+  /* ---------- Slide-Rahmen: 1080 × 1350 (Instagram 4:5) ---------- */
+  .slide {
+    position: relative;
+    width: 1080px;
+    height: 1350px;
+    overflow: hidden;
+    background:
+      linear-gradient(rgba(244, 241, 234, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(244, 241, 234, 0.04) 1px, transparent 1px),
+      var(--pit);
+    background-size: 64px 64px, 64px 64px, auto;
+  }
+  .slide::after {   /* leichte Vignette, damit die Ränder ruhig bleiben */
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 42%, transparent 55%, rgba(0,0,0,0.5) 100%);
+    pointer-events: none;
+  }
+  .glow-bg {        /* Orange-Glut hinter dem Handy, wie auf der Landingpage */
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 90, 23, 0.16);
+    filter: blur(110px);
+  }
+
+  .inner { position: absolute; inset: 0; padding: 84px; z-index: 1; }
+
+  /* ---------- Typo-Bausteine ---------- */
+  .badge {
+    display: inline-flex; align-items: center; gap: 12px;
+    border: 1px solid rgba(255, 90, 23, 0.25);
+    background: rgba(255, 90, 23, 0.06);
+    padding: 14px 24px;
+    font-size: 21px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--blood);
+  }
+  .badge .dim { opacity: 0.5; }
+  h1 {
+    font-family: 'Anton', Impact, sans-serif;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    line-height: 0.97;
+    color: var(--bone);
+  }
+  .accent { color: var(--blood); text-shadow: 0 0 40px rgba(255, 90, 23, 0.45); }
+  .lede { font-size: 30px; line-height: 1.5; color: var(--ash); }
+  .lede strong { color: var(--bone); font-weight: 700; }
+  .tagline {
+    display: flex; align-items: center; gap: 18px;
+    font-size: 22px; font-weight: 900;
+    letter-spacing: 0.3em; text-transform: uppercase; color: var(--bone);
+  }
+  .tagline .bar {
+    display: inline-block; height: 10px; width: 56px;
+    background: var(--blood); transform: skewX(-12deg);
+  }
+
+  /* ---------- Footer auf jedem Slide ---------- */
+  .foot {
+    position: absolute; left: 84px; right: 84px; bottom: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 5;
+  }
+  .foot .wordmark { font-size: 30px; color: var(--bone); }
+  .foot .wordmark span { color: var(--blood); }
+  .dots { display: flex; align-items: center; gap: 10px; }
+  .dots i {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(244, 241, 234, 0.18);
+  }
+  .dots i.on { background: var(--blood); box-shadow: 0 0 10px rgba(255,90,23,.8); }
+  .dots .n { margin-left: 10px; font-size: 19px; color: var(--ash); letter-spacing: .12em; }
+
+  .demo-note {
+    position: absolute; right: 30px; top: 50%;
+    transform: translateY(-50%);
+    writing-mode: vertical-rl;
+    font-size: 17px; color: rgba(138, 134, 130, 0.6);
+    letter-spacing: 0.28em; text-transform: uppercase;
+    z-index: 6;
+  }
+
+  /* ---------- Annotation (Marker-Chip mit Linie) ---------- */
+  .callout {
+    position: absolute; z-index: 6;
+    display: inline-flex; align-items: center; gap: 10px;
+    border: 1.5px solid rgba(255, 122, 42, 0.75);
+    background: rgba(10, 10, 10, 0.92);
+    color: var(--ember);
+    padding: 12px 20px; border-radius: 999px;
+    font-size: 21px; letter-spacing: 0.06em; font-weight: 700;
+    box-shadow: 0 0 24px rgba(255, 90, 23, 0.25);
+    white-space: nowrap;
+  }
+  .callout::after {
+    content: ''; position: absolute; width: 2px; height: var(--tail, 46px);
+    background: linear-gradient(to bottom, rgba(255,122,42,.85), rgba(255,122,42,0));
+    left: 50%; top: 100%;
+  }
+  .callout.tail-up::after {
+    top: auto; bottom: 100%;
+    background: linear-gradient(to top, rgba(255,122,42,.85), rgba(255,122,42,0));
+  }
+  .callout.tail-off::after { display: none; }
+
+  /* =========================================================
+     Handy-Mockup – Nachbau von components/AppScreenshot.tsx
+     ========================================================= */
+  .phone {
+    position: relative;
+    width: 560px;
+    border-radius: 66px;
+    border: 1.5px solid var(--rivet);
+    background: linear-gradient(to bottom, var(--steel-2), var(--pit));
+    padding: 15px;
+    box-shadow: 0 48px 96px rgba(0, 0, 0, 0.72);
+  }
+  .phone::before {
+    content: ''; position: absolute; inset: 0; border-radius: 66px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); pointer-events: none;
+  }
+  .screen {
+    position: relative; overflow: hidden;
+    border-radius: 52px; background: var(--pit);
+  }
+  .notch {
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+    width: 150px; height: 30px; border-radius: 999px; background: #000; z-index: 20;
+  }
+  .app-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 52px 20px 16px;
+    background: linear-gradient(160deg, #1c1c1c 0%, #101010 50%, #141414 100%);
+    border-bottom: 1px solid rgba(255, 90, 23, 0.18);
+  }
+  .app-header .left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .app-header .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--blood); box-shadow: 0 0 12px #ff5a17; flex: none;
+  }
+  .app-header .logo { font-size: 21px; color: var(--bone); white-space: nowrap; }
+  .app-header .logo span { color: var(--blood); }
+  .group-chip {
+    display: flex; align-items: center; gap: 8px;
+    border: 1px solid var(--rivet); background: var(--steel-2);
+    border-radius: 999px; padding: 4px 14px 4px 4px; min-width: 0;
+  }
+  .group-chip .gava {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--blood);
+    display: flex; align-items: center; justify-content: center; font-size: 13px; flex: none;
+  }
+  .group-chip .gname {
+    font-size: 15px; font-weight: 700; color: var(--bone); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .me-ava {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: rgba(0,0,0,0.85);
+    background: #35c5d8; box-shadow: 0 0 0 2.5px #e7e7ee; flex: none;
+  }
+  .bottom-nav {
+    display: flex; border-top: 1px solid var(--rivet); background: var(--steel);
+    position: relative; z-index: 10;
+  }
+  .bottom-nav .tab {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 14px 0 18px; color: var(--ash);
+  }
+  .bottom-nav .tab.on { color: var(--blood); }
+  .bottom-nav .tab .ico { font-size: 26px; line-height: 1; }
+  .bottom-nav .tab .lbl {
+    font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .fade-bottom {
+    position: absolute; left: 0; right: 0; height: 70px; z-index: 5;
+    background: linear-gradient(to top, var(--pit), transparent);
+  }
+
+  /* ---------- Avatare ---------- */
+  .ava {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    font-size: 11px; font-weight: 700; color: rgba(0, 0, 0, 0.85);
+    box-shadow: 0 0 0 2.5px #0b0b0f; margin-left: -8px;
+  }
+  .ava.first { margin-left: 0; }
+  .ava.more { background: var(--rivet); color: var(--bone); font-size: 12px; width: auto; padding: 0 8px; border-radius: 999px; }
+  .ava.faded { opacity: 0.45; }
+
+  /* ---------- Listen-Ansicht („Unsere Bands") ---------- */
+  .list { padding: 16px 18px 0; display: flex; flex-direction: column; gap: 18px; }
+  .day-h { font-family: 'Anton', Impact, sans-serif; font-size: 17px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ash); }
+  .day-h .d { color: rgba(138, 134, 130, 0.5); }
+  .cards { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+  .card {
+    position: relative;
+    display: flex; align-items: center; gap: 14px;
+    border-radius: 18px; border: 1.5px solid var(--rivet);
+    background: var(--steel); padding: 13px 14px;
+  }
+  .card.going { border-color: rgba(255, 90, 23, 0.5); background: rgba(255, 90, 23, 0.1); }
+  .card.interested { border-style: dashed; border-color: rgba(255, 122, 42, 0.6); background: rgba(255, 122, 42, 0.05); }
+  .tbox {
+    width: 64px; height: 58px; flex: none; border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .tbox .t { font-size: 16px; font-weight: 900; }
+  .tbox .s { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+  .card .mid { flex: 1; min-width: 0; }
+  .card .band { font-size: 20px; font-weight: 700; color: var(--bone); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .sub { font-size: 15px; color: var(--ash); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .card .right { display: flex; align-items: center; gap: 8px; flex: none; }
+  .pill {
+    min-width: 30px; text-align: center; border-radius: 999px;
+    background: var(--rivet); color: var(--bone);
+    font-size: 15px; font-weight: 700; padding: 4px 10px;
+  }
+  .pill.int {
+    background: transparent; border: 1.5px dashed rgba(255, 122, 42, 0.6); color: var(--ember);
+  }
+
+  /* ---------- Feuerrahmen (Hot Slot) – statische Version von .fire-frame ---------- */
+  .fire { position: absolute; inset: 0; border-radius: 18px; pointer-events: none; }
+  .fire::after {
+    content: ''; position: absolute; inset: -3px; border-radius: inherit;
+    border: 2px solid rgba(255, 165, 55, 0.9);
+    box-shadow:
+      0 0 10px 2px rgba(255, 90, 23, 0.6),
+      0 0 28px 7px rgba(255, 122, 42, 0.3),
+      inset 0 0 16px rgba(255, 122, 42, 0.45);
+  }
+  .fire .fl {
+    position: absolute; bottom: calc(100% - 2px);
+    width: 20px; height: 26px; opacity: 0.9;
+    background: radial-gradient(ellipse 50% 62% at 50% 88%, #ffe9b0 0%, #ffb347 38%, #ff5a17 68%, transparent 80%);
+    border-radius: 50% 50% 30% 30%;
+    filter: blur(3px);
+  }
+
+  /* ---------- Timetable-Grid ---------- */
+  .day-tabs { display: flex; border-bottom: 1px solid var(--rivet); background: var(--steel); }
+  .day-tabs .dt {
+    flex: 1; text-align: center; padding: 14px 0 12px;
+    font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ash);
+  }
+  .day-tabs .dt small { font-size: 13px; font-weight: 600; color: rgba(138,134,130,.6); margin-left: 5px; }
+  .day-tabs .dt.on { color: var(--bone); box-shadow: inset 0 -3px 0 var(--blood); }
+  .stage-head { display: flex; background: linear-gradient(160deg, #1c1c1c, #101010 50%, #141414); border-bottom: 1px solid rgba(255,90,23,.18); }
+  .stage-head .gut { width: 64px; flex: none; }
+  .stage-head .st {
+    flex: 1; text-align: center; padding: 12px 0;
+    font-family: 'Anton', Impact, sans-serif; font-size: 15px; letter-spacing: 0.12em;
+    text-transform: uppercase; border-left: 1px solid var(--rivet);
+  }
+  .grid-body { position: relative; display: flex; }
+  .grid-body .gut { width: 64px; flex: none; position: relative; }
+  .grid-body .hour {
+    position: absolute; right: 10px; transform: translateY(-50%);
+    font-size: 13px; font-weight: 600; color: var(--ash);
+  }
+  .grid-body .hline { position: absolute; left: 64px; right: 0; border-top: 1px solid rgba(42, 38, 34, 0.55); }
+  .grid-body .col { flex: 1; position: relative; border-left: 1px solid rgba(42, 38, 34, 0.6); }
+  .gslot {
+    position: absolute; left: 5px; right: 5px; overflow: hidden;
+    border-radius: 10px; border: 1.5px solid var(--rivet);
+    border-left-width: 4px; background: var(--steel-2);
+    padding: 7px 9px; text-align: left;
+  }
+  .gslot .b { font-size: 15px; font-weight: 700; color: var(--bone); line-height: 1.15; }
+  .gslot .tm { font-size: 12px; color: var(--ash); margin-top: 2px; }
+  .gslot .avs { position: absolute; left: 9px; bottom: 7px; display: flex; }
+  .gslot.going { border-color: var(--blood); border-left-color: var(--blood); background: rgba(255, 90, 23, 0.15); }
+  .gslot.interested { border-style: dashed; border-color: rgba(255, 122, 42, 0.7); background: rgba(255, 122, 42, 0.1); }
+  .now-line { position: absolute; left: 64px; right: 0; height: 2px; background: var(--blood); box-shadow: 0 0 12px rgba(255,90,23,.9); z-index: 4; }
+  .now-line::before {
+    content: ''; position: absolute; left: -5px; top: -4px;
+    width: 10px; height: 10px; border-radius: 50%; background: var(--blood);
+  }
+
+  /* ---------- Bühnen-Karte (StageMap) ---------- */
+  .stage-page { padding: 16px 18px 0; }
+  .band-ctx {
+    display: flex; align-items: center; gap: 14px;
+    border: 1.5px solid rgba(255, 90, 23, 0.5); background: rgba(255, 90, 23, 0.1);
+    border-radius: 18px; padding: 12px 14px; margin-bottom: 14px;
+  }
+  .band-ctx .mid { flex: 1; }
+  .band-ctx .hint {
+    font-size: 14px; color: var(--ember); font-weight: 600; white-space: nowrap;
+  }
+  .mapwrap { border-radius: 20px; overflow: hidden; border: 1.5px solid var(--rivet); background: #101016; }
+  .poi-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .poi-legend .p {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--rivet); background: var(--steel-2);
+    border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 600; color: var(--ash);
+  }
+
+  /* ---------- Feature-Karten (Slide 5) ---------- */
+  .feat {
+    position: relative;
+    border: 1.5px solid rgba(42, 38, 34, 0.9); background: var(--steel);
+    border-radius: 26px; padding: 36px 48px;
+    display: flex; gap: 36px; align-items: flex-start;
+  }
+  .feat .ico { font-size: 60px; line-height: 1; margin-top: 4px; }
+  .feat h3 { font-family: 'Anton', Impact, sans-serif; font-weight: 400; font-size: 40px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); }
+  .feat p { margin-top: 12px; font-size: 26px; line-height: 1.45; color: var(--ash); }
+  .feat p strong { color: var(--bone); font-weight: 700; }
+
+  /* ---------- Schritte (Slide 6) ---------- */
+  .step { display: flex; gap: 40px; align-items: flex-start; }
+  .step .n {
+    font-family: 'Anton', Impact, sans-serif; font-size: 96px; line-height: 0.9;
+    color: rgba(255, 90, 23, 0.28); text-shadow: 0 0 30px rgba(255, 90, 23, 0.15);
+    width: 130px; flex: none;
+  }
+  .step h3 { font-family: 'Anton', Impact, sans-serif; font-weight: 400; font-size: 38px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); margin-top: 10px; }
+  .step p { margin-top: 10px; font-size: 26px; line-height: 1.45; color: var(--ash); }
+  .cta-btn {
+    display: inline-block; background: var(--blood); color: #000;
+    font-family: 'Anton', Impact, sans-serif; font-size: 44px; letter-spacing: 0.05em;
+    text-transform: uppercase; padding: 30px 72px; border-radius: 20px;
+    box-shadow: 0 0 60px rgba(255, 90, 23, 0.35);
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= SLIDE 1 · COVER ================= -->
+<section class="slide" id="s1">
+  <div class="glow-bg" style="width:760px;height:760px;left:160px;top:640px;"></div>
+  <div class="inner">
+    <div class="badge mono"><span class="dim">//</span> Party.San Open Air &nbsp;×&nbsp; Festival Buddy</div>
+    <h1 style="font-size:136px;margin-top:52px;">Wer geht<br />zu welcher<br /><span class="accent">Band?</span></h1>
+    <div class="tagline" style="margin-top:44px;">Stramm <span class="bar"></span> Geplant</div>
+    <p class="lede" style="margin-top:40px;max-width:850px;">
+      <strong>Festival Buddy</strong> ist eure App fürs Festival: Timetable checken,
+      Bands markieren, die Crew im Getümmel finden. Swipe durch. 🤘
+    </p>
+  </div>
+
+  <!-- Handy ragt unten aus dem Slide: „Unsere Bands"-Teaser -->
+  <div class="phone" style="position:absolute;left:50%;transform:translateX(-50%) rotate(-2deg);top:880px;width:580px;">
+    <div class="screen">
+      <div class="notch"></div>
+      <div class="app-header">
+        <div class="left">
+          <span class="dot"></span>
+          <span class="logo metal">Festival <span>Buddy</span></span>
+          <span class="group-chip"><span class="gava">🤘</span><span class="gname">MOSHKOMMANDO</span></span>
+        </div>
+        <span class="me-ava">DA</span>
+      </div>
+      <div class="list">
+        <div>
+          <div class="day-h">Freitag <span class="d">· Tag 2</span></div>
+          <div class="cards">
+            <div class="card going">
+              <div class="tbox" style="background:rgba(255,90,23,.13);"><span class="t" style="color:#ff5a17;">17:15</span><span class="s" style="color:#ff5a17;">Main</span></div>
+              <div class="mid"><div class="band">Asphyx</div><div class="sub">Mainstage · bis 18:15 Uhr</div></div>
+              <div class="right">
+                <span style="display:flex;padding-left:8px;">
+                  <span class="ava first" style="background:#35c5d8;">DA</span><span class="ava" style="background:#e0457f;">BR</span><span class="ava" style="background:#e8c33a;">CH</span>
+                </span>
+                <span class="pill">3</span>
+              </div>
+            </div>
+            <div class="card going">
+              <div class="fire">
+                <span class="fl" style="left:8%;height:24px;"></span><span class="fl" style="left:26%;height:30px;width:24px;"></span>
+                <span class="fl" style="left:47%;height:22px;"></span><span class="fl" style="left:66%;height:32px;width:26px;"></span>
+                <span class="fl" style="left:86%;height:24px;"></span>
+              </div>
+              <div class="tbox" style="background:rgba(255,90,23,.13);"><span class="t" style="color:#ff5a17;">19:00</span><span class="s" style="color:#ff5a17;">Main</span></div>
+              <div class="mid"><div class="band">Bloodbath</div><div class="sub">Mainstage · bis 20:15 Uhr</div></div>
+              <div class="right">
+                <span style="display:flex;padding-left:8px;">
+                  <span class="ava first" style="background:#35c5d8;">DA</span><span class="ava" style="background:#e0457f;">BR</span><span class="ava" style="background:#57c98a;">LA</span><span class="ava more">+4</span>
+                </span>
+                <span class="pill">8</span>
+              </div>
+            </div>
+            <div class="card interested">
+              <div class="tbox" style="background:rgba(47,184,184,.13);"><span class="t" style="color:#2fb8b8;">22:45</span><span class="s" style="color:#2fb8b8;">Tent</span></div>
+              <div class="mid"><div class="band">Necrophobic</div><div class="sub">Tentstage · bis 23:45 Uhr</div></div>
+              <div class="right">
+                <span style="display:flex;padding-left:8px;">
+                  <span class="ava first faded" style="background:#35c5d8;">DA</span><span class="ava faded" style="background:#e8c33a;">CH</span>
+                </span>
+                <span class="pill">1</span><span class="pill int">+2</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-note mono">Demo-Ansicht · Beispieldaten</div>
+  <div class="foot">
+    <span class="wordmark metal">Festival <span>Buddy</span></span>
+    <span class="dots"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><span class="n">1/6</span></span>
+  </div>
+</section>
+
+<!-- ================= SLIDE 2 · TIMETABLE ================= -->
+<section class="slide" id="s2">
+  <div class="glow-bg" style="width:700px;height:700px;left:190px;top:620px;"></div>
+  <div class="inner">
+    <div class="badge mono"><span class="dim">//</span> Feature 01 · Timetable</div>
+    <h1 style="font-size:92px;margin-top:40px;">Der komplette<br /><span class="accent">Timetable.</span></h1>
+    <p class="lede" style="margin-top:28px;max-width:880px;">
+      Alle Bühnen nebeneinander, alle Tage im Blick. <strong>Band antippen → du bist
+      eingetragen.</strong> Deine Crew sieht es sofort.
+    </p>
+  </div>
+
+  <div class="phone" style="position:absolute;left:50%;transform:translateX(-50%);top:480px;width:540px;">
+    <div class="screen">
+      <div class="notch"></div>
+      <div class="app-header">
+        <div class="left">
+          <span class="dot"></span>
+          <span class="logo metal">Festival <span>Buddy</span></span>
+          <span class="group-chip"><span class="gava">🤘</span><span class="gname">MOSHKOMMANDO</span></span>
+        </div>
+        <span class="me-ava">DA</span>
+      </div>
+      <div class="day-tabs">
+        <div class="dt">Do</div>
+        <div class="dt on">Fr</div>
+        <div class="dt">Sa</div>
+      </div>
+      <div class="stage-head">
+        <div class="gut"></div>
+        <div class="st" style="color:#ff5a17;">Mainstage</div>
+        <div class="st" style="color:#2fb8b8;">Tentstage</div>
+      </div>
+      <div class="grid-body" style="height:540px;">
+        <!-- Stunden-Linien + Zeiten: 17–23 Uhr, 1.5 px pro Minute -->
+        <div class="hline" style="top:0;"></div>
+        <div class="hline" style="top:90px;"></div>
+        <div class="hline" style="top:180px;"></div>
+        <div class="hline" style="top:270px;"></div>
+        <div class="hline" style="top:360px;"></div>
+        <div class="hline" style="top:450px;"></div>
+        <div class="gut">
+          <span class="hour" style="top:14px;">17:00</span>
+          <span class="hour" style="top:90px;">18:00</span>
+          <span class="hour" style="top:180px;">19:00</span>
+          <span class="hour" style="top:270px;">20:00</span>
+          <span class="hour" style="top:360px;">21:00</span>
+          <span class="hour" style="top:450px;">22:00</span>
+        </div>
+        <div class="col">
+          <div class="gslot" style="top:24px;height:84px;border-left-color:#ff5a17;">
+            <div class="b">Asphyx</div><div class="tm">17:15–18:15</div>
+            <div class="avs"><span class="ava first" style="background:#35c5d8;">DA</span><span class="ava" style="background:#e0457f;">BR</span></div>
+          </div>
+          <div class="gslot going" style="top:180px;height:106px;">
+            <div class="b">Bloodbath</div><div class="tm">19:00–20:15</div>
+            <div class="avs">
+              <span class="ava first" style="background:#35c5d8;">DA</span><span class="ava" style="background:#e0457f;">BR</span>
+              <span class="ava" style="background:#e8c33a;">CH</span><span class="ava more">+3</span>
+            </div>
+          </div>
+          <div class="gslot" style="top:360px;height:106px;border-left-color:#ff5a17;">
+            <div class="b">Dark Funeral</div><div class="tm">21:00–22:15</div>
+            <div class="avs"><span class="ava first" style="background:#e0457f;">BR</span><span class="ava" style="background:#57c98a;">LA</span></div>
+          </div>
+          <div class="gslot" style="top:495px;height:60px;border-left-color:#ff5a17;">
+            <div class="b">Marduk</div><div class="tm">22:30–23:45</div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="gslot" style="top:68px;height:64px;border-left-color:#2fb8b8;">
+            <div class="b">Vomitory</div>
+            <div class="avs"><span class="ava first" style="background:#d84a3a;">CL</span></div>
+          </div>
+          <div class="gslot interested" style="top:225px;height:86px;border-left-color:#2fb8b8;">
+            <div class="b">Necrophobic</div><div class="tm">19:30–20:30</div>
+            <div class="avs"><span class="ava first faded" style="background:#35c5d8;">DA</span><span class="ava faded" style="background:#e8c33a;">CH</span></div>
+          </div>
+          <div class="gslot" style="top:382px;height:64px;border-left-color:#2fb8b8;">
+            <div class="b">Grave</div>
+            <div class="avs"><span class="ava first" style="background:#4a7a9a;">BO</span><span class="ava" style="background:#4fb877;">JD</span></div>
+          </div>
+        </div>
+        <div class="now-line" style="top:160px;"></div>
+      </div>
+      <div class="fade-bottom" style="bottom:74px;"></div>
+      <div class="bottom-nav">
+        <div class="tab on"><span class="ico">🗓️</span><span class="lbl">Timetable</span></div>
+        <div class="tab"><span class="ico">🤘</span><span class="lbl">Unsere Bands</span></div>
+        <div class="tab"><span class="ico">🗺️</span><span class="lbl">Bühnen</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout" style="left:200px;top:818px;--tail:42px;">Ein Tap = eingetragen</div>
+  <div class="demo-note mono">Demo-Ansicht · Beispieldaten</div>
+
+  <div class="foot">
+    <span class="wordmark metal">Festival <span>Buddy</span></span>
+    <span class="dots"><i></i><i class="on"></i><i></i><i></i><i></i><i></i><span class="n">2/6</span></span>
+  </div>
+</section>
+
+<!-- ================= SLIDE 3 · WER GEHT WOHIN + HOT SLOT ================= -->
+<section class="slide" id="s3">
+  <div class="glow-bg" style="width:700px;height:700px;left:190px;top:640px;"></div>
+  <div class="inner">
+    <div class="badge mono"><span class="dim">//</span> Feature 02 · Crew</div>
+    <h1 style="font-size:92px;margin-top:40px;">Wer ist wo<br /><span class="accent">dabei?</span></h1>
+    <p class="lede" style="margin-top:28px;max-width:880px;">
+      Bunte Kreise = deine Leute. Und wenn genug fest zusagen,
+      <strong>fängt der Slot Feuer</strong> – Pflichttermin für alle. 🔥
+    </p>
+  </div>
+
+  <div class="phone" style="position:absolute;left:50%;transform:translateX(-50%);top:480px;width:540px;">
+    <div class="screen">
+      <div class="notch"></div>
+      <div class="app-header">
+        <div class="left">
+          <span class="dot"></span>
+          <span class="logo metal">Festival <span>Buddy</span></span>
+          <span class="group-chip"><span class="gava">🤘</span><span class="gname">MOSHKOMMANDO</span></span>
+        </div>
+        <span class="me-ava">DA</span>
+      </div>
+      <div class="list" style="height:620px;overflow:hidden;">
+        <div>
+          <div class="day-h">Freitag <span class="d">· Tag 2</span></div>
+          <div class="cards">
+            <div class="card">
+              <div class="tbox" style="background:rgba(47,184,184,.13);"><span class="t" style="color:#2fb8b8;">14:00</span><span class="s" style="color:#2fb8b8;">Tent</span></div>
+              <div class="mid"><div class="band">Unleashed</div><div class="sub">Tentstage · bis 14:45 Uhr</div></div>
+              <div class="right">
+                <span style="display:flex;padding-left:8px;"><span class="ava first" style="background:#4a7a9a;">BO</span><span class="ava" style="background:#4fb877;">JD</span></span>
+                <span class="pill">2</span>
+              </div>
+            </div>
+            <div class="card going">
+              <div class="tbox" style="background:rgba(255,90,23,.13);"><span class="t" style="color:#ff5a17;">17:15</span><span class="s" style="color:#ff5a17;">Main</span></div>
+              <div class="mid"><div class="band">Asphyx</div><div class="sub">Mainstage · bis 18:15 Uhr</div></div>
+              <div class="right">
+                <span style="display:flex;padding-left:8px;">
+                  <span class="ava first" style="background:#35c5d8;">DA</span><span class="ava" style="background:#e0457f;">BR</span><span class="ava" style="background:#e8c33a;">CH</span>
+                </span>
+                <span class="pill">3</span>
+              </div>
+            </div>
+            <div class="card going" style="margin-top:8px;">
+              <div class="fire">
+                <span class="fl" style="left:7%;height:26px;"></span><span class="fl" style="left:22%;height:34px;width:26px;"></span>
+                <span class="fl" style="left:38%;height:24px;"></span><span class="fl" style="left:55%;height:36px;width:28px;"></span>
+                <span class="fl" style="left:72%;height:26px;"></span><span class="fl" style="left:88%;height:30px;"></span>
+              </div>
+              <div class="tbox" style="background:rgba(255,90,23,.13);"><span class="t" style="color:#ff5a17;">19:00</span><span class="s" style="color:#ff5a17;">Main</span></div>
+              <div class="mid"><div class="band">Bloodbath</div><div class="sub">Mainstage · bis 20:15 Uhr</div></div>
+              <div class="right">
+                <span style="display:flex;padding-left:8px;">
+                  <span class="ava first" style="background:#35c5d8;">DA</span><span class="ava" style="background:#e0457f;">BR</span>
+                  <span class="ava" style="background:#57c98a;">LA</span><span class="ava more">+4</span>
+                </span>
+                <span class="pill">8</span>
+              </div>
+            </div>
+            <div class="card interested">
+              <div class="tbox" style="background:rgba(47,184,184,.13);"><span class="t" style="color:#2fb8b8;">22:45</span><span class="s" style="color:#2fb8b8;">Tent</span></div>
+              <div class="mid"><div class="band">Necrophobic</div><div class="sub">Tentstage · bis 23:45 Uhr</div></div>
+              <div class="right">
+                <span style="display:flex;padding-left:8px;">
+                  <span class="ava first faded" style="background:#35c5d8;">DA</span><span class="ava faded" style="background:#e8c33a;">CH</span>
+                </span>
+                <span class="pill">1</span><span class="pill int">+2</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="day-h">Samstag <span class="d">· Tag 3</span></div>
+          <div class="cards">
+            <div class="card going">
+              <div class="tbox" style="background:rgba(255,90,23,.13);"><span class="t" style="color:#ff5a17;">15:30</span><span class="s" style="color:#ff5a17;">Main</span></div>
+              <div class="mid"><div class="band">Grave</div><div class="sub">Mainstage · bis 16:30 Uhr</div></div>
+              <div class="right">
+                <span style="display:flex;padding-left:8px;"><span class="ava first" style="background:#35c5d8;">DA</span><span class="ava" style="background:#57c98a;">LA</span></span>
+                <span class="pill">2</span>
+              </div>
+            </div>
+            <div class="card going">
+              <div class="tbox" style="background:rgba(255,90,23,.13);"><span class="t" style="color:#ff5a17;">20:30</span><span class="s" style="color:#ff5a17;">Main</span></div>
+              <div class="mid"><div class="band">Dark Funeral</div><div class="sub">Mainstage · bis 21:45 Uhr</div></div>
+              <div class="right">
+                <span style="display:flex;padding-left:8px;">
+                  <span class="ava first" style="background:#e0457f;">BR</span><span class="ava" style="background:#57c98a;">LA</span>
+                  <span class="ava" style="background:#4fb877;">JD</span><span class="ava more">+2</span>
+                </span>
+                <span class="pill">5</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="fade-bottom" style="bottom:74px;"></div>
+      <div class="bottom-nav">
+        <div class="tab"><span class="ico">🗓️</span><span class="lbl">Timetable</span></div>
+        <div class="tab on"><span class="ico">🤘</span><span class="lbl">Unsere Bands</span></div>
+        <div class="tab"><span class="ico">🗺️</span><span class="lbl">Bühnen</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout" style="right:120px;top:754px;--tail:60px;">🔥 Hot Slot – alle gehen hin</div>
+  <div class="demo-note mono">Demo-Ansicht · Beispieldaten</div>
+
+  <div class="foot">
+    <span class="wordmark metal">Festival <span>Buddy</span></span>
+    <span class="dots"><i></i><i></i><i class="on"></i><i></i><i></i><i></i><span class="n">3/6</span></span>
+  </div>
+</section>
+
+<!-- ================= SLIDE 4 · BÜHNENPLAN / POSITION ================= -->
+<section class="slide" id="s4">
+  <div class="glow-bg" style="width:700px;height:700px;left:190px;top:640px;"></div>
+  <div class="inner">
+    <div class="badge mono"><span class="dim">//</span> Feature 03 · Bühnenplan</div>
+    <h1 style="font-size:92px;margin-top:40px;">Finde deine Leute<br /><span class="accent">im Getümmel.</span></h1>
+    <p class="lede" style="margin-top:28px;max-width:900px;">
+      Vor der Show ein ✕ auf den Plan setzen: <strong>„Hier steh ich."</strong>
+      Dazu Klo, Wasser, Merch &amp; Erste Hilfe direkt auf der Karte.
+    </p>
+  </div>
+
+  <div class="phone" style="position:absolute;left:50%;transform:translateX(-50%);top:456px;width:540px;">
+    <div class="screen">
+      <div class="notch"></div>
+      <div class="app-header">
+        <div class="left">
+          <span class="dot"></span>
+          <span class="logo metal">Festival <span>Buddy</span></span>
+          <span class="group-chip"><span class="gava">🤘</span><span class="gname">MOSHKOMMANDO</span></span>
+        </div>
+        <span class="me-ava">DA</span>
+      </div>
+      <div class="stage-page" style="padding-top:12px;">
+        <div class="band-ctx">
+          <div class="tbox" style="background:rgba(255,90,23,.13);width:64px;height:58px;"><span class="t" style="color:#ff5a17;">19:00</span><span class="s" style="color:#ff5a17;">Main</span></div>
+          <div class="mid"><div class="band">Bloodbath</div><div class="sub">Mainstage · 4 Marker aktiv</div></div>
+          <div class="hint">Tippen = ✕ setzen</div>
+        </div>
+        <div class="mapwrap">
+          <svg viewBox="0 0 100 100" width="100%" style="display:block;">
+            <defs>
+              <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#1d1d26" stroke-width="0.3" />
+              </pattern>
+              <linearGradient id="stageMetal" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#3a3a48" />
+                <stop offset="100%" stop-color="#22222c" />
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="100" height="100" fill="url(#grid)" />
+            <!-- Bühne -->
+            <rect x="16" y="5" width="68" height="15" rx="1.5" fill="url(#stageMetal)" stroke="#ff5a17" stroke-width="0.8" />
+            <text x="50" y="14.5" text-anchor="middle" font-size="4.6" font-weight="900" fill="#ff5a17" style="letter-spacing:.8px;font-family:'Anton',sans-serif;">MAINSTAGE</text>
+            <!-- Absperrung + FOH -->
+            <rect x="22" y="25" width="56" height="1.6" fill="#4a4a58" />
+            <rect x="42" y="62" width="16" height="9" fill="#22222c" stroke="#4a4a58" stroke-width="0.5" />
+            <text x="50" y="68" text-anchor="middle" font-size="2.8" fill="#9a9aa8">FOH</text>
+            <!-- POIs -->
+            <g>
+              <circle cx="8" cy="38" r="5" fill="#15151c" stroke="#3a3a48" stroke-width="0.5" />
+              <text x="8" y="40" text-anchor="middle" font-size="5">🚻</text>
+              <circle cx="92" cy="34" r="5" fill="#15151c" stroke="#3a3a48" stroke-width="0.5" />
+              <text x="92" y="36" text-anchor="middle" font-size="5">💧</text>
+              <circle cx="9" cy="80" r="5" fill="#15151c" stroke="#3a3a48" stroke-width="0.5" />
+              <text x="9" y="82" text-anchor="middle" font-size="5">🛍️</text>
+              <circle cx="91" cy="72" r="5" fill="#15151c" stroke="#3a3a48" stroke-width="0.5" />
+              <text x="91" y="74" text-anchor="middle" font-size="5">⛑️</text>
+              <circle cx="50" cy="93" r="5" fill="#15151c" stroke="#3a3a48" stroke-width="0.5" />
+              <text x="50" y="95" text-anchor="middle" font-size="5">🚪</text>
+            </g>
+            <!-- Crew-Marker -->
+            <text x="31" y="46" text-anchor="middle" font-size="8" font-weight="900" fill="#e0457f" style="paint-order:stroke;stroke:#0b0b0f;stroke-width:.7px;">✕</text>
+            <text x="31" y="51.5" text-anchor="middle" font-size="3" font-weight="700" fill="#e0457f">BR</text>
+            <text x="63" y="42" text-anchor="middle" font-size="8" font-weight="900" fill="#57c98a" style="paint-order:stroke;stroke:#0b0b0f;stroke-width:.7px;">✕</text>
+            <text x="63" y="47.5" text-anchor="middle" font-size="3" font-weight="700" fill="#57c98a">LA</text>
+            <text x="42" y="55" text-anchor="middle" font-size="8" font-weight="900" fill="#e8c33a" opacity="0.55" style="paint-order:stroke;stroke:#0b0b0f;stroke-width:.7px;">✕</text>
+            <text x="42" y="60.5" text-anchor="middle" font-size="3" font-weight="700" fill="#e8c33a" opacity="0.55">CH</text>
+            <!-- Eigener Marker mit Ring -->
+            <circle cx="49" cy="35.5" r="7" fill="none" stroke="#f4f1ea" stroke-width="0.7" stroke-dasharray="1.6 1.1" />
+            <text x="49" y="38.4" text-anchor="middle" font-size="9" font-weight="900" fill="#35c5d8" style="paint-order:stroke;stroke:#0b0b0f;stroke-width:.8px;">✕</text>
+            <rect x="42.5" y="43.5" width="13" height="5.4" rx="2.7" fill="#0b0b0f" stroke="#35c5d8" stroke-width="0.4" />
+            <text x="49" y="47.4" text-anchor="middle" font-size="3.1" font-weight="700" fill="#35c5d8">Du (DA)</text>
+          </svg>
+        </div>
+        <div class="poi-legend" style="margin-top:12px;">
+          <span class="p" style="font-size:13px;padding:5px 11px;">🚻 Toiletten</span><span class="p" style="font-size:13px;padding:5px 11px;">💧 Wasser</span><span class="p" style="font-size:13px;padding:5px 11px;">🛍️ Merch</span><span class="p" style="font-size:13px;padding:5px 11px;">⛑️ Erste Hilfe</span>
+        </div>
+      </div>
+      <div class="bottom-nav" style="margin-top:12px;">
+        <div class="tab"><span class="ico">🗓️</span><span class="lbl">Timetable</span></div>
+        <div class="tab"><span class="ico">🤘</span><span class="lbl">Unsere Bands</span></div>
+        <div class="tab on"><span class="ico">🗺️</span><span class="lbl">Bühnen</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-note mono">Demo-Ansicht · Beispieldaten</div>
+
+  <div class="foot">
+    <span class="wordmark metal">Festival <span>Buddy</span></span>
+    <span class="dots"><i></i><i></i><i></i><i class="on"></i><i></i><i></i><span class="n">4/6</span></span>
+  </div>
+</section>
+
+<!-- ================= SLIDE 5 · OFFLINE / PASSKEY / DURCHSAGEN ================= -->
+<section class="slide" id="s5">
+  <div class="glow-bg" style="width:640px;height:640px;left:220px;top:700px;"></div>
+  <div class="inner">
+    <div class="badge mono"><span class="dim">//</span> Feature 04 · Festival-tauglich</div>
+    <h1 style="font-size:92px;margin-top:40px;">Gebaut fürs<br /><span class="accent">Feld.</span></h1>
+
+    <div style="display:flex;flex-direction:column;gap:26px;margin-top:52px;">
+      <div class="feat">
+        <div class="ico">📴</div>
+        <div>
+          <h3>Läuft auch im Funkloch</h3>
+          <p>Einmal geladen, läuft alles offline weiter. Deine Eintragungen
+          syncen <strong>automatisch</strong>, sobald wieder Netz da ist.</p>
+        </div>
+      </div>
+      <div class="feat">
+        <div class="ico">🔑</div>
+        <div>
+          <h3>Kein Passwort, kein Account-Gedöns</h3>
+          <p>Login per Passkey: <strong>Face ID oder Fingerabdruck</strong> –
+          nichts zu merken, nichts zu vergessen.</p>
+        </div>
+      </div>
+      <div class="feat">
+        <div class="ico">📣</div>
+        <div>
+          <h3>Durchsagen vom Festival</h3>
+          <p>Timetable-Änderungen und News landen als
+          <strong>Mitteilung direkt in der App</strong> – kein Aushang-Suchen.
+          Und aufs Handy kommt sie <strong>ohne App-Store</strong>: im Browser
+          öffnen, „Zum Homescreen hinzufügen", fertig.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span class="wordmark metal">Festival <span>Buddy</span></span>
+    <span class="dots"><i></i><i></i><i></i><i></i><i class="on"></i><i></i><span class="n">5/6</span></span>
+  </div>
+</section>
+
+<!-- ================= SLIDE 6 · CTA ================= -->
+<section class="slide" id="s6">
+  <div class="glow-bg" style="width:700px;height:700px;left:190px;top:160px;"></div>
+  <div class="inner">
+    <div class="badge mono"><span class="dim">//</span> In drei Schritten dabei</div>
+    <h1 style="font-size:100px;margin-top:44px;">Hol deine Crew<br /><span class="accent">an Bord.</span></h1>
+
+    <div style="display:flex;flex-direction:column;gap:42px;margin-top:60px;">
+      <div class="step">
+        <div class="n">01</div>
+        <div>
+          <h3>Rein mit Passkey</h3>
+          <p>Link öffnen, Namen tippen, Face ID / Fingerabdruck – drin.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">02</div>
+        <div>
+          <h3>Gruppe gründen oder beitreten</h3>
+          <p>Invite-Link in den Crew-Chat werfen – deine Leute sind in Sekunden dabei.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">03</div>
+        <div>
+          <h3>Bands markieren</h3>
+          <p>Und das Party.San gemeinsam planen: keine Band verpasst, keiner verloren.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:60px;">
+      <span class="cta-btn">→ Link in Bio</span>
+      <p class="mono" style="margin-top:24px;font-size:19px;letter-spacing:0.22em;text-transform:uppercase;color:var(--ash);">
+        Kostenlos · Im Browser · Wir sehen uns im Pit 🤘
+      </p>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span class="wordmark metal">Festival <span>Buddy</span></span>
+    <span class="dots"><i></i><i></i><i></i><i></i><i></i><i class="on"></i><span class="n">6/6</span></span>
+  </div>
+</section>
+
+<script>
+  // Render-Modus: ?slide=N zeigt genau einen Slide (für den Screenshot),
+  // ohne Parameter bleiben alle Slides untereinander sichtbar (Vorschau).
+  const n = new URLSearchParams(location.search).get('slide');
+  if (n) {
+    document.querySelectorAll('.slide').forEach((s) => {
+      if (s.id !== 's' + n) s.style.display = 'none';
+    });
+  }
+</script>
+</body>
+</html>
