@@ -13,6 +13,7 @@ vorzustellen.
 | 4     | Bühnenplan: ✕-Standort-Marker + POIs (Toiletten, Wasser, Merch, Erste Hilfe) |
 | 5     | Band-Erinnerungen (Push), Offline/Funkloch, Veranstalter-Durchsagen |
 | 6     | CTA: in drei Schritten dabei, „Link in Bio" |
+| 7     | Brand-Card: App-Logo + FestivalBuddy.app |
 
 Die fertigen PNGs liegen in [`out/`](out/), ein Caption-Vorschlag in
 [`caption.md`](caption.md).

@@ -894,6 +894,37 @@
   </div>
 </section>
 
+<!-- ================= SLIDE 7 · LOGO / BRAND-CARD ================= -->
+<section class="slide" id="s7">
+  <div class="glow-bg" style="width:720px;height:720px;left:180px;top:290px;"></div>
+  <div class="inner" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:72px;">
+    <!-- App-Icon: 1:1 aus scripts/generate-icons.mjs (drei Klauen-Schlitze) -->
+    <svg width="420" height="420" viewBox="0 0 512 512" style="filter:drop-shadow(0 30px 60px rgba(0,0,0,.6));">
+      <defs>
+        <linearGradient id="logo-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#23232e"/>
+          <stop offset="0.5" stop-color="#101016"/>
+          <stop offset="1" stop-color="#1a1a24"/>
+        </linearGradient>
+        <linearGradient id="logo-claw" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ff7a2a"/>
+          <stop offset="1" stop-color="#cc3d00"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="512" height="512" rx="96" fill="url(#logo-bg)"/>
+      <g transform="rotate(-18 256 256)">
+        <path d="M156 96 C 176 200, 176 312, 150 416 C 196 330, 204 190, 186 92 Z" fill="url(#logo-claw)"/>
+        <path d="M246 76 C 270 200, 270 320, 240 436 C 292 336, 300 180, 278 72 Z" fill="url(#logo-claw)"/>
+        <path d="M336 96 C 356 200, 356 312, 330 416 C 376 330, 384 190, 366 92 Z" fill="url(#logo-claw)"/>
+      </g>
+      <rect x="6" y="6" width="500" height="500" rx="92" fill="none" stroke="#3a3a48" stroke-width="6"/>
+    </svg>
+    <div class="metal" style="font-size:88px;line-height:1;color:var(--bone);">
+      Festival<span style="color:var(--blood);text-shadow:0 0 40px rgba(255,90,23,.45);">Buddy</span>.app
+    </div>
+  </div>
+</section>
+
 <script>
   // Render-Modus: ?slide=N zeigt genau einen Slide (für den Screenshot),
   // ohne Parameter bleiben alle Slides untereinander sichtbar (Vorschau).

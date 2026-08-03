@@ -34,7 +34,7 @@ const page = await browser.newPage({
   deviceScaleFactor: 1,
 });
 
-for (let i = 1; i <= 6; i++) {
+for (let i = 1; i <= 7; i++) {
   await page.goto(`file://${join(here, 'slides.html')}?slide=${i}`);
   await page.evaluate(() => document.fonts.ready);
   const file = join(here, 'out', `slide-${i}.png`);
