@@ -5,6 +5,7 @@ import {
   browserSupportsWebAuthnAutofill,
   startAuthentication,
   startRegistration,
+  WebAuthnAbortService,
 } from '@simplewebauthn/browser';
 import type { User } from '../types';
 
@@ -17,6 +18,23 @@ import type { User } from '../types';
  */
 
 export { browserSupportsWebAuthn, browserSupportsWebAuthnAutofill };
+
+/**
+ * Die noch offene Passkey-Abfrage abbrechen – gedacht für die
+ * Hintergrund-Conditional-UI, sobald sie nicht mehr gebraucht wird
+ * (Wechsel aufs E-Mail+Passwort-Formular, Panel zu, Unmount).
+ *
+ * Ohne den Abbruch bleibt `navigator.credentials.get({ mediation:
+ * 'conditional' })` einfach hängen, und iOS/WebKit (auch Chrome auf iOS)
+ * klopft dann bei jedem Tastenanschlag in beliebigen Formularfeldern die
+ * offene Anfrage für AutoFill-Vorschläge ab – die Registrierung mit
+ * E-Mail und Passwort fühlt sich dadurch pro Zeichen um ~0,5 s verzögert
+ * an. Der ausgelöste `AbortError` wird von den Aufrufern über
+ * `isWebAuthnAbort` geschluckt.
+ */
+export function cancelPendingPasskey(): void {
+  WebAuthnAbortService.cancelCeremony();
+}
 
 async function post<T>(url: string, body?: object): Promise<T> {
   const res = await fetch(url, {
