@@ -6,6 +6,7 @@ import { useApp } from '@/lib/client/store';
 import {
   browserSupportsWebAuthn,
   browserSupportsWebAuthnAutofill,
+  cancelPendingPasskey,
   describeWebAuthnError,
   isWebAuthnAbort,
   loginWithPasskey,
@@ -32,31 +33,43 @@ export function NameGate() {
   const valid = name.trim().length >= 2;
   const mounted = useRef(true);
 
-  // Conditional UI: Passkey-Autofill im Hintergrund scharf schalten.
-  // iOS/Android zeigen den gespeicherten Passkey dann von selbst an,
-  // sobald das Namensfeld fokussiert wird.
   useEffect(() => {
     mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  // Conditional UI: Passkey-Autofill im Hintergrund scharf schalten.
+  // iOS/Android zeigen den gespeicherten Passkey dann von selbst an,
+  // sobald das Namensfeld fokussiert wird. Nur solange der Passkey-Modus
+  // sichtbar ist – beim Wechsel aufs E-Mail+Passwort-Formular wird die
+  // Anfrage abgebrochen, sonst bremst iOS/WebKit (auch Chrome auf iOS)
+  // dort jeden Tastenanschlag mit einer AutoFill-Abfrage aus.
+  useEffect(() => {
+    if (method !== 'passkey') return;
     if (!browserSupportsWebAuthn()) {
       setSupported(false);
       return;
     }
+    let cancelled = false;
     void (async () => {
       try {
         if (!(await browserSupportsWebAuthnAutofill())) return;
         const user = await loginWithPasskey({ conditional: true });
-        if (mounted.current) loginAs(user);
+        if (!cancelled && mounted.current) loginAs(user);
       } catch (err) {
         // Abbruch (z. B. weil eine Registrierung startet) ist kein Fehler
-        if (mounted.current && !isWebAuthnAbort(err)) {
+        if (!cancelled && mounted.current && !isWebAuthnAbort(err)) {
           setError((err as Error).message);
         }
       }
     })();
     return () => {
-      mounted.current = false;
+      cancelled = true;
+      cancelPendingPasskey();
     };
-  }, [loginAs]);
+  }, [method, loginAs]);
 
   const register = async (e: React.FormEvent) => {
     e.preventDefault();

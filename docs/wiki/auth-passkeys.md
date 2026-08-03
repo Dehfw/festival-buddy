@@ -18,6 +18,12 @@ selben Session-Cookie; ein Konto kann beides gleichzeitig haben.
   Namensfeld von selbst an. Für fremde Geräte gibt es den
   QR-Code-Flow des Betriebssystems. Nach erfolgreichem Login wird der
   Signatur-Zähler fortgeschrieben (Replay-Schutz).
+- Die Conditional-Anfrage läuft nur, solange das Passkey-Formular
+  sichtbar ist: Beim Wechsel aufs E-Mail+Passwort-Formular (oder beim
+  Schließen des Login-Panels) bricht `cancelPendingPasskey()` sie ab.
+  Bleibt sie hängen, bremst iOS/WebKit (auch Chrome auf iOS) jeden
+  Tastenanschlag in den Passwort-Feldern mit einer AutoFill-Abfrage
+  aus (~0,5 s Verzögerung pro Zeichen).
 - Passkeys syncen über iCloud-Schlüsselbund bzw. Google
   Passwortmanager. Achtung: Sie sind an die **Domain (RP ID)**
   gebunden – Domain-Umzug macht bestehende Passkeys unbrauchbar.

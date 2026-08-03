@@ -9,6 +9,7 @@ import type { User } from '@/lib/types';
 import {
   browserSupportsWebAuthn,
   browserSupportsWebAuthnAutofill,
+  cancelPendingPasskey,
   describeWebAuthnError,
   isWebAuthnAbort,
   loginWithPasskey,
@@ -58,7 +59,10 @@ export function LandingLogin() {
 
   // Passkey-Autofill (Conditional UI) erst scharf schalten, wenn das Panel
   // offen ist – iOS/Android bieten den gespeicherten Passkey dann am
-  // Namensfeld von selbst an.
+  // Namensfeld von selbst an. Beim Wechsel aufs E-Mail+Passwort-Formular
+  // oder Schließen des Panels wird die Anfrage abgebrochen, sonst bremst
+  // iOS/WebKit (auch Chrome auf iOS) jeden Tastenanschlag mit einer
+  // AutoFill-Abfrage aus.
   useEffect(() => {
     if (!open || method !== 'passkey') return;
     if (!browserSupportsWebAuthn()) {
@@ -79,6 +83,7 @@ export function LandingLogin() {
     })();
     return () => {
       cancelled = true;
+      cancelPendingPasskey();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, method]);
