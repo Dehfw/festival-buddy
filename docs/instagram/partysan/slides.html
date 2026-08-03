@@ -347,6 +347,11 @@
   .feat h3 { font-family: 'Anton', Impact, sans-serif; font-weight: 400; font-size: 40px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--bone); }
   .feat p { margin-top: 12px; font-size: 26px; line-height: 1.45; color: var(--ash); }
   .feat p strong { color: var(--bone); font-weight: 700; }
+  .feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 52px; }
+  .feat.sm { flex-direction: column; gap: 22px; padding: 38px 40px; }
+  .feat.sm .ico { font-size: 52px; margin-top: 0; }
+  .feat.sm h3 { font-size: 33px; }
+  .feat.sm p { font-size: 24px; margin-top: 10px; }
 
   /* ---------- Schritte (Slide 6) ---------- */
   .step { display: flex; gap: 40px; align-items: flex-start; }
@@ -461,11 +466,12 @@
 <section class="slide" id="s2">
   <div class="glow-bg" style="width:700px;height:700px;left:190px;top:620px;"></div>
   <div class="inner">
-    <div class="badge mono"><span class="dim">//</span> Feature 01 · Timetable</div>
+    <div class="badge mono"><span class="dim">//</span> Timetable</div>
     <h1 style="font-size:92px;margin-top:40px;">Der komplette<br /><span class="accent">Timetable.</span></h1>
-    <p class="lede" style="margin-top:28px;max-width:880px;">
-      Alle Bühnen nebeneinander, alle Tage im Blick. <strong>Band antippen → du bist
-      eingetragen.</strong> Deine Crew sieht es sofort.
+    <p class="lede" style="margin-top:28px;max-width:920px;">
+      Alle Bühnen, alle Tage im Blick. Band antippen und wählen:
+      <strong>„geh ich hin" oder „interessiert"</strong> – deine Crew
+      sieht's sofort.
     </p>
   </div>
 
@@ -562,7 +568,7 @@
     </div>
   </div>
 
-  <div class="callout" style="left:200px;top:910px;--tail:18px;">Ein Tap = eingetragen</div>
+  <div class="callout" style="left:150px;top:908px;--tail:20px;">Antippen → hin oder interessiert</div>
 
   <div class="foot">
     <span class="wordmark metal">Festival <span>Buddy</span></span>
@@ -574,7 +580,7 @@
 <section class="slide" id="s3">
   <div class="glow-bg" style="width:700px;height:700px;left:190px;top:640px;"></div>
   <div class="inner">
-    <div class="badge mono"><span class="dim">//</span> Feature 02 · Crew</div>
+    <div class="badge mono"><span class="dim">//</span> Crew</div>
     <h1 style="font-size:92px;margin-top:40px;">Wer ist wo<br /><span class="accent">dabei?</span></h1>
     <p class="lede" style="margin-top:28px;max-width:880px;">
       Bunte Kreise = deine Leute. Und wenn genug fest zusagen,
@@ -694,7 +700,7 @@
     </div>
   </div>
 
-  <div class="callout" style="right:120px;top:754px;--tail:60px;">🔥 Hot Slot – alle gehen hin</div>
+  <div class="callout" style="right:100px;top:742px;--tail:56px;white-space:normal;display:block;width:395px;border-radius:20px;line-height:1.35;">🔥 Hot Slot<br /><span style="font-size:19px;font-weight:600;">viele aus deiner Crew gehen hin</span></div>
 
   <div class="foot">
     <span class="wordmark metal">Festival <span>Buddy</span></span>
@@ -706,7 +712,7 @@
 <section class="slide" id="s4">
   <div class="glow-bg" style="width:700px;height:700px;left:190px;top:640px;"></div>
   <div class="inner">
-    <div class="badge mono"><span class="dim">//</span> Feature 03 · Bühnenplan</div>
+    <div class="badge mono"><span class="dim">//</span> Bühnenplan</div>
     <h1 style="font-size:92px;margin-top:40px;">Finde deine Leute<br /><span class="accent">im Getümmel.</span></h1>
     <p class="lede" style="margin-top:28px;max-width:900px;">
       Vor der Show ein ✕ auf den Plan setzen: <strong>„Hier steh ich."</strong>
@@ -799,35 +805,43 @@
 <section class="slide" id="s5">
   <div class="glow-bg" style="width:640px;height:640px;left:220px;top:700px;"></div>
   <div class="inner">
-    <div class="badge mono"><span class="dim">//</span> Feature 04 · Festival-tauglich</div>
+    <div class="badge mono"><span class="dim">//</span> Festival-tauglich</div>
     <h1 style="font-size:92px;margin-top:40px;">Gebaut fürs<br /><span class="accent">Feld.</span></h1>
 
-    <div style="display:flex;flex-direction:column;gap:26px;margin-top:52px;">
-      <div class="feat">
+    <div class="feat-grid">
+      <div class="feat sm">
+        <div class="ico">📲</div>
+        <div>
+          <h3>Ab aufs Homescreen</h3>
+          <p>Webseite öffnen, <strong>„Zum Homescreen hinzufügen"</strong> –
+          liegt wie eine App auf dem Handy und schickt dir
+          Push-Nachrichten.</p>
+        </div>
+      </div>
+      <div class="feat sm">
         <div class="ico">🔔</div>
         <div>
           <h3>Weckruf vor der Band</h3>
-          <p>Band markiert? Kurz vor der Show brummt das Handy:
-          <strong>„startet gleich!"</strong> Wer noch am Camp hängt,
-          wird sogar früher erinnert – die App denkt den Fußweg mit.</p>
+          <p>Deine markierten Bands melden sich: Kurz vor Showbeginn
+          <strong>brummt das Handy</strong> – vom Camp aus sogar mit
+          extra Vorlauf.</p>
         </div>
       </div>
-      <div class="feat">
+      <div class="feat sm">
         <div class="ico">📴</div>
         <div>
           <h3>Läuft auch im Funkloch</h3>
-          <p>Einmal geladen, läuft alles offline weiter – mitten auf dem
-          Acker. Deine Eintragungen syncen <strong>automatisch</strong>,
-          sobald wieder Netz da ist.</p>
+          <p>Einmal geladen, läuft alles offline weiter. Eintragungen
+          syncen <strong>automatisch</strong>, sobald wieder Netz
+          da ist.</p>
         </div>
       </div>
-      <div class="feat">
+      <div class="feat sm">
         <div class="ico">📣</div>
         <div>
           <h3>Durchsagen vom Festival</h3>
-          <p>Timetable-Änderungen und News landen als
-          <strong>Mitteilung direkt in der App</strong> – statt am
-          schwarzen Brett neben dem Dixi.</p>
+          <p>Timetable-Änderungen und News vom Veranstalter landen als
+          <strong>Mitteilung direkt in der App</strong>.</p>
         </div>
       </div>
     </div>
