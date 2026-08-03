@@ -15,8 +15,7 @@
 >
 > Wir sehen uns in Obermehler. 🤘
 >
-> (Spielzeiten auf den Screens sind beispielhaft – die finale Running Order
-> gibt's wie immer auf party-san.de.)
+> (Die Crew auf den Screens ist Demo – die Running Order ist echt.)
 >
 > #partysan #partysanopenair #psoa #psoa2026 #festivalbuddy #metalfestival
 > #deathmetal #blackmetal #festivalcrew #runningorder #obermehler
@@ -26,4 +25,4 @@ Kurzvariante:
 > Wer geht zu welcher Band? 🤘 Mit Festival Buddy plant ihr das Party.San
 > als Crew: Running Order antippen, Hot Slots sehen, Leute im Pit finden,
 > Weckruf vor der Show – läuft sogar im Funkloch. Kostenlos im Browser,
-> Link in Bio. (Spielzeiten auf den Screens beispielhaft.)
+> Link in Bio.

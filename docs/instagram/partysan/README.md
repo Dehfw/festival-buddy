@@ -17,20 +17,19 @@ vorzustellen.
 Die fertigen PNGs liegen in [`out/`](out/), ein Caption-Vorschlag in
 [`caption.md`](caption.md).
 
-## Wichtig: echte Bands, beispielhafte Zeiten
+## Datenstand
 
 Die Handy-Mockups sind **keine Screenshots**, sondern im App-Design
 nachgebaute Ansichten (analog zu `src/components/AppScreenshot.tsx`).
-Die gezeigten Bands, Tage (Do 6.8. – Sa 8.8.2026) und Bühnen
-(Mainstage/Tentstage) entsprechen der **offiziellen Running Order 2026**
-(party-san.de/bands-2026/running-order, abgerufen über Presse-Spiegel am
-03.08.2026, u. a. vampster.com und time-for-metal.eu, da die Seite selbst
-Bot-Zugriffe blockt). Die **Uhrzeiten sind beispielhaft** gesetzt – exakte
-Set-Zeiten waren nicht maschinenlesbar verfügbar, und die Slot-Reihenfolge
-am Freitagabend (Sacred Reich → Dark Funeral → Alcest → Amorphis) ist
-plausibel geschätzt. Jeder Mockup-Slide trägt deshalb den Randvermerk
-„Lineup 2026 · Zeiten beispielhaft". Vor dem Posten idealerweise die
-Zeiten in `slides.html` mit der finalen Running Order abgleichen.
+Bands, Tage (Do 6.8. – Sa 8.8.2026), Bühnen (Mainstage/Tentstage) **und
+Uhrzeiten** entsprechen der offiziellen Running Order 2026 von
+party-san.de/bands-2026/running-order (übernommen aus Screenshots der
+Seite, Stand 03.08.2026) – gezeigt wird der Freitagabend (Deceased,
+Wolves in the Throne Room, Sacred Reich, Alcest, Dark Funeral, Amorphis
+bzw. Crawl bis Fleshcrawl im Zelt) sowie Marduk und Hypocrisy am Samstag.
+Nur die **Crew ist fiktiv** (Avatare, Zusagen, Marker) – daher der
+Randvermerk „Offizielle Running Order 2026 · Demo-Crew" auf den
+Mockup-Slides.
 
 ## Neu rendern
 
