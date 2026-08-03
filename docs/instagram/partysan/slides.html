@@ -119,16 +119,7 @@
     background: rgba(244, 241, 234, 0.18);
   }
   .dots i.on { background: var(--blood); box-shadow: 0 0 10px rgba(255,90,23,.8); }
-  .dots .n { margin-left: 10px; font-size: 19px; color: var(--ash); letter-spacing: .12em; }
 
-  .demo-note {
-    position: absolute; right: 30px; top: 50%;
-    transform: translateY(-50%);
-    writing-mode: vertical-rl;
-    font-size: 17px; color: rgba(138, 134, 130, 0.6);
-    letter-spacing: 0.28em; text-transform: uppercase;
-    z-index: 6;
-  }
 
   /* ---------- Annotation (Marker-Chip mit Linie) ---------- */
   .callout {
@@ -280,12 +271,9 @@
       0 0 28px 7px rgba(255, 122, 42, 0.3),
       inset 0 0 16px rgba(255, 122, 42, 0.45);
   }
-  .fire .fl {
-    position: absolute; bottom: calc(100% - 2px);
-    width: 20px; height: 26px; opacity: 0.9;
-    background: radial-gradient(ellipse 50% 62% at 50% 88%, #ffe9b0 0%, #ffb347 38%, #ff5a17 68%, transparent 80%);
-    border-radius: 50% 50% 30% 30%;
-    filter: blur(3px);
+  .fire svg.flames {
+    position: absolute; bottom: calc(100% - 7px); left: 4px;
+    width: calc(100% - 8px); height: 44px;
   }
 
   /* ---------- Timetable-Grid ---------- */
@@ -420,9 +408,24 @@
             </div>
             <div class="card going">
               <div class="fire">
-                <span class="fl" style="left:8%;height:24px;"></span><span class="fl" style="left:26%;height:30px;width:24px;"></span>
-                <span class="fl" style="left:47%;height:22px;"></span><span class="fl" style="left:66%;height:32px;width:26px;"></span>
-                <span class="fl" style="left:86%;height:24px;"></span>
+                <svg class="flames" viewBox="0 0 280 44" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="fgo" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stop-color="#ff7a2a" stop-opacity="0.45"/>
+                      <stop offset="0.55" stop-color="#ff5a17" stop-opacity="0.95"/>
+                      <stop offset="1" stop-color="#ffb347"/>
+                    </linearGradient>
+                    <linearGradient id="fgi" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stop-color="#ffd27a" stop-opacity="0.55"/>
+                      <stop offset="1" stop-color="#ffe9b0"/>
+                    </linearGradient>
+                    <filter id="fbo" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="1.1"/></filter>
+                    <filter id="fbi" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="0.6"/></filter>
+                  </defs>
+                  <path d="M0,44 L0,38 Q6,20 8,14 Q10,20 14,38 Q18,34 20,28 Q22,34 26,38 Q30,12 32,6 Q34,12 38,38 Q42,28 44,22 Q46,28 50,38 Q54,18 56,12 Q58,18 62,38 Q66,36 68,30 Q70,36 74,38 Q78,10 80,4 Q82,10 86,38 Q90,26 92,20 Q94,26 98,38 Q102,16 104,10 Q106,16 110,38 Q114,32 116,26 Q118,32 122,38 Q126,14 128,8 Q130,14 134,38 Q138,30 140,24 Q142,30 146,38 Q150,20 152,14 Q154,20 158,38 Q162,36 164,30 Q166,36 170,38 Q174,12 176,6 Q178,12 182,38 Q186,28 188,22 Q190,28 194,38 Q198,18 200,12 Q202,18 206,38 Q210,34 212,28 Q214,34 218,38 Q222,14 224,8 Q226,14 230,38 Q234,26 236,20 Q238,26 242,38 Q246,20 248,14 Q250,20 254,38 Q258,32 260,26 Q262,32 266,38 Q270,11 272,5 Q274,11 278,38 L280,44 Z" fill="url(#fgo)" filter="url(#fbo)"/>
+                  <path d="M0,44 L0,40 Q6,33.0 8,29.0 Q10,33.0 20,40 Q30,29.0 32,25.0 Q34,29.0 44,40 Q54,32.0 56,28.0 Q58,32.0 68,40 Q78,28.0 80,24.0 Q82,28.0 92,40 Q102,31.0 104,27.0 Q106,31.0 116,40 Q126,30.0 128,26.0 Q130,30.0 140,40 Q150,33.0 152,29.0 Q154,33.0 164,40 Q174,29.0 176,25.0 Q178,29.0 188,40 Q198,32.0 200,28.0 Q202,32.0 212,40 Q222,30.0 224,26.0 Q226,30.0 236,40 Q246,33.0 248,29.0 Q250,33.0 260,40 Q270,28.5 272,24.5 Q274,28.5 284,40 L280,44 Z" fill="url(#fgi)" filter="url(#fbi)" opacity="0.9"/>
+                  <circle cx="32" cy="3" r="1.4" fill="#ffb347" opacity="0.8"/><circle cx="80" cy="1.5" r="1.1" fill="#ffb347" opacity="0.7"/><circle cx="128" cy="4" r="1.5" fill="#ffb347" opacity="0.8"/><circle cx="185" cy="2" r="1.2" fill="#ffb347" opacity="0.7"/><circle cx="240" cy="4" r="1.4" fill="#ffb347" opacity="0.8"/>
+                </svg>
               </div>
               <div class="tbox" style="background:rgba(255,90,23,.13);"><span class="t" style="color:#ff5a17;">22:20</span><span class="s" style="color:#ff5a17;">Main</span></div>
               <div class="mid"><div class="band">Dark Funeral</div><div class="sub">Mainstage · bis 23:20 Uhr</div></div>
@@ -448,11 +451,9 @@
       </div>
     </div>
   </div>
-
-  <div class="demo-note mono">Offizielle Running Order 2026 · Demo-Crew</div>
   <div class="foot">
     <span class="wordmark metal">Festival <span>Buddy</span></span>
-    <span class="dots"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><span class="n">1/6</span></span>
+    <span class="dots"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></span>
   </div>
 </section>
 
@@ -562,11 +563,10 @@
   </div>
 
   <div class="callout" style="left:200px;top:910px;--tail:18px;">Ein Tap = eingetragen</div>
-  <div class="demo-note mono">Offizielle Running Order 2026 · Demo-Crew</div>
 
   <div class="foot">
     <span class="wordmark metal">Festival <span>Buddy</span></span>
-    <span class="dots"><i></i><i class="on"></i><i></i><i></i><i></i><i></i><span class="n">2/6</span></span>
+    <span class="dots"><i></i><i class="on"></i><i></i><i></i><i></i><i></i></span>
   </div>
 </section>
 
@@ -619,9 +619,24 @@
             </div>
             <div class="card going" style="margin-top:8px;">
               <div class="fire">
-                <span class="fl" style="left:7%;height:26px;"></span><span class="fl" style="left:22%;height:34px;width:26px;"></span>
-                <span class="fl" style="left:38%;height:24px;"></span><span class="fl" style="left:55%;height:36px;width:28px;"></span>
-                <span class="fl" style="left:72%;height:26px;"></span><span class="fl" style="left:88%;height:30px;"></span>
+                <svg class="flames" viewBox="0 0 280 44" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="fgo2" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stop-color="#ff7a2a" stop-opacity="0.45"/>
+                      <stop offset="0.55" stop-color="#ff5a17" stop-opacity="0.95"/>
+                      <stop offset="1" stop-color="#ffb347"/>
+                    </linearGradient>
+                    <linearGradient id="fgi2" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stop-color="#ffd27a" stop-opacity="0.55"/>
+                      <stop offset="1" stop-color="#ffe9b0"/>
+                    </linearGradient>
+                    <filter id="fbo2" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="1.1"/></filter>
+                    <filter id="fbi2" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="0.6"/></filter>
+                  </defs>
+                  <path d="M0,44 L0,38 Q6,20 8,14 Q10,20 14,38 Q18,34 20,28 Q22,34 26,38 Q30,12 32,6 Q34,12 38,38 Q42,28 44,22 Q46,28 50,38 Q54,18 56,12 Q58,18 62,38 Q66,36 68,30 Q70,36 74,38 Q78,10 80,4 Q82,10 86,38 Q90,26 92,20 Q94,26 98,38 Q102,16 104,10 Q106,16 110,38 Q114,32 116,26 Q118,32 122,38 Q126,14 128,8 Q130,14 134,38 Q138,30 140,24 Q142,30 146,38 Q150,20 152,14 Q154,20 158,38 Q162,36 164,30 Q166,36 170,38 Q174,12 176,6 Q178,12 182,38 Q186,28 188,22 Q190,28 194,38 Q198,18 200,12 Q202,18 206,38 Q210,34 212,28 Q214,34 218,38 Q222,14 224,8 Q226,14 230,38 Q234,26 236,20 Q238,26 242,38 Q246,20 248,14 Q250,20 254,38 Q258,32 260,26 Q262,32 266,38 Q270,11 272,5 Q274,11 278,38 L280,44 Z" fill="url(#fgo2)" filter="url(#fbo2)"/>
+                  <path d="M0,44 L0,40 Q6,33.0 8,29.0 Q10,33.0 20,40 Q30,29.0 32,25.0 Q34,29.0 44,40 Q54,32.0 56,28.0 Q58,32.0 68,40 Q78,28.0 80,24.0 Q82,28.0 92,40 Q102,31.0 104,27.0 Q106,31.0 116,40 Q126,30.0 128,26.0 Q130,30.0 140,40 Q150,33.0 152,29.0 Q154,33.0 164,40 Q174,29.0 176,25.0 Q178,29.0 188,40 Q198,32.0 200,28.0 Q202,32.0 212,40 Q222,30.0 224,26.0 Q226,30.0 236,40 Q246,33.0 248,29.0 Q250,33.0 260,40 Q270,28.5 272,24.5 Q274,28.5 284,40 L280,44 Z" fill="url(#fgi2)" filter="url(#fbi2)" opacity="0.9"/>
+                  <circle cx="32" cy="3" r="1.4" fill="#ffb347" opacity="0.8"/><circle cx="80" cy="1.5" r="1.1" fill="#ffb347" opacity="0.7"/><circle cx="128" cy="4" r="1.5" fill="#ffb347" opacity="0.8"/><circle cx="185" cy="2" r="1.2" fill="#ffb347" opacity="0.7"/><circle cx="240" cy="4" r="1.4" fill="#ffb347" opacity="0.8"/>
+                </svg>
               </div>
               <div class="tbox" style="background:rgba(255,90,23,.13);"><span class="t" style="color:#ff5a17;">22:20</span><span class="s" style="color:#ff5a17;">Main</span></div>
               <div class="mid"><div class="band">Dark Funeral</div><div class="sub">Mainstage · bis 23:20 Uhr</div></div>
@@ -680,11 +695,10 @@
   </div>
 
   <div class="callout" style="right:120px;top:754px;--tail:60px;">🔥 Hot Slot – alle gehen hin</div>
-  <div class="demo-note mono">Offizielle Running Order 2026 · Demo-Crew</div>
 
   <div class="foot">
     <span class="wordmark metal">Festival <span>Buddy</span></span>
-    <span class="dots"><i></i><i></i><i class="on"></i><i></i><i></i><i></i><span class="n">3/6</span></span>
+    <span class="dots"><i></i><i></i><i class="on"></i><i></i><i></i><i></i></span>
   </div>
 </section>
 
@@ -775,11 +789,9 @@
     </div>
   </div>
 
-  <div class="demo-note mono">Offizielle Running Order 2026 · Demo-Crew</div>
-
   <div class="foot">
     <span class="wordmark metal">Festival <span>Buddy</span></span>
-    <span class="dots"><i></i><i></i><i></i><i class="on"></i><i></i><i></i><span class="n">4/6</span></span>
+    <span class="dots"><i></i><i></i><i></i><i class="on"></i><i></i><i></i></span>
   </div>
 </section>
 
@@ -823,7 +835,7 @@
 
   <div class="foot">
     <span class="wordmark metal">Festival <span>Buddy</span></span>
-    <span class="dots"><i></i><i></i><i></i><i></i><i class="on"></i><i></i><span class="n">5/6</span></span>
+    <span class="dots"><i></i><i></i><i></i><i></i><i class="on"></i><i></i></span>
   </div>
 </section>
 
@@ -871,7 +883,7 @@
 
   <div class="foot">
     <span class="wordmark metal">Festival <span>Buddy</span></span>
-    <span class="dots"><i></i><i></i><i></i><i></i><i></i><i class="on"></i><span class="n">6/6</span></span>
+    <span class="dots"><i></i><i></i><i></i><i></i><i></i><i class="on"></i></span>
   </div>
 </section>
 
