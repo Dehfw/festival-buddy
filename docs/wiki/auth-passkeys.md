@@ -23,7 +23,12 @@ selben Session-Cookie; ein Konto kann beides gleichzeitig haben.
   Schließen des Login-Panels) bricht `cancelPendingPasskey()` sie ab.
   Bleibt sie hängen, bremst iOS/WebKit (auch Chrome auf iOS) jeden
   Tastenanschlag in den Passwort-Feldern mit einer AutoFill-Abfrage
-  aus (~0,5 s Verzögerung pro Zeichen).
+  aus (~0,5 s Verzögerung pro Zeichen). Weil vor der Ceremony erst der
+  Options-Request übers Netz geht, reicht `cancelPendingPasskey()`
+  allein nicht: Ein `AbortSignal` zieht sich durch `loginWithPasskey`,
+  damit auch ein Abbruch während des Requests greift, und
+  `PasswordAuth` bricht beim Einblenden zur Sicherheit jede noch
+  hängende Abfrage ab.
 - Passkeys syncen über iCloud-Schlüsselbund bzw. Google
   Passwortmanager. Achtung: Sie sind an die **Domain (RP ID)**
   gebunden – Domain-Umzug macht bestehende Passkeys unbrauchbar.

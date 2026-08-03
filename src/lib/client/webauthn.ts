@@ -36,11 +36,12 @@ export function cancelPendingPasskey(): void {
   WebAuthnAbortService.cancelCeremony();
 }
 
-async function post<T>(url: string, body?: object): Promise<T> {
+async function post<T>(url: string, body?: object, signal?: AbortSignal): Promise<T> {
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body ?? {}),
+    signal,
   });
   const data = await res.json().catch(() => null);
   if (!res.ok) {
@@ -63,9 +64,21 @@ export async function registerWithPasskey(name: string): Promise<User> {
 }
 
 export async function loginWithPasskey(
-  opts: { conditional?: boolean } = {}
+  opts: { conditional?: boolean; signal?: AbortSignal } = {}
 ): Promise<User> {
-  const { options } = await post<{ options: never }>('/api/webauthn/login/options');
+  const { options } = await post<{ options: never }>(
+    '/api/webauthn/login/options',
+    undefined,
+    opts.signal
+  );
+  // Der Aufrufer kann während des Options-Requests längst abgebrochen
+  // haben (z. B. Wechsel aufs E-Mail+Passwort-Formular). Dann darf die
+  // Ceremony gar nicht erst starten: Ein cancelPendingPasskey() aus dem
+  // Cleanup wäre schon verpufft, die Conditional-Anfrage bliebe hängen
+  // und iOS würde wieder jeden Tastenanschlag ausbremsen.
+  if (opts.signal?.aborted) {
+    throw new DOMException('Passkey-Anfrage abgebrochen', 'AbortError');
+  }
   const response = await startAuthentication({
     optionsJSON: options,
     useBrowserAutofill: opts.conditional === true,

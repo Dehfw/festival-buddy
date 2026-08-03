@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   loginWithPassword,
   registerWithPassword,
   requestPasswordReset,
 } from '@/lib/client/password';
+import { cancelPendingPasskey } from '@/lib/client/webauthn';
 import type { User } from '@/lib/types';
 
 type Mode = 'login' | 'register' | 'forgot';
@@ -37,6 +38,16 @@ export function PasswordAuth({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
+
+  // Sicherheitsnetz: Sobald das Passwort-Formular sichtbar ist, hat eine
+  // Passkey-Abfrage nichts mehr zu suchen. Eine noch hängende
+  // Conditional-Anfrage würde auf iOS/WebKit (auch Chrome auf iOS) jeden
+  // Tastenanschlag in diesen Feldern mit einer AutoFill-Abfrage
+  // ausbremsen – hier wird sie deshalb hart abgebrochen, egal wie sie
+  // gestartet wurde.
+  useEffect(() => {
+    cancelPendingPasskey();
+  }, []);
 
   const switchMode = (next: Mode) => {
     setMode(next);

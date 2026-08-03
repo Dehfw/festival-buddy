@@ -69,20 +69,30 @@ export function LandingLogin() {
       setSupported(false);
       return;
     }
-    let cancelled = false;
+    // AbortController statt cancelled-Flag: Das Signal wandert bis in
+    // loginWithPasskey hinein, damit auch ein Abbruch WÄHREND des
+    // Options-Requests greift – sonst startet die Ceremony erst nach dem
+    // Cleanup und hinge dann dauerhaft im Hintergrund. Genau dieses
+    // Fenster ist im Popup groß: Der Request läuft ab Panel-Öffnung, und
+    // wer sich mit E-Mail registrieren will, tippt den Link sofort an.
+    const abort = new AbortController();
     void (async () => {
       try {
         if (!(await browserSupportsWebAuthnAutofill())) return;
-        const user = await loginWithPasskey({ conditional: true });
-        if (!cancelled && mounted.current) enter(user);
+        if (abort.signal.aborted) return;
+        const user = await loginWithPasskey({
+          conditional: true,
+          signal: abort.signal,
+        });
+        if (!abort.signal.aborted && mounted.current) enter(user);
       } catch (err) {
-        if (!cancelled && mounted.current && !isWebAuthnAbort(err)) {
+        if (!abort.signal.aborted && mounted.current && !isWebAuthnAbort(err)) {
           setError((err as Error).message);
         }
       }
     })();
     return () => {
-      cancelled = true;
+      abort.abort();
       cancelPendingPasskey();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

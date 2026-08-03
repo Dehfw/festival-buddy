@@ -52,21 +52,29 @@ export function NameGate() {
       setSupported(false);
       return;
     }
-    let cancelled = false;
+    // AbortController statt cancelled-Flag: Das Signal wandert bis in
+    // loginWithPasskey hinein, damit auch ein Abbruch WÄHREND des
+    // Options-Requests greift – sonst startet die Ceremony erst nach dem
+    // Cleanup und hinge dann dauerhaft im Hintergrund.
+    const abort = new AbortController();
     void (async () => {
       try {
         if (!(await browserSupportsWebAuthnAutofill())) return;
-        const user = await loginWithPasskey({ conditional: true });
-        if (!cancelled && mounted.current) loginAs(user);
+        if (abort.signal.aborted) return;
+        const user = await loginWithPasskey({
+          conditional: true,
+          signal: abort.signal,
+        });
+        if (!abort.signal.aborted && mounted.current) loginAs(user);
       } catch (err) {
         // Abbruch (z. B. weil eine Registrierung startet) ist kein Fehler
-        if (!cancelled && mounted.current && !isWebAuthnAbort(err)) {
+        if (!abort.signal.aborted && mounted.current && !isWebAuthnAbort(err)) {
           setError((err as Error).message);
         }
       }
     })();
     return () => {
-      cancelled = true;
+      abort.abort();
       cancelPendingPasskey();
     };
   }, [method, loginAs]);
