@@ -499,17 +499,20 @@ export async function getTimetableFresh(festivalId: string): Promise<Timetable |
   return getTimetable(festivalId);
 }
 
+/** en-CA formatiert als JJJJ-MM-TT */
+const todayFormat = new Intl.DateTimeFormat('en-CA', {
+  timeZone: FESTIVAL_TZ,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
 /**
  * Heutiges Datum (JJJJ-MM-TT) in der Festival-Zeitzone – Stichtag dafür,
  * ob ein Festival schon vorbei ist.
  */
 function festivalTodayISO(): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: FESTIVAL_TZ,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date());
+  return todayFormat.format(new Date());
 }
 
 /**
