@@ -2,7 +2,7 @@
 
 > Zettel-Chaos am Bauzaun? Vorbei. 🤘
 >
-> Mit **Festival Buddy** plant ihr das Party.San als Crew:
+> Mit **FestivalBuddy.app** plant ihr das Party.San als Crew:
 >
 > 🗓️ Die komplette Running Order – ein Tap und du bist bei einer Band eingetragen
 > 🔥 Hot Slots – wenn genug fest zusagen, brennt der Slot: Pflichttermin für alle
@@ -22,7 +22,7 @@
 
 Kurzvariante:
 
-> Wer geht zu welcher Band? 🤘 Mit Festival Buddy plant ihr das Party.San
+> Wer geht zu welcher Band? 🤘 Mit FestivalBuddy.app plant ihr das Party.San
 > als Crew: Running Order antippen, Hot Slots sehen, Leute im Pit finden,
 > Weckruf vor der Show – läuft sogar im Funkloch. Kostenlos im Browser,
 > Link in Bio.
