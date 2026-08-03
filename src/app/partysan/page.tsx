@@ -7,27 +7,28 @@ import { LandingLogin } from '@/components/LandingLogin';
 const TITLE = 'Festival Buddy fürs Party.San Metal Open Air 2026';
 const DESCRIPTION =
   'Der Timetable-Planer für deine Party.San-Crew: Wer geht zu welcher Band? ' +
-  'Gruppe gründen – das Party.San 2026 ist schon vorausgewählt. Bands ' +
-  'markieren, Hot Slots sehen, läuft auch offline auf dem Flugplatz.';
+  'Die komplette Running Order 2026 ist schon drin – von Testament bis ' +
+  'Hypocrisy. Gruppe gründen, Bands markieren, läuft auch offline auf dem ' +
+  'Flugplatz.';
 
 /** Deep-Link in die App: merkt das Party.San als Festival-Vorauswahl vor */
 const APP_LINK = '/app?festival=psoa2026';
 
 /**
- * Akzente monochrom in Silber/Bone – wie das Party.San-Logo selbst
- * (die PSD kennt nur Schwarz, Grau und Weiß). Überschriften-Highlights
- * bekommen einen metallischen Verlauf mit weichem weißen Glow.
+ * Akzente in Party.San-Gold, gesampelt vom offiziellen 2026er Plakat
+ * (Logo-Highlights #f0d860, Mitteltöne #d8a830, Tiefen #907830).
+ * Überschriften-Highlights bekommen einen goldenen Verlauf mit warmem Glow.
  */
-const SILVER_TEXT = {
+const GOLD_TEXT = {
   backgroundImage:
-    'linear-gradient(180deg, #ffffff 0%, #d9d6cf 45%, #8f8c86 100%)',
+    'linear-gradient(180deg, #f7e27a 0%, #e0b038 45%, #96701c 100%)',
   WebkitBackgroundClip: 'text',
   backgroundClip: 'text',
   color: 'transparent',
-  filter: 'drop-shadow(0 0 18px rgba(244,241,234,0.3))',
+  filter: 'drop-shadow(0 0 18px rgba(224,176,56,0.35))',
 } as const;
 
-const BONE_GLOW = { textShadow: '0 0 30px rgba(244,241,234,.15)' };
+const GOLD_GLOW = { textShadow: '0 0 30px rgba(224,176,56,.2)' };
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -157,16 +158,16 @@ export default function PartySanLandingPage() {
 
       {/* Hero: Logo groß, Claim, CTA */}
       <section className="relative mx-auto max-w-4xl px-6 pt-14 pb-16 text-center sm:pt-20 sm:pb-20">
-        {/* Silbriger Schein hinter dem Logo */}
+        {/* Goldener Schein hinter dem Logo */}
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-24 h-64 w-[80%] -translate-x-1/2 rounded-full bg-bone/10 blur-[110px]"
+          className="pointer-events-none absolute left-1/2 top-24 h-64 w-[80%] -translate-x-1/2 rounded-full bg-[#d8a830]/15 blur-[110px]"
         />
 
         <div className="relative">
-          <div className="mb-8 inline-flex items-center gap-2 border border-bone/25 bg-bone/5 px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-bone/80">
-            <span className="opacity-50">//</span> 06.–08.08.2026 · Flugplatz
-            Obermehler-Schlotheim
+          <div className="mb-8 inline-flex items-center gap-2 border border-[#e0b038]/30 bg-[#e0b038]/10 px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-[#f0d860]">
+            <span className="opacity-50">//</span> 30th Edition ·
+            06.–08.08.2026 · Flugplatz Obermehler-Schlotheim
           </div>
 
           <img
@@ -175,9 +176,9 @@ export default function PartySanLandingPage() {
             className="mx-auto w-full max-w-xl select-none drop-shadow-[0_12px_40px_rgba(0,0,0,0.8)]"
           />
 
-          <h1 className="mt-10 font-metal text-4xl uppercase leading-[0.95] text-ash sm:text-5xl">
+          <h1 className="mt-10 font-metal text-4xl uppercase leading-[0.95] text-bone sm:text-5xl">
             Wer geht zu{' '}
-            <span style={SILVER_TEXT}>welcher Band?</span>
+            <span style={GOLD_TEXT}>welcher Band?</span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-ash sm:text-lg">
@@ -189,7 +190,10 @@ export default function PartySanLandingPage() {
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href={APP_LINK}
-              className="w-full rounded-xl bg-bone px-8 py-4 font-metal text-lg uppercase tracking-wide text-pit shadow-[0_0_30px_rgba(244,241,234,0.15)] transition active:scale-[0.98] sm:w-auto"
+              className="w-full rounded-xl px-8 py-4 font-metal text-lg uppercase tracking-wide text-pit shadow-[0_0_30px_rgba(224,176,56,0.25)] transition active:scale-[0.98] sm:w-auto"
+              style={{
+                background: 'linear-gradient(180deg, #f0d860 0%, #d8a830 100%)',
+              }}
             >
               Party.San-Crew starten
             </Link>
@@ -202,8 +206,28 @@ export default function PartySanLandingPage() {
           </div>
           <p className="mt-4 text-xs text-ash/70">
             Beim Gruppengründen ist das Party.San 2026 schon ausgewählt – kein
-            Festival-Gesuche. Sobald die Running Order draußen ist, landet sie
-            direkt in der App.
+            Festival-Gesuche. Und die komplette Running Order ist schon drin.
+          </p>
+        </div>
+      </section>
+
+      {/* Lineup-Teaser: Headliner vom offiziellen Plakat */}
+      <section className="border-t border-rivet/40">
+        <div className="mx-auto max-w-5xl px-6 py-14 text-center">
+          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#f0d860]/80">
+            <span className="opacity-50">//</span> Running Order 2026 – komplett
+            in der App
+          </p>
+          <p className="mt-6 font-metal text-3xl uppercase leading-snug text-bone sm:text-4xl">
+            Testament · Amorphis · Hypocrisy
+          </p>
+          <p className="mt-3 font-metal text-lg uppercase leading-relaxed text-ash sm:text-xl">
+            Moonspell · Dark Funeral · Marduk · Alcest · Sacred Reich · Wolves
+            in the Throne Room
+          </p>
+          <p className="mt-4 text-xs text-ash/70">
+            … und über 40 weitere Bands auf Mainstage und Tentstage – alle 57
+            Sets mit Zeiten in der App.
           </p>
         </div>
       </section>
@@ -212,7 +236,7 @@ export default function PartySanLandingPage() {
       <section className="border-t border-rivet/40 bg-pit/60">
         <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <h2 className="text-center font-metal text-3xl uppercase text-bone sm:text-4xl">
-            Alles fürs <span style={SILVER_TEXT}>Party.San</span>
+            Alles fürs <span style={GOLD_TEXT}>Party.San</span>
           </h2>
           <p className="mx-auto mt-3 max-w-md text-center text-sm text-ash">
             Kein Excel, kein Gruppenchat-Scrollen. Ein Ort für die ganze Crew.
@@ -245,15 +269,15 @@ export default function PartySanLandingPage() {
       <section id="so-gehts" className="scroll-mt-20 border-t border-rivet/40">
         <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <h2 className="text-center font-metal text-3xl uppercase text-bone sm:text-4xl">
-            In <span style={SILVER_TEXT}>drei Schritten</span> dabei
+            In <span style={GOLD_TEXT}>drei Schritten</span> dabei
           </h2>
 
           <div className="mt-12 grid gap-8 sm:grid-cols-3">
             {STEPS.map((s) => (
               <div key={s.n} className="relative">
                 <div
-                  className="font-metal text-6xl leading-none text-bone/25"
-                  style={BONE_GLOW}
+                  className="font-metal text-6xl leading-none text-[#e0b038]/30"
+                  style={GOLD_GLOW}
                 >
                   {s.n}
                 </div>
@@ -282,7 +306,10 @@ export default function PartySanLandingPage() {
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href={APP_LINK}
-              className="w-full rounded-xl bg-bone px-10 py-4 font-metal text-lg uppercase tracking-wide text-pit shadow-[0_0_30px_rgba(244,241,234,0.15)] transition active:scale-[0.98] sm:w-auto"
+              className="w-full rounded-xl px-10 py-4 font-metal text-lg uppercase tracking-wide text-pit shadow-[0_0_30px_rgba(224,176,56,0.25)] transition active:scale-[0.98] sm:w-auto"
+              style={{
+                background: 'linear-gradient(180deg, #f0d860 0%, #d8a830 100%)',
+              }}
             >
               Jetzt Crew gründen
             </Link>

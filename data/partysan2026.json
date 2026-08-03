@@ -1,7 +1,7 @@
 {
   "festival": "Party.San Metal Open Air 2026",
-  "edition": "30 Jahre Party.San – 06.–08.08.2026, Flugplatz Obermehler-Schlotheim (Einlass Do 11:00 Uhr)",
-  "dataVersion": "2026-07-22 (Running Order via konzertn.de, Fan-Angaben ohne Gewähr; Tentstage-Endzeiten geschätzt: 40-Min.-Sets)",
+  "edition": "30 Jahre · 06.–08.08.2026 · Flugplatz Obermehler-Schlotheim",
+  "dataVersion": "2026-08-03 (offizielle Running Order laut Plakat, 30th Edition)",
   "days": [
     {
       "id": "thu",
@@ -27,7 +27,7 @@
       "id": "main",
       "name": "Mainstage",
       "short": "MAIN",
-      "color": "#e63946"
+      "color": "#e8c24a"
     },
     {
       "id": "tent",
@@ -124,7 +124,7 @@
       "stageId": "main",
       "band": "Testament",
       "start": "23:45",
-      "end": "01:00",
+      "end": "25:00",
       "confirmed": true
     },
     {
@@ -133,7 +133,7 @@
       "stageId": "tent",
       "band": "Morbus Dei",
       "start": "15:20",
-      "end": "16:00",
+      "end": "15:55",
       "confirmed": true
     },
     {
@@ -142,7 +142,7 @@
       "stageId": "tent",
       "band": "Rats Of Gomorrah",
       "start": "16:20",
-      "end": "17:00",
+      "end": "16:55",
       "confirmed": true
     },
     {
@@ -151,7 +151,7 @@
       "stageId": "tent",
       "band": "Messticator",
       "start": "17:20",
-      "end": "18:00",
+      "end": "17:55",
       "confirmed": true
     },
     {
@@ -160,7 +160,7 @@
       "stageId": "tent",
       "band": "TodoMal",
       "start": "18:25",
-      "end": "19:05",
+      "end": "19:00",
       "confirmed": true
     },
     {
@@ -169,7 +169,7 @@
       "stageId": "tent",
       "band": "Begging For Incest",
       "start": "19:30",
-      "end": "20:10",
+      "end": "20:05",
       "confirmed": true
     },
     {
@@ -178,7 +178,7 @@
       "stageId": "tent",
       "band": "Evoken",
       "start": "20:35",
-      "end": "21:15",
+      "end": "21:10",
       "confirmed": true
     },
     {
@@ -295,7 +295,7 @@
       "stageId": "main",
       "band": "Amorphis",
       "start": "23:45",
-      "end": "01:00",
+      "end": "25:00",
       "confirmed": true
     },
     {
@@ -304,7 +304,7 @@
       "stageId": "tent",
       "band": "Nail By Nail",
       "start": "15:20",
-      "end": "16:00",
+      "end": "15:55",
       "confirmed": true
     },
     {
@@ -313,7 +313,7 @@
       "stageId": "tent",
       "band": "Endonomos",
       "start": "16:20",
-      "end": "17:00",
+      "end": "16:55",
       "confirmed": true
     },
     {
@@ -322,7 +322,7 @@
       "stageId": "tent",
       "band": "Crawl",
       "start": "17:20",
-      "end": "18:00",
+      "end": "17:55",
       "confirmed": true
     },
     {
@@ -331,7 +331,7 @@
       "stageId": "tent",
       "band": "Death Worship",
       "start": "18:25",
-      "end": "19:05",
+      "end": "19:00",
       "confirmed": true
     },
     {
@@ -340,7 +340,7 @@
       "stageId": "tent",
       "band": "Lucifer's Child",
       "start": "19:30",
-      "end": "20:10",
+      "end": "20:05",
       "confirmed": true
     },
     {
@@ -349,7 +349,7 @@
       "stageId": "tent",
       "band": "Asagraum",
       "start": "20:35",
-      "end": "21:15",
+      "end": "21:10",
       "confirmed": true
     },
     {
@@ -466,7 +466,7 @@
       "stageId": "main",
       "band": "Hypocrisy",
       "start": "23:45",
-      "end": "01:00",
+      "end": "25:00",
       "confirmed": true
     },
     {
@@ -475,7 +475,7 @@
       "stageId": "tent",
       "band": "Gorefunest (Gorefest-Tribute)",
       "start": "10:00",
-      "end": "10:40",
+      "end": "10:45",
       "confirmed": true
     },
     {
@@ -484,7 +484,7 @@
       "stageId": "tent",
       "band": "For Victory (Bolt Thrower)",
       "start": "11:00",
-      "end": "11:40",
+      "end": "12:00",
       "confirmed": true
     },
     {
@@ -493,7 +493,7 @@
       "stageId": "tent",
       "band": "Baxaxaxa",
       "start": "15:20",
-      "end": "16:00",
+      "end": "15:55",
       "confirmed": true
     },
     {
@@ -502,7 +502,7 @@
       "stageId": "tent",
       "band": "Bloody Vengeance",
       "start": "16:20",
-      "end": "17:00",
+      "end": "16:55",
       "confirmed": true
     },
     {
@@ -511,7 +511,7 @@
       "stageId": "tent",
       "band": "Temple Of Dread",
       "start": "17:20",
-      "end": "18:00",
+      "end": "17:55",
       "confirmed": true
     },
     {
@@ -520,7 +520,7 @@
       "stageId": "tent",
       "band": "Impurity",
       "start": "18:25",
-      "end": "19:05",
+      "end": "19:00",
       "confirmed": true
     },
     {
@@ -529,7 +529,7 @@
       "stageId": "tent",
       "band": "Celeste",
       "start": "19:30",
-      "end": "20:10",
+      "end": "20:05",
       "confirmed": true
     },
     {
@@ -538,7 +538,7 @@
       "stageId": "tent",
       "band": "Sunken",
       "start": "20:35",
-      "end": "21:15",
+      "end": "21:10",
       "confirmed": true
     },
     {

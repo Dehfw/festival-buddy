@@ -5,8 +5,10 @@ steht ihr im Publikum? Mandantenfähig über **Gruppen**: Nach dem Login
 gründet man eine Gruppe (mit Festival-Auswahl, Name und Gruppenbild) oder
 tritt per **Einladungscode** bei – als Link (`/join/<code>`) oder zum
 Abtippen. Aktuell angelegte Festivals: **Wacken Open Air 2026**,
-**Summer Breeze 2026** und **Party.San Metal Open Air 2026** (Lineups
-folgen per Import).
+**Summer Breeze 2026** (Lineup folgt per Import) und **Party.San Metal
+Open Air 2026** – mit kompletter Running Order laut offiziellem Plakat,
+geseedet aus `data/partysan2026.json` (Update ohne Redeploy:
+`npm run import:db -- --festival psoa2026 data/partysan2026.json`).
 
 Festival-Landingpages: Unter `/partysan` gibt es eine eigene Startseite
 fürs Party.San. Ihre CTAs zeigen auf `/app?festival=psoa2026` – die

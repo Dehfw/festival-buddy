@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID } from 'crypto';
 import { Pool, type PoolClient } from 'pg';
 import blueprintSeedJson from '../../data/blueprints.seed.json';
+import partysanJson from '../../data/partysan2026.json';
 import timetableJson from '../../data/timetable.json';
 import type {
   Announcement,
@@ -39,6 +40,7 @@ import { FESTIVAL_TZ, toMinutes } from './types';
  */
 
 const wackenTimetable = timetableJson as unknown as Timetable;
+const partysanTimetable = partysanJson as unknown as Timetable;
 const blueprintSeed = blueprintSeedJson as unknown as Record<string, Blueprint>;
 
 /** Festival-ID der Bestandsdaten (Nur-Wacken-Ära) */
@@ -333,8 +335,8 @@ async function createSchema(): Promise<void> {
       $mig$;
     `);
 
-    // Festivals seeden: Wacken aus dem gebundelten Timetable-JSON, Summer
-    // Breeze und Party.San als Gerüst (Lineup kommt später per
+    // Festivals seeden: Wacken und Party.San aus den gebundelten
+    // Timetable-JSONs, Summer Breeze als Gerüst (Lineup kommt später per
     // scripts/import-festival.mjs). Nur einfügen, wenn die Zeile fehlt –
     // danach ist die DB die Wahrheit.
     await client.query(
@@ -377,18 +379,13 @@ async function createSchema(): Promise<void> {
        VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`,
       [
         'psoa2026',
-        'Party.San Metal Open Air 2026',
-        '06.–08.08.2026 · Flugplatz Obermehler-Schlotheim',
-        '',
+        partysanTimetable.festival,
+        partysanTimetable.edition,
+        partysanTimetable.dataVersion,
         JSON.stringify({
-          days: [
-            { id: 'wed', label: 'Mi', longLabel: 'Mittwoch (Warm-Up)', date: '2026-08-05' },
-            { id: 'thu', label: 'Do', longLabel: 'Donnerstag', date: '2026-08-06' },
-            { id: 'fri', label: 'Fr', longLabel: 'Freitag', date: '2026-08-07' },
-            { id: 'sat', label: 'Sa', longLabel: 'Samstag', date: '2026-08-08' },
-          ],
-          stages: [],
-          slots: [],
+          days: partysanTimetable.days,
+          stages: partysanTimetable.stages,
+          slots: partysanTimetable.slots,
         }),
       ]
     );
