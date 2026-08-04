@@ -99,7 +99,7 @@ const FEATURES: { icon: string; title: string; body: string; hot?: boolean }[] =
   {
     icon: '📴',
     title: 'Läuft offline',
-    body: 'Als App aufs Handy installieren – einmal geladen, läuft alles auch ohne Netz. Genau richtig fürs Funkloch auf dem Flugplatz.',
+    body: 'Einmal geöffnet, läuft alles auch ohne Netz weiter – genau richtig fürs Funkloch auf dem Flugplatz.',
   },
   {
     icon: '👥',
@@ -108,16 +108,16 @@ const FEATURES: { icon: string; title: string; body: string; hot?: boolean }[] =
   },
   {
     icon: '🔑',
-    title: 'Kein Passwort',
-    body: 'Login per Passkey – Face ID oder Fingerabdruck. Nichts zu merken, nichts zu vergessen, nichts zu klauen.',
+    title: 'Login, wie du willst',
+    body: 'Per Passkey (Face ID / Fingerabdruck) oder klassisch mit E-Mail & Passwort – beides geht, ganz ohne Gedöns.',
   },
 ];
 
 const STEPS: { n: string; title: string; body: string }[] = [
   {
     n: '01',
-    title: 'Rein mit Passkey',
-    body: 'Namen tippen, Face ID / Fingerabdruck – schon bist du drin. Kein Passwort, kein Account-Gedöns.',
+    title: 'Reinkommen',
+    body: 'Name eintippen, dann Passkey (Face ID / Fingerabdruck) oder E-Mail & Passwort – schon bist du drin.',
   },
   {
     n: '02',
@@ -328,9 +328,7 @@ export default function PartySanLandingPage() {
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-6 py-10 text-center">
           <DefektLogo variant="mini" />
           <p className="max-w-md text-xs leading-relaxed text-ash/70">
-            Festival Buddy ist ein unabhängiges Fan-Projekt und kein Angebot
-            des Veranstalters. Das Party.San-Logo gehört dem Party.San Metal
-            Open Air.
+            Festival Buddy · Timetable-Planer für deine Party.San-Crew.
           </p>
           <p className="flex items-center justify-center gap-3 font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">
             <Link href="/" className="underline underline-offset-2 hover:text-ash">
