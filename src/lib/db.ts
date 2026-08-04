@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID } from 'crypto';
 import { Pool, type PoolClient } from 'pg';
 import blueprintSeedJson from '../../data/blueprints.seed.json';
+import partysanJson from '../../data/partysan2026.json';
 import timetableJson from '../../data/timetable.json';
 import type {
   Announcement,
@@ -39,6 +40,7 @@ import { FESTIVAL_TZ, toMinutes } from './types';
  */
 
 const wackenTimetable = timetableJson as unknown as Timetable;
+const partysanTimetable = partysanJson as unknown as Timetable;
 const blueprintSeed = blueprintSeedJson as unknown as Record<string, Blueprint>;
 
 /** Festival-ID der Bestandsdaten (Nur-Wacken-Ära) */
@@ -333,9 +335,10 @@ async function createSchema(): Promise<void> {
       $mig$;
     `);
 
-    // Festivals seeden: Wacken aus dem gebundelten Timetable-JSON, Summer
-    // Breeze als Gerüst (Lineup kommt später per scripts/import-festival.mjs).
-    // Nur einfügen, wenn die Zeile fehlt – danach ist die DB die Wahrheit.
+    // Festivals seeden: Wacken und Party.San aus den gebundelten
+    // Timetable-JSONs, Summer Breeze als Gerüst (Lineup kommt später per
+    // scripts/import-festival.mjs). Nur einfügen, wenn die Zeile fehlt –
+    // danach ist die DB die Wahrheit.
     await client.query(
       `INSERT INTO festivals (id, name, edition, data_version, timetable)
        VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`,
@@ -368,6 +371,21 @@ async function createSchema(): Promise<void> {
           ],
           stages: [],
           slots: [],
+        }),
+      ]
+    );
+    await client.query(
+      `INSERT INTO festivals (id, name, edition, data_version, timetable)
+       VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`,
+      [
+        'psoa2026',
+        partysanTimetable.festival,
+        partysanTimetable.edition,
+        partysanTimetable.dataVersion,
+        JSON.stringify({
+          days: partysanTimetable.days,
+          stages: partysanTimetable.stages,
+          slots: partysanTimetable.slots,
         }),
       ]
     );

@@ -8,7 +8,7 @@ import { resolveSiteUrl } from '@/lib/siteUrl';
 
 const TITLE = 'Festival Buddy – Wer geht zu welcher Band? | DEFƎKT';
 const DESCRIPTION =
-  'Der Timetable-Planer für deine Festival-Crew. Wer geht zu welcher Band? Gruppen gründen, Bands markieren, Hot Slots sehen – offline-fähig, ohne Passwort. Für jedes Festival.';
+  'Der Timetable-Planer für deine Festival-Crew. Wer geht zu welcher Band? Gruppen gründen, Bands markieren, Hot Slots sehen – offline-fähig, Login per Passkey oder E-Mail. Für jedes Festival.';
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -97,20 +97,20 @@ const FEATURES: { icon: string; title: string; body: string; hot?: boolean }[] =
   {
     icon: '📴',
     title: 'Läuft offline',
-    body: 'Installier sie als App aufs Handy. Einmal geladen, läuft alles auch ohne Netz – genau richtig fürs Feld im Funkloch.',
+    body: 'Einmal geöffnet, läuft alles auch ohne Netz weiter – genau richtig fürs Feld im Funkloch.',
   },
   {
     icon: '🔑',
-    title: 'Kein Passwort',
-    body: 'Login per Passkey – Face ID oder Fingerabdruck. Nichts zu merken, nichts zu vergessen, nichts zu klauen.',
+    title: 'Login, wie du willst',
+    body: 'Per Passkey (Face ID / Fingerabdruck) oder klassisch mit E-Mail & Passwort – beides geht, ganz ohne Gedöns.',
   },
 ];
 
 const STEPS: { n: string; title: string; body: string }[] = [
   {
     n: '01',
-    title: 'Rein mit Passkey',
-    body: 'Namen tippen, Face ID / Fingerabdruck – schon bist du drin. Kein Passwort, kein Account-Gedöns.',
+    title: 'Reinkommen',
+    body: 'Name eintippen, dann Passkey (Face ID / Fingerabdruck) oder E-Mail & Passwort – schon bist du drin.',
   },
   {
     n: '02',

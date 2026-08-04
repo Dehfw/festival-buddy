@@ -6,7 +6,7 @@ import { GroupGate } from '@/components/GroupGate';
 import { JoinGate } from '@/components/JoinGate';
 import { NameGate } from '@/components/NameGate';
 import { AppProvider, useApp } from '@/lib/client/store';
-import { loadPendingInvite } from '@/lib/client/sync';
+import { loadPendingInvite, savePendingFestival } from '@/lib/client/sync';
 
 /**
  * Gate-Kaskade:
@@ -19,7 +19,16 @@ function Gate() {
   const { ready, user, groups, data } = useApp();
   const [pendingInvite, setPendingInvite] = useState<string | null>(null);
 
+  // Festival-Landingpages (z. B. /partysan) verlinken auf
+  // /app?festival=<id>: Vorauswahl merken, damit sie den Passkey-Login
+  // überlebt, und den Parameter aus der URL nehmen (Reload/Bookmark).
+  // Läuft vor dem ersten Gate-Render – GroupGate liest sie beim Mount.
   useEffect(() => {
+    const festival = new URLSearchParams(window.location.search).get('festival');
+    if (festival) {
+      savePendingFestival(festival);
+      window.history.replaceState(null, '', window.location.pathname);
+    }
     setPendingInvite(loadPendingInvite());
   }, []);
 
