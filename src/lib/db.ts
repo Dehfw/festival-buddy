@@ -1757,6 +1757,21 @@ export async function hasPushSubscription(userId: string): Promise<boolean> {
 }
 
 /**
+ * Zielgruppe einer Programm-Änderung: alle Nutzer, die beim Slot eingetragen
+ * sind ('going' oder 'interested'), über alle Gruppen des Festivals hinweg.
+ */
+export async function getSlotSelectionUserIds(
+  festivalId: string,
+  slotId: string
+): Promise<string[]> {
+  const res = await query<{ user_id: string }>(
+    'SELECT DISTINCT user_id FROM selections WHERE festival_id = $1 AND slot_id = $2',
+    [festivalId, slotId]
+  );
+  return res.rows.map((r) => r.user_id);
+}
+
+/**
  * Zielgruppe einer Veranstalter-Mitteilung: alle Mitglieder aller Gruppen
  * dieses Festivals (dieselbe Kette wie beim Daten-Payload, nur festivalweit).
  */
@@ -2260,12 +2275,18 @@ export interface SlotInput {
   spotifyArtistId?: string;
 }
 
-/** Slot anlegen (ohne id) oder ändern – die Slot-ID bleibt bei Edits stabil */
+/**
+ * Slot anlegen (ohne id) oder ändern – die Slot-ID bleibt bei Edits stabil.
+ * Bei Edits kommt der vorherige Stand als `previous` zurück, damit die
+ * Slot-Route erkennen kann, ob sich Zeit/Tag/Bühne geändert haben (und die
+ * eingetragenen Besucher darüber pushen kann).
+ */
 export async function upsertSlot(
   festivalId: string,
   input: SlotInput
-): Promise<TimetableEditResult> {
+): Promise<TimetableEditResult & { previous?: Slot }> {
   let resultId = input.id;
+  let previous: Slot | undefined;
   const result = await mutateTimetable(festivalId, (t) => {
     const band = input.band.trim();
     if (band.length < 1 || band.length > 80) {
@@ -2299,9 +2320,11 @@ export async function upsertSlot(
       ...(input.spotifyArtistId ? { spotifyArtistId: input.spotifyArtistId } : {}),
     };
     if (input.id) {
-      if (!t.slots.some((s) => s.id === input.id)) {
+      const existing = t.slots.find((s) => s.id === input.id);
+      if (!existing) {
         return { error: 'Unbekannter Slot', status: 404 };
       }
+      previous = existing;
       return {
         ...t,
         slots: t.slots.map((s) => (s.id === input.id ? { id: s.id, ...patch } : s)),
@@ -2317,7 +2340,7 @@ export async function upsertSlot(
     resultId = id;
     return { ...t, slots: [...t.slots, { id, ...patch }] };
   });
-  return result.ok ? { ...result, id: resultId } : result;
+  return result.ok ? { ...result, id: resultId, previous } : result;
 }
 
 /** Slot löschen – Auswahlen/Positionen dazu werden mitgelöscht */
