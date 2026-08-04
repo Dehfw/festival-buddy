@@ -6,7 +6,11 @@ import { GroupGate } from '@/components/GroupGate';
 import { JoinGate } from '@/components/JoinGate';
 import { NameGate } from '@/components/NameGate';
 import { AppProvider, useApp } from '@/lib/client/store';
-import { loadPendingInvite, savePendingFestival } from '@/lib/client/sync';
+import {
+  loadPendingFestival,
+  loadPendingInvite,
+  savePendingFestival,
+} from '@/lib/client/sync';
 
 /**
  * Gate-Kaskade:
@@ -18,6 +22,11 @@ import { loadPendingInvite, savePendingFestival } from '@/lib/client/sync';
 function Gate() {
   const { ready, user, groups, data } = useApp();
   const [pendingInvite, setPendingInvite] = useState<string | null>(null);
+  // Vorauswahl-Overlay für Nutzer, die SCHON Gruppen haben: Ohne Gruppe
+  // übernimmt die Vollbild-GroupGate – mit Gruppen zeigt die Kaskade sonst
+  // direkt die App, und der "Crew starten"-Klick von der Landingpage
+  // liefe ins Leere. Also legt sich die GroupGate als Overlay darüber.
+  const [festivalOverlay, setFestivalOverlay] = useState(false);
 
   // Festival-Landingpages (z. B. /partysan) verlinken auf
   // /app?festival=<id>: Vorauswahl merken, damit sie den Passkey-Login
@@ -31,6 +40,15 @@ function Gate() {
     }
     setPendingInvite(loadPendingInvite());
   }, []);
+
+  // Erst entscheiden, wenn Session UND Gruppen geladen sind. Nach einer
+  // Gründung über die Vollbild-Gate ist die Vorauswahl bereits verbraucht
+  // (savePendingFestival(null) vor adoptGroup) – dann öffnet sich nichts.
+  useEffect(() => {
+    if (!ready || !user || pendingInvite) return;
+    if (!groups || groups.length === 0) return;
+    if (loadPendingFestival()) setFestivalOverlay(true);
+  }, [ready, user, groups, pendingInvite]);
 
   if (!ready) return null;
   if (!user) return <NameGate />;
@@ -54,7 +72,21 @@ function Gate() {
       </main>
     );
   }
-  return <AppShell />;
+  return (
+    <>
+      <AppShell />
+      {festivalOverlay && (
+        <GroupGate
+          onClose={() => {
+            // Schließen ohne Gründen = Vorauswahl verwerfen, sonst poppt
+            // das Overlay beim nächsten /app-Besuch in diesem Tab wieder auf
+            setFestivalOverlay(false);
+            savePendingFestival(null);
+          }}
+        />
+      )}
+    </>
+  );
 }
 
 export default function Page() {
