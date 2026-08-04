@@ -91,11 +91,15 @@ neuem und altem Stand im Text. Details:
 - Nur echte Verschiebungen pushen. Bandname, „bestätigt“-Häkchen oder
   Spotify-ID ändern lösen nichts aus – neue Slots sowieso nicht.
 - Der Editor lässt den Veranstalter die Änderung vorher **bestätigen**:
-  Der Dialog nennt, wie viele Eingetragene die Push-Mitteilung bekommen
-  („Speichern & Senden“); ohne Einträge am Slot wird ohne Dialog
-  gespeichert. Der Versand wird vor der Antwort komplett ge-awaitet
-  (Serverless!), das Ergebnis erscheint als Bestätigung im Editor
-  („Push ist raus an X Personen, Y Geräte erreicht“).
+  Der Dialog nennt, wie viele Eingetragene betroffen sind („Speichern &
+  Senden“); ohne Einträge am Slot wird ohne Dialog gespeichert. Der
+  Versand wird vor der Antwort komplett ge-awaitet (Serverless!), das
+  Ergebnis erscheint als Bestätigung im Editor – **ehrlich gezählt**:
+  „Push ist raus an X von Y Eingetragenen“, wobei als informiert nur
+  zählt, wen mindestens ein Gerät wirklich erreicht hat
+  (`sendPushToUsers` meldet dafür `users` neben den Geräte-Zählern).
+  Wer Push nicht aktiviert hat, wird also nicht als benachrichtigt
+  ausgegeben – er sieht die Änderung nur in der App.
 - Gleicher Notification-`tag` pro (Festival, Slot): Nachjustieren
   ersetzt eine noch sichtbare Notification statt zu stapeln.
 - Wer kein Push erlaubt hat, sieht die neue Zeit trotzdem ≤ 7 s später

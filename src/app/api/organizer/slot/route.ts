@@ -65,8 +65,10 @@ function schedulePush(prev: Slot, next: Slot, timetable: Timetable) {
  *
  * Ändert ein Edit Zeit, Tag oder Bühne, bekommen alle beim Slot
  * eingetragenen Besucher ('going'/'interested', über alle Gruppen) eine
- * Push-Mitteilung; die Antwort meldet dem Editor `notified` (betroffene
- * Personen) und `push` ({ sent, gone, failed } auf Geräte-Ebene) zurück.
+ * Push-Mitteilung; die Antwort meldet dem Editor `audience` (Eingetragene
+ * gesamt), `notified` (davon per Push wirklich erreichte Personen – wer
+ * kein Push aktiviert hat, zählt nicht) und `push` ({ sent, gone, failed }
+ * auf Geräte-Ebene) zurück.
  */
 export async function PUT(req: Request) {
   const body = await req.json().catch(() => null);
@@ -112,7 +114,8 @@ export async function PUT(req: Request) {
       rev: result.rev,
       timetable: result.timetable,
       id: result.id,
-      notified: audience.length,
+      audience: audience.length,
+      notified: push.users,
       push,
     });
   }

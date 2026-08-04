@@ -45,7 +45,9 @@ type ApiResult =
       ok: true;
       timetable: Timetable;
       id?: string;
-      /** Verschobener Slot: so viele Eingetragene wurden benachrichtigt */
+      /** Verschobener Slot: so viele Personen sind dort eingetragen */
+      audience?: number;
+      /** … und so viele davon hat der Push wirklich erreicht (mind. 1 Gerät) */
       notified?: number;
       /** Versand-Ergebnis auf Geräte-Ebene (siehe /api/organizer/slot) */
       push?: { sent: number; gone: number; failed: number };
@@ -67,6 +69,7 @@ async function callApi(path: string, method: string, body: unknown): Promise<Api
       ok: true,
       timetable: data.timetable as Timetable,
       id: data.id,
+      audience: typeof data.audience === 'number' ? data.audience : undefined,
       notified: typeof data.notified === 'number' ? data.notified : undefined,
       push: data.push,
     };
@@ -776,16 +779,23 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
       setError(result.error);
       return;
     }
-    if (result.notified !== undefined) {
+    if (result.audience !== undefined) {
+      // Ehrliche Zählung: `audience` = Eingetragene gesamt, `notified` = wer
+      // davon wirklich mindestens ein Gerät per Push erreicht hat. Der Rest
+      // sieht die Änderung nur beim nächsten Blick in die App.
+      const audience = result.audience;
+      const reached = result.notified ?? 0;
       const devices = result.push?.sent ?? 0;
       setInfo(
-        devices > 0
-          ? `🔔 Push zur Änderung ist raus an ${result.notified} eingetragene ${
-              result.notified === 1 ? 'Person' : 'Personen'
-            } (${devices} ${devices === 1 ? 'Gerät' : 'Geräte'} erreicht).`
-          : result.notified === 0
-            ? 'Änderung gespeichert – niemand war hier eingetragen, kein Push nötig.'
-            : `Änderung gespeichert – von ${result.notified} Eingetragenen hat aktuell niemand Push-Mitteilungen aktiv.`
+        audience === 0
+          ? 'Änderung gespeichert – niemand war hier eingetragen, kein Push nötig.'
+          : reached === 0
+            ? `Änderung gespeichert – von ${audience} Eingetragenen war niemand per Push erreichbar; sie sehen die neue Zeit nur in der App.`
+            : reached === audience
+              ? `🔔 Push zur Änderung ist raus an ${
+                  audience === 1 ? 'die eine eingetragene Person' : `alle ${audience} Eingetragenen`
+                } (${devices} ${devices === 1 ? 'Gerät' : 'Geräte'} erreicht).`
+              : `🔔 Push ist raus an ${reached} von ${audience} Eingetragenen – der Rest hat kein Push aktiv oder war gerade nicht erreichbar und sieht die Änderung nur in der App.`
       );
     }
     onTimetable(result.timetable);
@@ -823,9 +833,11 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
       title: 'Slot verschieben?',
       message: `"${original.band}" wandert von ${describe(original)} auf ${describe(draft)}.`,
       affectedSelections: 0,
-      notice: `🔔 ${affected} eingetragene ${
-        affected === 1 ? 'Person bekommt' : 'Personen bekommen'
-      } dazu automatisch eine Push-Mitteilung (sofern Mitteilungen aktiviert sind).`,
+      notice: `🔔 ${
+        affected === 1
+          ? 'Die eine hier eingetragene Person wird'
+          : `Die ${affected} hier eingetragenen Personen werden`
+      } automatisch per Push informiert – erreicht wird dabei nur, wer Mitteilungen aktiviert hat.`,
       confirmLabel: 'Speichern & Senden',
       onConfirm: () => {
         void doSave();
