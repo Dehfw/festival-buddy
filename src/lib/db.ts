@@ -22,7 +22,7 @@ import type {
   Timetable,
   User,
 } from './types';
-import { FESTIVAL_TZ, toMinutes } from './types';
+import { FESTIVAL_TZ, isValidTime, toMinutes } from './types';
 
 /**
  * Datenschicht: Festivals (inkl. Timetable), Gruppen, Nutzer, Band-
@@ -1933,12 +1933,6 @@ const MAX_STAGES = 40;
 const MAX_SLOTS = 2000;
 
 /** "HH:MM" mit Stunden 0–31 (>= 24 = nach Mitternacht, wie toMinutes) */
-function isValidTime(value: string): boolean {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(value);
-  if (!m) return false;
-  return Number(m[1]) <= 31 && Number(m[2]) <= 59;
-}
-
 /**
  * IDs im dokumentierten Schema tag-buehne-bandslug: Umlaute ausschreiben,
  * alles andere zu '-' – einmal vergeben, nie wieder geändert (Auswahlen

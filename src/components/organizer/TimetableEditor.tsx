@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import {
   formatTime,
+  isValidTime,
   toMinutes,
   type FestivalDay,
   type Slot,
@@ -781,22 +782,42 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
     }
     if (result.audience !== undefined) {
       // Ehrliche Zählung: `audience` = Eingetragene gesamt, `notified` = wer
-      // davon wirklich mindestens ein Gerät per Push erreicht hat. Der Rest
-      // sieht die Änderung nur beim nächsten Blick in die App.
+      // davon wirklich mindestens ein Gerät per Push erreicht hat. `failed`
+      // unterscheidet "kein Push aktiv" von "Versand fehlgeschlagen" – ohne
+      // Fehler heißt "0 erreicht" wirklich: keine aktiven Abos.
       const audience = result.audience;
       const reached = result.notified ?? 0;
       const devices = result.push?.sent ?? 0;
-      setInfo(
-        audience === 0
-          ? 'Änderung gespeichert – niemand war hier eingetragen, kein Push nötig.'
-          : reached === 0
-            ? `Änderung gespeichert – von ${audience} Eingetragenen war niemand per Push erreichbar; sie sehen die neue Zeit nur in der App.`
-            : reached === audience
-              ? `🔔 Push zur Änderung ist raus an ${
-                  audience === 1 ? 'die eine eingetragene Person' : `alle ${audience} Eingetragenen`
-                } (${devices} ${devices === 1 ? 'Gerät' : 'Geräte'} erreicht).`
-              : `🔔 Push ist raus an ${reached} von ${audience} Eingetragenen – der Rest hat kein Push aktiv oder war gerade nicht erreichbar und sieht die Änderung nur in der App.`
-      );
+      const failed = result.push?.failed ?? 0;
+      if (audience === 0) {
+        setInfo('Änderung gespeichert – niemand war hier eingetragen, kein Push nötig.');
+      } else if (reached === 0) {
+        setInfo(
+          failed > 0
+            ? `⚠️ Änderung gespeichert, aber der Push-Versand schlug fehl (${failed} ${
+                failed === 1 ? 'Zustellung' : 'Zustellungen'
+              }); die Eingetragenen sehen die neue Zeit nur in der App.`
+            : `Änderung gespeichert – von ${audience} Eingetragenen hat niemand Push aktiv; sie sehen die neue Zeit nur in der App.`
+        );
+      } else if (reached === audience) {
+        setInfo(
+          `🔔 Push zur Änderung ist raus an ${
+            audience === 1 ? 'die eine eingetragene Person' : `alle ${audience} Eingetragenen`
+          } (${devices} ${devices === 1 ? 'Gerät' : 'Geräte'} erreicht).${
+            failed > 0
+              ? ` ⚠️ ${failed} ${
+                  failed === 1 ? 'Geräte-Zustellung schlug' : 'Geräte-Zustellungen schlugen'
+                } trotzdem fehl.`
+              : ''
+          }`
+        );
+      } else {
+        setInfo(
+          failed > 0
+            ? `🔔 Push ist raus an ${reached} von ${audience} Eingetragenen – beim Rest ist kein Push aktiv oder die Zustellung schlug fehl (${failed}×); sie sehen die Änderung nur in der App.`
+            : `🔔 Push ist raus an ${reached} von ${audience} Eingetragenen – der Rest hat kein Push aktiv und sieht die Änderung nur in der App.`
+        );
+      }
     }
     onTimetable(result.timetable);
     setDraft(null);
@@ -818,11 +839,18 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
     // Änderung danach automatisch an alle Eingetragenen.
     const original = draft.id ? timetable.slots.find((s) => s.id === draft.id) : undefined;
     const affected = draft.id ? totalSelections(selectionCounts[draft.id]) : 0;
-    // Zeiten über Minuten vergleichen – "9:30" und "09:30" sind gleich
+    const start = draft.start.trim();
+    const end = draft.end.trim();
+    // Ungültige Zeiten (z. B. 99:99 – das HTML-Pattern lässt sie durch)
+    // gar nicht erst bestätigen lassen: describe() würde Unsinn anzeigen
+    // und der Server lehnt den Save gleich mit einer klaren Meldung ab.
+    // Zeiten über Minuten vergleichen – "9:30" und "09:30" sind gleich.
     const moved =
       original &&
-      (toMinutes(original.start) !== toMinutes(draft.start.trim()) ||
-        toMinutes(original.end) !== toMinutes(draft.end.trim()) ||
+      isValidTime(start) &&
+      isValidTime(end) &&
+      (toMinutes(original.start) !== toMinutes(start) ||
+        toMinutes(original.end) !== toMinutes(end) ||
         original.dayId !== draft.dayId ||
         original.stageId !== draft.stageId);
     if (!moved || affected === 0) {
