@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { readSessionUserId } from '@/lib/auth';
 import { createGroup, getFestivalStatus, getUserById } from '@/lib/db';
+import { notifyGroupCreated } from '@/lib/discord';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +12,8 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(req: Request) {
   const userId = readSessionUserId(req);
-  if (!userId || !(await getUserById(userId))) {
+  const user = userId ? await getUserById(userId) : null;
+  if (!userId || !user) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
   const body = await req.json().catch(() => null);
@@ -41,5 +43,6 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+  after(() => notifyGroupCreated(group.name, group.festivalName, user.name));
   return NextResponse.json({ group });
 }
