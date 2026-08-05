@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { UpdatePrompt } from '@/components/UpdatePrompt';
+import { LanguageProvider, LanguageSwitch } from '@/lib/client/i18n';
 import { resolveSiteUrl } from '@/lib/siteUrl';
 import './globals.css';
 
@@ -33,8 +34,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="de">
       <body className="min-h-dvh bg-pit text-bone antialiased">
-        {children}
-        <UpdatePrompt />
+        <LanguageProvider>
+          <div id="festival-buddy-root">
+            {children}
+            <UpdatePrompt />
+          </div>
+          <LanguageSwitch />
+        </LanguageProvider>
       </body>
     </html>
   );
