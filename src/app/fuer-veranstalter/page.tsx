@@ -129,7 +129,10 @@ export default async function FuerVeranstalterPage() {
     <main className="defekt-grid min-h-dvh">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: structuredData }}
+        // `<` maskieren, damit ein Wert (z. B. host-abgeleitete URL) das
+        // <script>-Tag nicht per </script> verlassen kann. JSON.stringify
+        // escaped nur Anführungszeichen, nicht Tag-Grenzen.
+        dangerouslySetInnerHTML={{ __html: structuredData.replace(/</g, '\\u003c') }}
       />
       {/* Topbar */}
       <header className="steel-sheen sticky top-0 z-40">

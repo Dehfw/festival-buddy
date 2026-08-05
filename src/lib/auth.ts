@@ -24,11 +24,23 @@ export const SESSION_MAX_AGE_S = 180 * 24 * 60 * 60;
 export const CHALLENGE_MAX_AGE_S = 5 * 60;
 
 function getSecret(): Buffer {
-  const seed =
-    process.env.AUTH_SECRET ||
-    process.env.DATABASE_URL ||
-    process.env.POSTGRES_URL ||
-    'festival-buddy-dev-secret';
+  const explicit = process.env.AUTH_SECRET;
+  if (explicit) {
+    return createHash('sha256').update(`fb-auth:${explicit}`).digest();
+  }
+  // Ohne AUTH_SECRET: in Produktion hart abbrechen. Sonst würde der
+  // Signierschlüssel für Session-/Reset-/Challenge-Tokens aus der
+  // DATABASE_URL (wird freizügiger geteilt/geloggt) oder – schlimmer – einer
+  // öffentlich bekannten Konstante abgeleitet, was Session-Fälschung erlaubt.
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'AUTH_SECRET ist nicht gesetzt. In Produktion Pflicht: ein langer Zufallswert, ' +
+        'der Session-, Reset- und Challenge-Tokens signiert (z. B. `openssl rand -base64 48`).'
+    );
+  }
+  // Nur Dev/Test: deterministischer Fallback, damit lokal ohne Extra-Setup
+  // gearbeitet werden kann (alle Instanzen leiten denselben Schlüssel ab).
+  const seed = process.env.DATABASE_URL || process.env.POSTGRES_URL || 'festival-buddy-dev-secret';
   return createHash('sha256').update(`fb-auth:${seed}`).digest();
 }
 
@@ -116,7 +128,12 @@ export function getRpConfig(req: Request): RpConfig {
     rpID,
     rpName: 'Festival Buddy',
     expectedOrigin: origin,
-    secureCookies: origin.startsWith('https'),
+    // In Produktion IMMER Secure-Cookies – nie aus dem (fälschbaren)
+    // x-forwarded-proto ableiten, sonst könnte ein erzwungenes http-Origin
+    // das Session-Cookie ohne Secure-Flag setzen. Lokal (http://localhost)
+    // muss Secure aus bleiben, sonst speichert der Browser das Cookie nicht.
+    secureCookies:
+      process.env.NODE_ENV === 'production' ? true : origin.startsWith('https'),
   };
 }
 

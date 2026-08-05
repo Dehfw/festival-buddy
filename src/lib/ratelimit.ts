@@ -24,9 +24,18 @@ export function rateLimit(key: string, max: number, windowMs: number): boolean {
   return true;
 }
 
-/** Client-IP hinter Proxy/Vercel (erster Eintrag in x-forwarded-for) */
+/**
+ * Client-IP hinter Proxy/Vercel für die Rate-Limit-Keys. Bewusst zuerst
+ * x-real-ip: den setzt und überschreibt die Plattform (Vercel), während der
+ * LINKESTE x-forwarded-for-Eintrag vom Client frei wählbar ist – würde die
+ * Bremse den nehmen, käme ein Angreifer mit jeder erfundenen IP an einen
+ * frischen Key und umginge das Limit (Login/Reset/Join/Redeem). x-forwarded-
+ * for bleibt nur Fallback, falls die Plattform kein x-real-ip liefert.
+ */
 export function clientIp(req: Request): string {
+  const real = req.headers.get('x-real-ip');
+  if (real) return real.trim();
   const fwd = req.headers.get('x-forwarded-for');
   if (fwd) return fwd.split(',')[0].trim();
-  return req.headers.get('x-real-ip') || 'unknown';
+  return 'unknown';
 }

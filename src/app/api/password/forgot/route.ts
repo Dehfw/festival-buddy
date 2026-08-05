@@ -8,7 +8,7 @@ import {
   RESET_TOKEN_MAX_AGE_S,
 } from '@/lib/password';
 import { clientIp, rateLimit } from '@/lib/ratelimit';
-import { resolveSiteUrl } from '@/lib/siteUrl';
+import { trustedBaseUrl } from '@/lib/siteUrl';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +30,17 @@ export async function POST(req: Request) {
 
   const stored = await getUserByEmail(email);
   if (stored) {
+    // Basis-URL NUR aus APP_URL – kein Host-Header-Fallback (Reset-Poisoning).
+    // Fehlt APP_URL, wird bewusst keine Mail versendet, statt einen auf einen
+    // gefälschten Host zeigenden Reset-Link zu verschicken. Antwort bleibt
+    // neutral, damit weiterhin kein E-Mail-Orakel entsteht.
+    const base = trustedBaseUrl();
+    if (!base) {
+      console.error(
+        'APP_URL nicht gesetzt – Passwort-Reset-Mail unterdrückt (Schutz vor Host-Header-Poisoning).'
+      );
+      return neutral;
+    }
     const token = sealToken(
       {
         ruid: stored.user.id,
@@ -38,7 +49,6 @@ export async function POST(req: Request) {
       },
       RESET_TOKEN_MAX_AGE_S
     );
-    const base = await resolveSiteUrl();
     await sendPasswordResetMail(email, `${base}/passwort-reset#${token}`);
   }
   return neutral;

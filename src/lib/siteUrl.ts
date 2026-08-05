@@ -16,7 +16,7 @@ import { headers } from 'next/headers';
  *  3. localhost nur als letzter Fallback (Build ohne Request-Kontext).
  */
 export async function resolveSiteUrl(): Promise<string> {
-  const configured = process.env.APP_URL?.replace(/\/$/, '');
+  const configured = trustedBaseUrl();
   if (configured) return configured;
 
   try {
@@ -35,4 +35,16 @@ export async function resolveSiteUrl(): Promise<string> {
   }
 
   return `http://localhost:${process.env.PORT ?? 3000}`;
+}
+
+/**
+ * Nur die fest konfigurierte Basis-URL (APP_URL), OHNE Header-Fallback.
+ * Für sicherheitskritische Links – allen voran die Passwort-Reset-Mail –,
+ * die niemals einem angreiferkontrollierbaren Host-Header vertrauen dürfen
+ * (Reset-Poisoning: gefälschter x-forwarded-host lenkt den Reset-Link samt
+ * Token auf eine fremde Domain). null = APP_URL nicht gesetzt; der Aufrufer
+ * versendet dann bewusst nichts, statt einen manipulierbaren Link zu bauen.
+ */
+export function trustedBaseUrl(): string | null {
+  return process.env.APP_URL?.replace(/\/$/, '') || null;
 }
