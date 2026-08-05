@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import {
   getRpConfig,
@@ -8,6 +8,7 @@ import {
   setAuthCookie,
 } from '@/lib/auth';
 import { createUserWithPassword, findAdoptableUser } from '@/lib/db';
+import { notifyUserRegistered } from '@/lib/discord';
 import { colorForName } from '@/lib/ids';
 import {
   hashPassword,
@@ -82,6 +83,8 @@ export async function POST(req: Request) {
       { status: 409 }
     );
   }
+
+  after(() => notifyUserRegistered(user.name, 'Passwort'));
 
   const rp = getRpConfig(req);
   const res = NextResponse.json({ user });

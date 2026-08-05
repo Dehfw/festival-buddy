@@ -1,9 +1,10 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import {
   verifyRegistrationResponse,
   type RegistrationResponseJSON,
 } from '@simplewebauthn/server';
 import { createUserWithCredential } from '@/lib/db';
+import { notifyUserRegistered } from '@/lib/discord';
 import { colorForName } from '@/lib/ids';
 import {
   clearAuthCookie,
@@ -86,6 +87,8 @@ export async function POST(req: Request) {
       { status: 409 }
     );
   }
+
+  after(() => notifyUserRegistered(user.name, 'Passkey'));
 
   const res = NextResponse.json({ user });
   setAuthCookie(res, rp, SESSION_COOKIE, sealToken({ uid: user.id }, SESSION_MAX_AGE_S), {
