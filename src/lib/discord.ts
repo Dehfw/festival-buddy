@@ -9,12 +9,18 @@
 async function sendDiscord(content: string): Promise<void> {
   const url = process.env.DISCORD_WEBHOOK_URL;
   if (!url) return;
+
+  const safeContent = content.length > 2000 ? `${content.slice(0, 1997)}…` : content;
+  const abort = new AbortController();
+  const timeout = setTimeout(() => abort.abort(), 3_000);
+
   try {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: abort.signal,
       body: JSON.stringify({
-        content,
+        content: safeContent,
         // Nutzer-/Gruppennamen stecken im Text – niemand soll sich per
         // Name "@everyone" einen Server-weiten Ping erschleichen können.
         allowed_mentions: { parse: [] },
@@ -27,7 +33,14 @@ async function sendDiscord(content: string): Promise<void> {
     }
   } catch (err) {
     console.error('Discord-Webhook nicht erreichbar:', err);
+  } finally {
+    clearTimeout(timeout);
   }
+}
+
+const DISCORD_MD_ESCAPE_RE = /[\\`*_~]/g;
+function escapeDiscordMarkdown(text: string): string {
+  return text.replace(DISCORD_MD_ESCAPE_RE, '\\$&');
 }
 
 /** Neues Konto angelegt – bewusst nur der Name, keine E-Mail-Adresse. */
@@ -35,7 +48,7 @@ export function notifyUserRegistered(
   name: string,
   method: 'Passkey' | 'Passwort'
 ): Promise<void> {
-  return sendDiscord(`👤 Neuer Nutzer: **${name}** (per ${method})`);
+  return sendDiscord(`👤 Neuer Nutzer: **${escapeDiscordMarkdown(name)}** (per ${method})`);
 }
 
 /** Neue Gruppe gegründet. */
@@ -45,6 +58,8 @@ export function notifyGroupCreated(
   ownerName: string
 ): Promise<void> {
   return sendDiscord(
-    `🎪 Neue Gruppe: **${groupName}** für ${festivalName} (gegründet von ${ownerName})`
+    `🎪 Neue Gruppe: **${escapeDiscordMarkdown(groupName)}** für ${escapeDiscordMarkdown(
+      festivalName
+    )} (gegründet von ${escapeDiscordMarkdown(ownerName)})`
   );
 }
