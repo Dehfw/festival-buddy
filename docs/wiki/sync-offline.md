@@ -141,8 +141,9 @@ Deshalb trägt die Landing ganz oben ein Inline-Script
 standalone läuft, und in dem Fall per `location.replace('/app')`
 weiterspringt – also ohne Aufblitzen der Landing und ohne
 History-Eintrag. Ausnahmen: Zurück-/Vorwärts-Navigation (wer aus der App
-bewusst zurück auf die Landing geht, soll sie sehen) und `/?landing=1`
-als Notausgang. Im Browser ändert sich nichts, die Landing bleibt die
+bewusst zurück auf die Landing geht, soll sie sehen) und ein gesetzter
+`landing`-Parameter (etwa `/?landing=1`; der Wert ist egal) als
+Notausgang. Im Browser ändert sich nichts, die Landing bleibt die
 öffentliche Startseite inklusive SEO.
 
 ### Sicherheitsgrenze des Daten-Caches

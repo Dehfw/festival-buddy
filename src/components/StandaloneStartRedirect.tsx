@@ -24,8 +24,10 @@
  *    heraus bewusst zurück auf die Landing navigiert, soll sie sehen und
  *    nicht in einer Schleife landen. Bei einer bfcache-Wiederherstellung
  *    läuft das Script ohnehin nicht erneut.
- *  - **Nicht bei `/?landing=1`**: bewusster Notausgang, um die Landing
- *    auch in der installierten App anzuschauen.
+ *  - **Nicht, wenn die URL den Parameter `landing` trägt** (etwa
+ *    `/?landing=1`; der Wert ist egal, es zählt allein, dass der
+ *    Parameter gesetzt ist): bewusster Notausgang, um die Landing auch
+ *    in der installierten App anzuschauen.
  *
  * Im Browser (nicht installiert) ändert sich nichts – die Landing bleibt
  * die öffentliche Startseite inklusive SEO, Crawler laufen nie
