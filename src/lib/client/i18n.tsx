@@ -164,7 +164,7 @@ const EN: Record<string, string> = {
   'Interesse zurückziehen': 'Remove interest',
   'Ich bin dabei!': "I'm going!",
   'Ich bin dabei': "I'm going",
-  '🤔 Ich bin interessiert (unverbindlich)': "🤔 I'm interested (non-binding)",
+  '🤔 Ich bin interessiert (unverbindlich)': "🤔 I'm interested",
   'Ich bin interessiert': "I'm interested",
   'Dabei (': 'Going (',
   'Interessiert (': 'Interested (',
@@ -548,7 +548,7 @@ const EN: Record<string, string> = {
     'Edition/subtitle (e.g. “30 Jul–1 Aug 2026 · Wacken”)',
   'feste Zusage': 'confirmed attendee',
   'feste Zusagen': 'confirmed attendees',
-  'interessiert (unverbindlich)': 'interested (non-binding)',
+  'interessiert (unverbindlich)': 'interested',
   'Position markiert': 'Position marked',
   'gerade eben': 'just now',
   'gelöschtem Konto': 'deleted account',
@@ -687,7 +687,7 @@ function translated(value: string): string {
   const daysAgo = key.match(/^vor (\d+) Tag(?:en)?$/);
   if (daysAgo) return spaced(`${daysAgo[1]} day${daysAgo[1] === '1' ? '' : 's'} ago`);
   const interestedNonBinding = key.match(/^(\d+) interessiert \(unverbindlich\)$/);
-  if (interestedNonBinding) return spaced(`${interestedNonBinding[1]} interested (non-binding)`);
+  if (interestedNonBinding) return spaced(`${interestedNonBinding[1]} interested`);
   const sentBy = key.match(/^gesendet von (.+)$/);
   if (sentBy) return spaced(`sent by ${sentBy[1]}`);
   const removed = key.match(/^(.+) entfernt$/);
