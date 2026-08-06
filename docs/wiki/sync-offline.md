@@ -127,6 +127,25 @@ Meldet sich ein neuer Worker, bietet `UpdatePrompt` (global im
 Root-Layout) einen „Neu laden"-Hinweis an. Voraussetzung für Service
 Worker **und** Passkeys: Auslieferung über HTTPS (oder localhost).
 
+### Start in der installierten App
+
+`start_url` im Manifest zeigt auf `/app`, die Homescreen-Verknüpfung
+kann aber trotzdem auf `/` zeigen (iOS merkt sich beim „Zum
+Home-Bildschirm" die gerade offene Adresse, ältere Installationen
+behalten ihre alte Start-Adresse). Wird die App nach längerer Zeit aus
+dem Speicher zurückgeholt, lädt genau diese Adresse neu – ohne
+Gegenmaßnahme landet man dann auf der Landing statt im Timetable.
+
+Deshalb trägt die Landing ganz oben ein Inline-Script
+(`StandaloneStartRedirect`), das noch beim Parsen prüft, ob die Seite
+standalone läuft, und in dem Fall per `location.replace('/app')`
+weiterspringt – also ohne Aufblitzen der Landing und ohne
+History-Eintrag. Ausnahmen: Zurück-/Vorwärts-Navigation (wer aus der App
+bewusst zurück auf die Landing geht, soll sie sehen) und ein gesetzter
+`landing`-Parameter (etwa `/?landing=1`; der Wert ist egal) als
+Notausgang. Im Browser ändert sich nichts, die Landing bleibt die
+öffentliche Startseite inklusive SEO.
+
 ### Sicherheitsgrenze des Daten-Caches
 
 `/api/data` enthält geschützte Gruppendaten und ist serverseitig mit
