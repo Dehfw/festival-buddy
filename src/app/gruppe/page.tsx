@@ -9,7 +9,7 @@ import { GroupGate } from '@/components/GroupGate';
 import { PasswordSettings } from '@/components/PasswordSettings';
 import { PushSettings } from '@/components/PushSettings';
 import { resizeImage } from '@/lib/client/image';
-import { useLanguage } from '@/lib/client/i18n';
+import { LanguageSwitch, useLanguage } from '@/lib/client/i18n';
 import { AppProvider, useApp } from '@/lib/client/store';
 import { USER_COLORS } from '@/lib/ids';
 import { formatInviteCode, isGroupAdmin } from '@/lib/types';
@@ -611,8 +611,16 @@ function GroupPageInner() {
       {tab === 'konto' && (
         <>
           {/* ---------- 3) Konto: Icon-Farbe, Mitteilungen, Abmelden ---------- */}
+          <div className="mt-4 flex items-center justify-between rounded-xl border border-rivet bg-steel px-3.5 py-3">
+            <div>
+              <div className="text-sm font-bold text-bone">Sprache</div>
+              <div className="text-[11px] text-ash">Deutsch oder Englisch</div>
+            </div>
+            <LanguageSwitch placement="profile" />
+          </div>
+
           {/* Eigene Icon-Farbe */}
-          <div className="mt-4 mb-3 rounded-xl border border-rivet bg-steel p-3.5">
+          <div className="mb-3 mt-3 rounded-xl border border-rivet bg-steel p-3.5">
             <div className="flex items-center gap-2.5">
               <Avatar user={user} size={40} ring />
               <div className="min-w-0 flex-1">

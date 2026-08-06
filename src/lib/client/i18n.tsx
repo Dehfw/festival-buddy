@@ -166,6 +166,28 @@ const EN: Record<string, string> = {
   'Ich bin dabei': "I'm going",
   '🤔 Ich bin interessiert (unverbindlich)': "🤔 I'm interested (non-binding)",
   'Ich bin interessiert': "I'm interested",
+  'Dabei (': 'Going (',
+  'Interessiert (': 'Interested (',
+  Fertig: 'Done',
+  'Vergangene Bands ausblenden': 'Hide past bands',
+  '▴ Vergangene Bands ausblenden': '▴ Hide past bands',
+  '🔗 Link kopieren': '🔗 Copy link',
+  'Link teilen': 'Share link',
+  'wechseln →': 'switch →',
+  Einladung: 'Invitation',
+  Mitglied: 'Member',
+  Eintrag: 'entry',
+  'einziger Login-Weg': 'only sign-in method',
+  'Reset-Link schicken': 'Send reset link',
+  'E-Mail schreiben': 'Write email',
+  Zuklappen: 'Collapse',
+  Beschriftung: 'Label',
+  Absperrung: 'Barrier',
+  Zelt: 'Tent',
+  'FOH/Turm': 'FOH/tower',
+  Moin: 'Hi',
+  Sprache: 'Language',
+  'Deutsch oder Englisch': 'German or English',
   'Meine Position ändern': 'Change my position',
   'Meine Position im Publikum markieren': 'Mark my position in the crowd',
   'Markierung löschen': 'Delete marker',
@@ -678,6 +700,28 @@ function translated(value: string): string {
   if (makeAdmin) return spaced(`Make ${makeAdmin[1]} an admin? Admins can edit the group, remove members and appoint more admins.`);
   const revokeAdmin = key.match(/^(.+) die Admin-Rechte entziehen\?$/);
   if (revokeAdmin) return spaced(`Remove admin rights from ${revokeAdmin[1]}?`);
+  const makeAdminTitle = key.match(/^(.+) zum Admin machen$/);
+  if (makeAdminTitle) return spaced(`Make ${makeAdminTitle[1]} an admin`);
+  const revokeAdminTitle = key.match(/^(.+) die Admin-Rechte entziehen$/);
+  if (revokeAdminTitle) return spaced(`Remove admin rights from ${revokeAdminTitle[1]}`);
+  const removeMemberTitle = key.match(/^(.+) entfernen$/);
+  if (removeMemberTitle) return spaced(`Remove ${removeMemberTitle[1]}`);
+  const deleteDay = key.match(/^(.+) \((\d{4}-\d{2}-\d{2})\) wird entfernt(?: – inklusive (\d+) (?:Slot|Slots) an diesem Tag)?\.$/);
+  if (deleteDay) {
+    const included = deleteDay[3]
+      ? `, including ${deleteDay[3]} slot${deleteDay[3] === '1' ? '' : 's'} on this day`
+      : '';
+    return spaced(`${deleteDay[1]} (${deleteDay[2]}) will be removed${included}.`);
+  }
+  const deleteStage = key.match(/^"(.+)" wird entfernt – inklusive Bühnenplan(?: und (\d+) (?:Slot|Slots) auf dieser Bühne)?\.$/);
+  if (deleteStage) {
+    const included = deleteStage[2]
+      ? ` and ${deleteStage[2]} slot${deleteStage[2] === '1' ? '' : 's'} on this stage`
+      : '';
+    return spaced(`"${deleteStage[1]}" will be removed, including its stage map${included}.`);
+  }
+  const deleteSlot = key.match(/^"(.+)" \(([^)]+)\) wird aus dem Timetable entfernt\.$/);
+  if (deleteSlot) return spaced(`"${deleteSlot[1]}" (${deleteSlot[2]}) will be removed from the timetable.`);
   const deleteAnnouncement = key.match(/^„(.+)“ für alle löschen\? Die Mitteilung verschwindet aus der App aller Nutzer – bereits zugestellte Push-Benachrichtigungen lassen sich aber nicht zurückholen\.$/);
   if (deleteAnnouncement) return spaced(`Delete “${deleteAnnouncement[1]}” for everyone? It will disappear from the app, but delivered push notifications cannot be recalled.`);
   const sentPush = key.match(/^✓ Gesendet – (\d+) Push-Geräte? erreicht; in der App sehen sie alle\.$/);
@@ -845,12 +889,25 @@ export function useLanguage() {
   return context;
 }
 
-export function LanguageSwitch() {
+export function LanguageSwitch({ placement = 'floating' }: { placement?: 'floating' | 'profile' }) {
   const { locale, setLocale } = useLanguage();
+  const pathname = usePathname();
+  const isPublicPage =
+    pathname === '/' ||
+    pathname === '/fuer-veranstalter' ||
+    pathname === '/passwort-reset' ||
+    pathname.startsWith('/join/');
+
+  if (placement === 'floating' && !isPublicPage) return null;
+
   return (
     <div
       data-no-i18n
-      className="fixed bottom-[calc(env(safe-area-inset-bottom)+4.2rem)] right-3 z-[100] flex rounded-full border border-rivet bg-steel/95 p-0.5 text-[10px] font-black tracking-wider shadow-xl backdrop-blur sm:bottom-4"
+      className={
+        placement === 'floating'
+          ? 'fixed bottom-4 right-3 z-[100] flex rounded-full border border-rivet bg-steel/95 p-0.5 text-[10px] font-black tracking-wider shadow-xl backdrop-blur'
+          : 'flex shrink-0 rounded-full border border-rivet bg-steel-2 p-0.5 text-[10px] font-black tracking-wider'
+      }
       role="group"
       aria-label="Language / Sprache"
     >
