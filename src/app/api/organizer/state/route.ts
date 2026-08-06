@@ -8,6 +8,7 @@ import {
   getTimetableFresh,
 } from '@/lib/db';
 import { canManageFestival } from '@/lib/organizer';
+import { isPushConfigured } from '@/lib/push';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,9 @@ export const dynamic = 'force-dynamic';
  * füttern Slot-Badges und die Warn-Dialoge beim Löschen), anonyme
  * Gruppen-Zähler (wie viele Gruppen/Leute – Gefühl für die Menge) sowie das
  * Veranstalter-Team des Festivals (meId markiert das eigene Konto).
+ * `pushConfigured` sagt dem Editor, ob Verschiebungen überhaupt pushen
+ * können – ohne VAPID-Keys verspricht der Verschiebe-Dialog sonst etwas,
+ * das nie passiert.
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -54,6 +58,7 @@ export async function GET(req: Request) {
       groupStats,
       organizers,
       meId: auth.userId,
+      pushConfigured: isPushConfigured(),
     },
     { headers: { 'Cache-Control': 'no-store' } }
   );

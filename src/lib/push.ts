@@ -21,7 +21,7 @@ export const PUSH_BODY_MAX = 500;
 const SEND_CONCURRENCY = 10;
 
 export interface PushPayload {
-  type: 'announcement' | 'reminder' | 'position';
+  type: 'announcement' | 'reminder' | 'position' | 'schedule';
   title: string;
   body: string;
   /** Deep-Link, den der SW bei Klick öffnet (z. B. /app?announcement=…) */
@@ -37,6 +37,15 @@ export interface PushSendResult {
   gone: number;
   /** sonstige Fehler (Abo bleibt bestehen) */
   failed: number;
+}
+
+/**
+ * Fan-out-Ergebnis: die Geräte-Zähler plus die Anzahl VERSCHIEDENER Nutzer,
+ * die mindestens ein Gerät erreicht hat. Ein Nutzer mit mehreren Abos zählt
+ * einmal – und wer Push gar nicht aktiviert hat, zählt nicht als informiert.
+ */
+export interface PushFanoutResult extends PushSendResult {
+  users: number;
 }
 
 let vapidConfigured = false;
@@ -99,8 +108,8 @@ async function sendToSubscription(
 export async function sendPushToUsers(
   userIds: string[],
   payload: PushPayload
-): Promise<PushSendResult> {
-  const result: PushSendResult = { sent: 0, gone: 0, failed: 0 };
+): Promise<PushFanoutResult> {
+  const result: PushFanoutResult = { sent: 0, gone: 0, failed: 0, users: 0 };
   if (!ensureVapid() || userIds.length === 0) return result;
 
   const subs = await getPushSubscriptionsForUsers(userIds);
@@ -109,16 +118,20 @@ export async function sendPushToUsers(
 
   // Kleines Concurrency-Fenster: die Abos als gemeinsame Warteschlange,
   // aus der SEND_CONCURRENCY Worker parallel abarbeiten.
+  const reached = new Set<string>();
   let next = 0;
   const workers = Array.from(
     { length: Math.min(SEND_CONCURRENCY, subs.length) },
     async () => {
       while (next < subs.length) {
         const sub = subs[next++];
-        result[await sendToSubscription(sub, json)]++;
+        const outcome = await sendToSubscription(sub, json);
+        result[outcome]++;
+        if (outcome === 'sent') reached.add(sub.userId);
       }
     }
   );
   await Promise.all(workers);
+  result.users = reached.size;
   return result;
 }

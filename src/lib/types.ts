@@ -290,6 +290,17 @@ export interface DataPayload {
  */
 export const FESTIVAL_TZ = 'Europe/Berlin';
 
+/**
+ * Gültige Timetable-Zeit "H:MM"/"HH:MM"; Stunden bis 31 sind erlaubt
+ * (nach Mitternacht, siehe toMinutes). Dieselbe Prüfung nutzen Server
+ * (upsertSlot) und Veranstalter-Editor (Verschiebe-Dialog).
+ */
+export function isValidTime(value: string): boolean {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(value);
+  if (!m) return false;
+  return Number(m[1]) <= 31 && Number(m[2]) <= 59;
+}
+
 /** "HH:MM" (auch 24:30 etc.) -> Minuten seit 00:00 des Festivaltags */
 export function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(':').map(Number);

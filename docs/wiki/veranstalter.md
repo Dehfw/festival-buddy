@@ -76,6 +76,13 @@ Der Editor **warnt vor jedem Löschen** mit einem Dialog – und hebt rot
 hervor, wie viele Besucher-Einträge (Zusagen/Interessen) an den
 betroffenen Slots hängen (Zähler aus `GET /api/organizer/state`).
 
+Auch das **Verschieben** eines Slots (Zeit, Tag oder Bühne), an dem
+schon Einträge hängen, bestätigt der Veranstalter vorher per Dialog –
+denn die Eingetragenen bekommen die Änderung automatisch als
+Push-Mitteilung (Details:
+[Push & Mitteilungen](push-mitteilungen.md#programm-änderungen)). Nach
+dem Speichern zeigt der Editor das Versand-Ergebnis an.
+
 Regeln & Grenzen (Validierung serverseitig):
 
 - **IDs sind stabil**: Slot-IDs (`tag-buehne-bandslug`), Tag- und

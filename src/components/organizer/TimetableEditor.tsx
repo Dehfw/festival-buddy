@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import {
   formatTime,
+  isValidTime,
   toMinutes,
   type FestivalDay,
   type Slot,
@@ -20,6 +21,11 @@ import {
  * ausdrücklich, wenn an den betroffenen Slots bereits Besucher-Einträge
  * (Zusagen/Interessen samt Positionsmarkern) hängen, denn die werden
  * unwiderruflich mit gelöscht.
+ *
+ * Auch das Verschieben eines Slots (Zeit/Tag/Bühne) mit Besucher-Einträgen
+ * bestätigt der Veranstalter vorher: Der Dialog nennt, wie viele
+ * Eingetragene die automatische Push-Mitteilung zur Änderung bekommen, und
+ * nach dem Speichern meldet der Editor das Versand-Ergebnis zurück.
  */
 
 export interface EditorApi {
@@ -27,6 +33,12 @@ export interface EditorApi {
   timetable: Timetable;
   /** Zusagen/Interessen pro Slot-ID, getrennt (über alle Gruppen des Festivals) */
   selectionCounts: Record<string, SlotSelectionCounts>;
+  /**
+   * Sind serverseitig VAPID-Keys gesetzt? Ohne Push entfällt der
+   * Verschiebe-Dialog – er würde eine Benachrichtigung versprechen, die
+   * das Deployment gar nicht senden kann.
+   */
+  pushConfigured: boolean;
   onTimetable: (t: Timetable) => void;
 }
 
@@ -36,7 +48,17 @@ function totalSelections(counts: SlotSelectionCounts | undefined): number {
 }
 
 type ApiResult =
-  | { ok: true; timetable: Timetable; id?: string }
+  | {
+      ok: true;
+      timetable: Timetable;
+      id?: string;
+      /** Verschobener Slot: so viele Personen sind dort eingetragen */
+      audience?: number;
+      /** … und so viele davon hat der Push wirklich erreicht (mind. 1 Gerät) */
+      notified?: number;
+      /** Versand-Ergebnis auf Geräte-Ebene (siehe /api/organizer/slot) */
+      push?: { sent: number; gone: number; failed: number };
+    }
   | { ok: false; error: string };
 
 async function callApi(path: string, method: string, body: unknown): Promise<ApiResult> {
@@ -50,7 +72,14 @@ async function callApi(path: string, method: string, body: unknown): Promise<Api
     if (!res.ok || !data?.timetable) {
       return { ok: false, error: data?.error ?? 'Fehler beim Speichern' };
     }
-    return { ok: true, timetable: data.timetable as Timetable, id: data.id };
+    return {
+      ok: true,
+      timetable: data.timetable as Timetable,
+      id: data.id,
+      audience: typeof data.audience === 'number' ? data.audience : undefined,
+      notified: typeof data.notified === 'number' ? data.notified : undefined,
+      push: data.push,
+    };
   } catch {
     return { ok: false, error: 'Keine Verbindung – der Editor braucht Netz' };
   }
@@ -65,6 +94,8 @@ export interface ConfirmRequest {
   message: string;
   /** Besucher-Einträge, die mit gelöscht würden – > 0 gibt eine deutliche Warnung */
   affectedSelections: number;
+  /** Hinweis ohne Lösch-Drama (z. B. "X Eingetragene bekommen einen Push") */
+  notice?: string;
   confirmLabel: string;
   onConfirm: () => void;
 }
@@ -93,6 +124,11 @@ function ConfirmDialog({
             {req.affectedSelections === 1 ? 'Eintrag' : 'Einträge'} von Besuchern
             (Zusagen/Interessen samt Treffpunkt-Markern) – die werden
             unwiderruflich mit gelöscht!
+          </p>
+        )}
+        {req.notice && (
+          <p className="mt-3 rounded-xl border border-ember/60 bg-ember/10 px-3 py-2 text-sm font-bold text-ember">
+            {req.notice}
           </p>
         )}
         <div className="mt-4 flex gap-2">
@@ -675,11 +711,12 @@ function SlotForm({
 }
 
 export function SlotsEditor({ api }: { api: EditorApi }) {
-  const { festivalId, timetable, selectionCounts, onTimetable } = api;
+  const { festivalId, timetable, selectionCounts, pushConfigured, onTimetable } = api;
   const [dayId, setDayId] = useState(timetable.days[0]?.id ?? '');
   const [draft, setDraft] = useState<SlotDraft | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [confirm, setConfirm] = useState<ConfirmRequest | null>(null);
 
   const activeDayId = timetable.days.some((d) => d.id === dayId)
@@ -697,6 +734,7 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
 
   const startEdit = (slot: Slot) => {
     setError('');
+    setInfo('');
     setDraft({
       id: slot.id,
       dayId: slot.dayId,
@@ -711,6 +749,7 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
 
   const startNew = () => {
     setError('');
+    setInfo('');
     setDraft({
       dayId: activeDayId,
       stageId: timetable.stages[0].id,
@@ -722,10 +761,11 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
     });
   };
 
-  const save = async () => {
+  const doSave = async () => {
     if (!draft) return;
     setBusy(true);
     setError('');
+    setInfo('');
     const result = await callApi('/api/organizer/slot', 'PUT', {
       festivalId,
       slot: {
@@ -746,8 +786,99 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
       setError(result.error);
       return;
     }
+    if (result.audience !== undefined) {
+      // Ehrliche Zählung: `audience` = Eingetragene gesamt, `notified` = wer
+      // davon wirklich mindestens ein Gerät per Push erreicht hat. `failed`
+      // unterscheidet "kein Push aktiv" von "Versand fehlgeschlagen" – ohne
+      // Fehler heißt "0 erreicht" wirklich: keine aktiven Abos.
+      const audience = result.audience;
+      const reached = result.notified ?? 0;
+      const devices = result.push?.sent ?? 0;
+      const failed = result.push?.failed ?? 0;
+      if (audience === 0) {
+        setInfo('Änderung gespeichert – niemand war hier eingetragen, kein Push nötig.');
+      } else if (reached === 0) {
+        setInfo(
+          failed > 0
+            ? `⚠️ Änderung gespeichert, aber der Push-Versand schlug fehl (${failed} ${
+                failed === 1 ? 'Zustellung' : 'Zustellungen'
+              }); die Eingetragenen sehen die neue Zeit nur in der App.`
+            : `Änderung gespeichert – von ${audience} Eingetragenen hat niemand Push aktiv; sie sehen die neue Zeit nur in der App.`
+        );
+      } else if (reached === audience) {
+        setInfo(
+          `🔔 Push zur Änderung ist raus an ${
+            audience === 1 ? 'die eine eingetragene Person' : `alle ${audience} Eingetragenen`
+          } (${devices} ${devices === 1 ? 'Gerät' : 'Geräte'} erreicht).${
+            failed > 0
+              ? ` ⚠️ ${failed} ${
+                  failed === 1 ? 'Geräte-Zustellung schlug' : 'Geräte-Zustellungen schlugen'
+                } trotzdem fehl.`
+              : ''
+          }`
+        );
+      } else {
+        setInfo(
+          failed > 0
+            ? `🔔 Push ist raus an ${reached} von ${audience} Eingetragenen – beim Rest ist kein Push aktiv oder die Zustellung schlug fehl (${failed}×); sie sehen die Änderung nur in der App.`
+            : `🔔 Push ist raus an ${reached} von ${audience} Eingetragenen – der Rest hat kein Push aktiv und sieht die Änderung nur in der App.`
+        );
+      }
+    }
     onTimetable(result.timetable);
     setDraft(null);
+  };
+
+  /** Beschreibung "Fr 17:30–18:30 · FSTR" für den Verschiebe-Dialog */
+  const describe = (slot: { dayId: string; start: string; end: string; stageId: string }) => {
+    const day = timetable.days.find((d) => d.id === slot.dayId);
+    const stage = timetable.stages.find((s) => s.id === slot.stageId);
+    return [day?.label, `${formatTime(slot.start)}–${formatTime(slot.end)}`, stage?.short]
+      .filter(Boolean)
+      .join(' · ');
+  };
+
+  const save = async () => {
+    if (!draft) return;
+    // Verschiebt der Edit den Slot (Zeit/Tag/Bühne) und sind schon Besucher
+    // eingetragen? Dann erst bestätigen lassen – der Server pusht die
+    // Änderung danach automatisch an alle Eingetragenen.
+    const original = draft.id ? timetable.slots.find((s) => s.id === draft.id) : undefined;
+    const affected = draft.id ? totalSelections(selectionCounts[draft.id]) : 0;
+    const start = draft.start.trim();
+    const end = draft.end.trim();
+    // Ungültige Zeiten (z. B. 99:99 – das HTML-Pattern lässt sie durch)
+    // gar nicht erst bestätigen lassen: describe() würde Unsinn anzeigen
+    // und der Server lehnt den Save gleich mit einer klaren Meldung ab.
+    // Zeiten über Minuten vergleichen – "9:30" und "09:30" sind gleich.
+    const moved =
+      original &&
+      isValidTime(start) &&
+      isValidTime(end) &&
+      (toMinutes(original.start) !== toMinutes(start) ||
+        toMinutes(original.end) !== toMinutes(end) ||
+        original.dayId !== draft.dayId ||
+        original.stageId !== draft.stageId);
+    // Ohne konfiguriertes Push (VAPID) gäbe der Dialog ein Versprechen ab,
+    // das der Server nicht einlösen kann – dann einfach speichern.
+    if (!moved || affected === 0 || !pushConfigured) {
+      await doSave();
+      return;
+    }
+    setConfirm({
+      title: 'Slot verschieben?',
+      message: `"${original.band}" wandert von ${describe(original)} auf ${describe(draft)}.`,
+      affectedSelections: 0,
+      notice: `🔔 ${
+        affected === 1
+          ? 'Die eine hier eingetragene Person wird'
+          : `Die ${affected} hier eingetragenen Personen werden`
+      } automatisch per Push informiert – erreicht wird dabei nur, wer Mitteilungen aktiviert hat.`,
+      confirmLabel: 'Speichern & Senden',
+      onConfirm: () => {
+        void doSave();
+      },
+    });
   };
 
   const requestDelete = (slot: Slot) => {
@@ -816,6 +947,7 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
         </button>
       )}
       {error && <p className="mt-2 text-sm text-blood">{error}</p>}
+      {info && <p className="mt-2 text-sm font-bold text-ember">{info}</p>}
 
       {/* Slots des Tages, gruppiert nach Bühne – am Desktop nebeneinander
           als Spalten-Board, damit die Breite genutzt wird */}

@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
-import { deleteSlot, upsertSlot, type SlotInput } from '@/lib/db';
+import { deleteSlot, getSlotSelectionUserIds, upsertSlot, type SlotInput } from '@/lib/db';
 import { canManageFestival } from '@/lib/organizer';
+import { isPushConfigured, PUSH_TITLE_MAX, sendPushToUsers } from '@/lib/push';
+import { formatTime, toMinutes, type Slot, type Timetable } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
+// Bei Zeit-/Tag-/Bühnen-Änderungen wird der Push-Fan-out an die
+// eingetragenen Besucher vor der Antwort komplett ge-awaitet (Serverless!).
+export const maxDuration = 60;
 
 function authError(status: 401 | 403) {
   return NextResponse.json(
@@ -11,9 +16,66 @@ function authError(status: 401 | 403) {
   );
 }
 
+/** "9:30" und "09:30" sind dieselbe Zeit – Vergleich deshalb über Minuten */
+function timeDiffers(prev: Slot, next: Slot): boolean {
+  return (
+    toMinutes(prev.start) !== toMinutes(next.start) ||
+    toMinutes(prev.end) !== toMinutes(next.end)
+  );
+}
+
+/** Hat sich geändert, WANN oder WO die Band spielt? (Nur das wird gepusht.) */
+function scheduleChanged(prev: Slot, next: Slot): boolean {
+  return timeDiffers(prev, next) || prev.dayId !== next.dayId || prev.stageId !== next.stageId;
+}
+
+/**
+ * Push-Text für eine Programm-Änderung: neuer Stand zuerst, alter Stand in
+ * der Klammer – Tag/Bühne nur da, wo sie sich wirklich geändert haben.
+ */
+function schedulePush(prev: Slot, next: Slot, timetable: Timetable) {
+  const day = (id: string) => timetable.days.find((d) => d.id === id)?.longLabel;
+  const stage = (id: string) => timetable.stages.find((s) => s.id === id)?.name;
+  const dayChanged = prev.dayId !== next.dayId;
+  const stageChanged = prev.stageId !== next.stageId;
+  const timeChanged = timeDiffers(prev, next);
+
+  const part = (dayId: string, from: string, to: string, stageId: string) =>
+    [
+      dayChanged ? day(dayId) : null,
+      timeChanged || dayChanged ? `${formatTime(from)}–${formatTime(to)}` : null,
+      stageChanged ? stage(stageId) : null,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+
+  // Titel nach dem, was sich WIRKLICH geändert hat – eine reine
+  // Tag-Verschiebung ist keine "neue Zeit".
+  const changes = [timeChanged, dayChanged, stageChanged].filter(Boolean).length;
+  const title =
+    changes > 1
+      ? `🕒 ${next.band} wurde verschoben`
+      : stageChanged
+        ? `🎪 ${next.band}: neue Bühne`
+        : dayChanged
+          ? `📅 ${next.band}: neuer Tag`
+          : `🕒 ${next.band}: neue Zeit`;
+  return {
+    title: title.slice(0, PUSH_TITLE_MAX),
+    body: `Jetzt ${part(next.dayId, next.start, next.end, next.stageId)} (vorher ${part(prev.dayId, prev.start, prev.end, prev.stageId)})`,
+  };
+}
+
 /**
  * Slot anlegen/ändern:
  * { festivalId, slot: { id?, dayId, stageId, band, start, end, confirmed, spotifyArtistId? } }
+ *
+ * Ändert ein Edit Zeit, Tag oder Bühne, bekommen alle beim Slot
+ * eingetragenen Besucher ('going'/'interested', über alle Gruppen) eine
+ * Push-Mitteilung; die Antwort meldet dem Editor `audience` (Eingetragene
+ * gesamt), `notified` (davon per Push wirklich erreichte Personen – wer
+ * kein Push aktiviert hat, zählt nicht) und `push` ({ sent, gone, failed }
+ * auf Geräte-Ebene) zurück.
  */
 export async function PUT(req: Request) {
   const body = await req.json().catch(() => null);
@@ -39,6 +101,30 @@ export async function PUT(req: Request) {
   const result = await upsertSlot(festivalId, input);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  // Verschoben? Dann die Eingetragenen informieren – ge-awaitet vor der
+  // Antwort, damit der Veranstalter das Versand-Ergebnis als Bestätigung
+  // sieht. Gleicher Tag pro Slot: Nachjustieren ersetzt eine noch
+  // sichtbare Notification statt zu stapeln.
+  const next = input.id ? result.timetable.slots.find((s) => s.id === input.id) : undefined;
+  if (result.previous && next && scheduleChanged(result.previous, next) && isPushConfigured()) {
+    const audience = await getSlotSelectionUserIds(festivalId, next.id);
+    const push = await sendPushToUsers(audience, {
+      type: 'schedule',
+      ...schedulePush(result.previous, next, result.timetable),
+      url: '/app',
+      tag: `schedule-${festivalId}-${next.id}`,
+    });
+    return NextResponse.json({
+      ok: true,
+      rev: result.rev,
+      timetable: result.timetable,
+      id: result.id,
+      audience: audience.length,
+      notified: push.users,
+      push,
+    });
   }
   return NextResponse.json({
     ok: true,

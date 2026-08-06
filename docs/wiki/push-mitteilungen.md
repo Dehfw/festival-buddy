@@ -1,8 +1,9 @@
 # Push & Mitteilungen
 
-Drei Dinge, ein Unterbau: **Mitteilungen** (Durchsagen von Veranstaltern
+Vier Dinge, ein Unterbau: **Mitteilungen** (Durchsagen von Veranstaltern
 bzw. dem Betreiber), **Band-Erinnerungen** („Deine Band startet
-gleich“) und **Standort-Benachrichtigungen** („Max steht bei …“, siehe
+gleich“), **Programm-Änderungen** („Neue Zeit für …“, siehe unten) und
+**Standort-Benachrichtigungen** („Max steht bei …“, siehe
 unten). Zugestellt wird per **Web Push (VAPID)** – Standard-Browser-Push
 ohne Firebase, Server-seitig über das npm-Paket `web-push`. Wer kein Push
 erlaubt (oder es verpasst), sieht Mitteilungen trotzdem in der App: Sie
@@ -78,6 +79,41 @@ Erinnerungen kommt `CRON_SECRET` dazu (siehe unten).
   ```
 
   Ohne `--festival` app-weit an alle Abos (`festival_id NULL`).
+
+## Programm-Änderungen
+
+Verschiebt ein Veranstalter im Editor einen Slot – neue Zeit, anderer
+Tag oder andere Bühne –, bekommen alle Nutzer, die beim Slot eingetragen
+sind (`going` **und** `interested`, über alle Gruppen des Festivals),
+sofort einen Push: „🕒 <Band>: neue Zeit“, „📅 …: neuer Tag“ oder
+„🎪 …: neue Bühne“ (bei mehreren Änderungen „… wurde verschoben“) – mit
+neuem und altem Stand im Text. Details:
+
+- Nur echte Verschiebungen pushen. Bandname, „bestätigt“-Häkchen oder
+  Spotify-ID ändern lösen nichts aus – neue Slots sowieso nicht.
+- Der Editor lässt den Veranstalter die Änderung vorher **bestätigen**:
+  Der Dialog nennt, wie viele Eingetragene betroffen sind („Speichern &
+  Senden“); ohne Einträge am Slot wird ohne Dialog gespeichert. Ist Push
+  gar nicht konfiguriert (keine VAPID-Keys), entfällt der Dialog
+  ebenfalls – er würde sonst etwas versprechen, das das Deployment nie
+  sendet (`pushConfigured` aus `GET /api/organizer/state`). Der
+  Versand wird vor der Antwort komplett ge-awaitet (Serverless!), das
+  Ergebnis erscheint als Bestätigung im Editor – **ehrlich gezählt**:
+  „Push ist raus an X von Y Eingetragenen“, wobei als informiert nur
+  zählt, wen mindestens ein Gerät wirklich erreicht hat
+  (`sendPushToUsers` meldet dafür `users` neben den Geräte-Zählern).
+  Wer Push nicht aktiviert hat, wird also nicht als benachrichtigt
+  ausgegeben – er sieht die Änderung nur in der App.
+- Gleicher Notification-`tag` pro (Festival, Slot): Nachjustieren
+  ersetzt eine noch sichtbare Notification statt zu stapeln.
+- Wer kein Push erlaubt hat, sieht die neue Zeit trotzdem ≤ 7 s später
+  über das normale Daten-Polling (`db_rev`-Bump wie bei jeder
+  Editor-Mutation). Eine zusätzliche In-App-Mitteilung gibt es bewusst
+  nicht – `announcements` erreichen immer das ganze Festival, die
+  Änderung interessiert aber nur die Eingetragenen.
+- Bewusste Vereinfachung: Das Ändern des **Datums eines Festivaltags**
+  (Tab „Tage“) pusht nicht – es verschiebt alle Slots des Tages auf
+  einmal und ist praktisch die Tippfehler-Korrektur vor dem Festival.
 
 ## Standort-Benachrichtigungen
 
