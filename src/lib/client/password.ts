@@ -46,8 +46,11 @@ export async function loginWithPassword(email: string, password: string): Promis
 }
 
 /** Antwortet immer ok – ob die Adresse ein Konto hat, verrät der Server nicht */
-export async function requestPasswordReset(email: string): Promise<void> {
-  await post('/api/password/forgot', { email });
+export async function requestPasswordReset(
+  email: string,
+  locale: 'de' | 'en' = 'de'
+): Promise<void> {
+  await post('/api/password/forgot', { email, locale });
 }
 
 /** Neues Passwort per Token aus der Reset-Mail; loggt direkt ein */

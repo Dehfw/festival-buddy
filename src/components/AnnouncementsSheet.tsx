@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
+import { useLanguage } from '@/lib/client/i18n';
 import { useModalDialog } from '@/lib/client/useModalDialog';
 import { useSheetDrag } from '@/lib/client/useSheetDrag';
 import { useSheetHistory } from '@/lib/client/useSheetHistory';
@@ -311,6 +312,7 @@ function AnnouncementDetailDialog({
   announcement: Announcement;
   onClose: () => void;
 }) {
+  const { locale } = useLanguage();
   const dialogRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -334,7 +336,7 @@ function AnnouncementDetailDialog({
   });
 
   // In der Liste reicht "vor X Min." – hier gibt es Platz fürs volle Datum
-  const createdLabel = new Date(a.createdAt).toLocaleString('de-DE', {
+  const createdLabel = new Date(a.createdAt).toLocaleString(locale === 'en' ? 'en-GB' : 'de-DE', {
     weekday: 'short',
     day: 'numeric',
     month: 'long',

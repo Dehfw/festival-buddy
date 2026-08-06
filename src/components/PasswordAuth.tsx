@@ -6,6 +6,7 @@ import {
   registerWithPassword,
   requestPasswordReset,
 } from '@/lib/client/password';
+import { useLanguage } from '@/lib/client/i18n';
 import { cancelPendingPasskey } from '@/lib/client/webauthn';
 import type { User } from '@/lib/types';
 
@@ -31,6 +32,7 @@ export function PasswordAuth({
   /** Name aus dem Passkey-Formular übernehmen, wenn schon getippt */
   initialName?: string;
 }) {
+  const { locale } = useLanguage();
   const [mode, setMode] = useState<Mode>('login');
   const [name, setName] = useState(initialName);
   const [email, setEmail] = useState('');
@@ -66,7 +68,7 @@ export function PasswordAuth({
       } else if (mode === 'register') {
         onSuccess(await registerWithPassword(name.trim(), email.trim(), password));
       } else {
-        await requestPasswordReset(email.trim());
+        await requestPasswordReset(email.trim(), locale);
         setResetSent(true);
       }
     } catch (err) {

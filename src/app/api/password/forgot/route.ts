@@ -23,6 +23,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const email = normalizeEmail(body?.email);
+  const locale = body?.locale === 'en' ? 'en' : 'de';
   const neutral = NextResponse.json({ ok: true });
   if (!email) return neutral;
   // Limit erreicht? Auch dann neutral antworten und einfach nichts senden.
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
       RESET_TOKEN_MAX_AGE_S
     );
     const base = await resolveSiteUrl();
-    await sendPasswordResetMail(email, `${base}/passwort-reset#${token}`);
+    await sendPasswordResetMail(email, `${base}/passwort-reset#${token}`, locale);
   }
   return neutral;
 }

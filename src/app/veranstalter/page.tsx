@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { useLanguage } from '@/lib/client/i18n';
 import { Avatar } from '@/components/Avatars';
 import { BlueprintEditor } from '@/components/BlueprintEditor';
 import { AnnouncementComposer } from '@/components/organizer/AnnouncementComposer';
@@ -408,6 +409,8 @@ function VeranstalterInner() {
  * Summen – welche Gruppen das sind und wer drinsteckt, bleibt privat.
  */
 function GroupStatsLine({ stats }: { stats: FestivalGroupStats }) {
+  const { locale } = useLanguage();
+  const numberLocale = locale === 'en' ? 'en-GB' : 'de-DE';
   if (stats.groups === 0) {
     return (
       <p className="mt-0.5 text-xs text-ash/70">👥 Noch keine Gruppen zu diesem Festival</p>
@@ -415,9 +418,9 @@ function GroupStatsLine({ stats }: { stats: FestivalGroupStats }) {
   }
   return (
     <p className="mt-0.5 text-xs text-ash/70">
-      👥 <span className="font-bold text-bone">{stats.people.toLocaleString('de-DE')}</span>{' '}
+      👥 <span className="font-bold text-bone">{stats.people.toLocaleString(numberLocale)}</span>{' '}
       {stats.people === 1 ? 'Person' : 'Leute'} in{' '}
-      <span className="font-bold text-bone">{stats.groups.toLocaleString('de-DE')}</span>{' '}
+      <span className="font-bold text-bone">{stats.groups.toLocaleString(numberLocale)}</span>{' '}
       {stats.groups === 1 ? 'Gruppe' : 'Gruppen'}
     </p>
   );
@@ -435,6 +438,7 @@ function OrganizerTeam({
   organizers: OrganizerInfo[];
   meId: string;
 }) {
+  const { locale } = useLanguage();
   return (
     <section className="mt-8 md:max-w-xl">
       <div className="mb-2 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-ash/60">
@@ -459,7 +463,7 @@ function OrganizerTeam({
               )}
             </span>
             <span className="shrink-0 text-[10px] text-ash/70">
-              seit {new Date(o.since).toLocaleDateString('de-DE')}
+              seit {new Date(o.since).toLocaleDateString(locale === 'en' ? 'en-GB' : 'de-DE')}
             </span>
           </li>
         ))}

@@ -40,7 +40,30 @@ async function sendMail(to: string, subject: string, text: string): Promise<bool
   }
 }
 
-export function sendPasswordResetMail(to: string, resetUrl: string): Promise<boolean> {
+export function sendPasswordResetMail(
+  to: string,
+  resetUrl: string,
+  locale: 'de' | 'en' = 'de'
+): Promise<boolean> {
+  if (locale === 'en') {
+    return sendMail(
+      to,
+      'Festival Buddy – Reset your password',
+      [
+        'Hi!',
+        '',
+        'A password reset was requested for your Festival Buddy account.',
+        'Use this link to set a new password (valid for 30 minutes):',
+        '',
+        resetUrl,
+        '',
+        'If this was not you, simply ignore this email – your password',
+        'will remain unchanged.',
+        '',
+        'Rock on! 🤘',
+      ].join('\n')
+    );
+  }
   return sendMail(
     to,
     'Festival Buddy – Passwort zurücksetzen',
