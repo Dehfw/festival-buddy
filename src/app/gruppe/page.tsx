@@ -9,6 +9,7 @@ import { GroupGate } from '@/components/GroupGate';
 import { PasswordSettings } from '@/components/PasswordSettings';
 import { PushSettings } from '@/components/PushSettings';
 import { resizeImage } from '@/lib/client/image';
+import { useLanguage } from '@/lib/client/i18n';
 import { AppProvider, useApp } from '@/lib/client/store';
 import { USER_COLORS } from '@/lib/ids';
 import { formatInviteCode, isGroupAdmin } from '@/lib/types';
@@ -21,6 +22,7 @@ import { formatInviteCode, isGroupAdmin } from '@/lib/types';
  *   Konto  – Icon-Farbe, Login & Sicherheit, Push-Mitteilungen, Abmelden
  */
 function GroupPageInner() {
+  const { locale } = useLanguage();
   const {
     ready,
     user,
@@ -140,7 +142,10 @@ function GroupPageInner() {
 
   const shareInvite = async () => {
     const url = inviteUrl();
-    const text = `Komm in unsere Festival-Gruppe „${group.name}“ (${group.festivalName})! Code: ${formatInviteCode(group.inviteCode)}`;
+    const text =
+      locale === 'en'
+        ? `Join our festival group “${group.name}” (${group.festivalName})! Code: ${formatInviteCode(group.inviteCode)}`
+        : `Komm in unsere Festival-Gruppe „${group.name}“ (${group.festivalName})! Code: ${formatInviteCode(group.inviteCode)}`;
     try {
       if (navigator.share) {
         await navigator.share({ title: group.name, text, url });

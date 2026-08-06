@@ -14,7 +14,7 @@ export const metadata: Metadata = {
  */
 export default function DatenschutzPage() {
   return (
-    <main className="defekt-grid min-h-dvh px-6 py-12">
+    <main data-no-i18n lang="de" className="defekt-grid min-h-dvh px-6 py-12">
       <div className="mx-auto w-full max-w-lg">
         <div className="flex items-center justify-between">
           <h1 className="font-metal text-3xl font-black uppercase">
