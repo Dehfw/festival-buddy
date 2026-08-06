@@ -4,6 +4,7 @@ import { AppScreenshot } from '@/components/AppScreenshot';
 import { DefektLogo } from '@/components/DefektLogo';
 import { FireFrame } from '@/components/FireFrame';
 import { LandingLogin } from '@/components/LandingLogin';
+import { StandaloneStartRedirect } from '@/components/StandaloneStartRedirect';
 import { resolveSiteUrl } from '@/lib/siteUrl';
 
 const TITLE = 'Festival Buddy – Wer geht zu welcher Band? | DEFƎKT';
@@ -128,6 +129,9 @@ export default async function LandingPage() {
   const structuredData = await jsonLd();
   return (
     <main className="defekt-grid min-h-dvh">
+      {/* Muss vor allem anderen stehen: springt in der installierten App
+          direkt auf /app, bevor die Landing gerendert wird */}
+      <StandaloneStartRedirect />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: structuredData }}
