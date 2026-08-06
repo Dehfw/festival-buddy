@@ -31,6 +31,8 @@ interface OrganizerState {
   organizers: OrganizerInfo[];
   /** Eigene User-ID – markiert „(du)“ in der Team-Liste */
   meId: string;
+  /** Sind VAPID-Keys gesetzt? Ohne Push kein Verschiebe-Dialog im Editor */
+  pushConfigured: boolean;
 }
 
 type Tab = 'meta' | 'days' | 'stages' | 'slots' | 'map' | 'message';
@@ -258,6 +260,7 @@ function VeranstalterInner() {
           festivalId,
           timetable: state.timetable,
           selectionCounts: state.selectionCounts,
+          pushConfigured: state.pushConfigured,
           onTimetable: (t) =>
             setState((prev) => (prev ? { ...prev, timetable: t } : prev)),
         }

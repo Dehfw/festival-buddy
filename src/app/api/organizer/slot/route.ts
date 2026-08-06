@@ -49,10 +49,17 @@ function schedulePush(prev: Slot, next: Slot, timetable: Timetable) {
       .filter(Boolean)
       .join(' · ');
 
+  // Titel nach dem, was sich WIRKLICH geändert hat – eine reine
+  // Tag-Verschiebung ist keine "neue Zeit".
+  const changes = [timeChanged, dayChanged, stageChanged].filter(Boolean).length;
   const title =
-    stageChanged && !timeChanged && !dayChanged
-      ? `🎪 ${next.band}: neue Bühne`
-      : `🕒 ${next.band}: neue Zeit`;
+    changes > 1
+      ? `🕒 ${next.band} wurde verschoben`
+      : stageChanged
+        ? `🎪 ${next.band}: neue Bühne`
+        : dayChanged
+          ? `📅 ${next.band}: neuer Tag`
+          : `🕒 ${next.band}: neue Zeit`;
   return {
     title: title.slice(0, PUSH_TITLE_MAX),
     body: `Jetzt ${part(next.dayId, next.start, next.end, next.stageId)} (vorher ${part(prev.dayId, prev.start, prev.end, prev.stageId)})`,

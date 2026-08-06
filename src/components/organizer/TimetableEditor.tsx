@@ -33,6 +33,12 @@ export interface EditorApi {
   timetable: Timetable;
   /** Zusagen/Interessen pro Slot-ID, getrennt (über alle Gruppen des Festivals) */
   selectionCounts: Record<string, SlotSelectionCounts>;
+  /**
+   * Sind serverseitig VAPID-Keys gesetzt? Ohne Push entfällt der
+   * Verschiebe-Dialog – er würde eine Benachrichtigung versprechen, die
+   * das Deployment gar nicht senden kann.
+   */
+  pushConfigured: boolean;
   onTimetable: (t: Timetable) => void;
 }
 
@@ -705,7 +711,7 @@ function SlotForm({
 }
 
 export function SlotsEditor({ api }: { api: EditorApi }) {
-  const { festivalId, timetable, selectionCounts, onTimetable } = api;
+  const { festivalId, timetable, selectionCounts, pushConfigured, onTimetable } = api;
   const [dayId, setDayId] = useState(timetable.days[0]?.id ?? '');
   const [draft, setDraft] = useState<SlotDraft | null>(null);
   const [busy, setBusy] = useState(false);
@@ -853,7 +859,9 @@ export function SlotsEditor({ api }: { api: EditorApi }) {
         toMinutes(original.end) !== toMinutes(end) ||
         original.dayId !== draft.dayId ||
         original.stageId !== draft.stageId);
-    if (!moved || affected === 0) {
+    // Ohne konfiguriertes Push (VAPID) gäbe der Dialog ein Versprechen ab,
+    // das der Server nicht einlösen kann – dann einfach speichern.
+    if (!moved || affected === 0 || !pushConfigured) {
       await doSave();
       return;
     }

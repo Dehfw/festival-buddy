@@ -85,14 +85,18 @@ Erinnerungen kommt `CRON_SECRET` dazu (siehe unten).
 Verschiebt ein Veranstalter im Editor einen Slot – neue Zeit, anderer
 Tag oder andere Bühne –, bekommen alle Nutzer, die beim Slot eingetragen
 sind (`going` **und** `interested`, über alle Gruppen des Festivals),
-sofort einen Push: „🕒 <Band>: neue Zeit“ (bzw. „🎪 …: neue Bühne“) mit
+sofort einen Push: „🕒 <Band>: neue Zeit“, „📅 …: neuer Tag“ oder
+„🎪 …: neue Bühne“ (bei mehreren Änderungen „… wurde verschoben“) – mit
 neuem und altem Stand im Text. Details:
 
 - Nur echte Verschiebungen pushen. Bandname, „bestätigt“-Häkchen oder
   Spotify-ID ändern lösen nichts aus – neue Slots sowieso nicht.
 - Der Editor lässt den Veranstalter die Änderung vorher **bestätigen**:
   Der Dialog nennt, wie viele Eingetragene betroffen sind („Speichern &
-  Senden“); ohne Einträge am Slot wird ohne Dialog gespeichert. Der
+  Senden“); ohne Einträge am Slot wird ohne Dialog gespeichert. Ist Push
+  gar nicht konfiguriert (keine VAPID-Keys), entfällt der Dialog
+  ebenfalls – er würde sonst etwas versprechen, das das Deployment nie
+  sendet (`pushConfigured` aus `GET /api/organizer/state`). Der
   Versand wird vor der Antwort komplett ge-awaitet (Serverless!), das
   Ergebnis erscheint als Bestätigung im Editor – **ehrlich gezählt**:
   „Push ist raus an X von Y Eingetragenen“, wobei als informiert nur
