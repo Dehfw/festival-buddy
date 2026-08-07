@@ -224,4 +224,5 @@ await writeFile(outPath, `${JSON.stringify(timetable, null, 2)}\n`, 'utf8');
 const unconfirmed = slots.filter((s) => !s.confirmed).length;
 console.log(`✓ ${path.relative(process.cwd(), outPath)}: ${slots.length} Slots auf ${stages.length} Bühnen und ${days.length} Tagen`);
 if (unconfirmed > 0) console.log(`  ${unconfirmed} davon als unbestätigt markiert`);
-console.log(`→ Jetzt prüfen: node scripts/validate-timetable.mjs ${path.relative(process.cwd(), outPath)}${festival ? ` --festival ${festival}` : ''}`);
+if (!process.env.LINEUP_PIPELINE)
+  console.log(`→ Jetzt prüfen: node scripts/validate-timetable.mjs ${path.relative(process.cwd(), outPath)}${festival ? ` --festival ${festival}` : ''}`);

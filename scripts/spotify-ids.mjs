@@ -30,17 +30,18 @@ function fail(msg) {
 }
 
 function parseArgs(argv) {
-  const args = { file: null, dryRun: false, force: false, limit: Infinity };
+  const args = { file: null, dryRun: false, force: false, optional: false, limit: Infinity };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--dry-run') args.dryRun = true;
     else if (argv[i] === '--force') args.force = true;
+    else if (argv[i] === '--optional') args.optional = true;
     else if (argv[i] === '--limit') args.limit = Number(argv[++i]);
     else if (!argv[i].startsWith('-')) args.file ??= argv[i];
   }
   return args;
 }
 
-const { file, dryRun, force, limit } = parseArgs(process.argv.slice(2));
+const { file, dryRun, force, optional, limit } = parseArgs(process.argv.slice(2));
 if (!file) {
   console.error('Aufruf: node scripts/spotify-ids.mjs <lineups/x.txt | data/x.json> [--dry-run] [--force]');
   process.exit(2);
@@ -49,11 +50,18 @@ if (!file) {
 const clientId = process.env.SPOTIFY_CLIENT_ID;
 const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 if (!clientId || !clientSecret) {
-  fail(
+  // --optional: aufgerufen als Teil der Pipeline. Fehlende Zugangsdaten
+  // sind dann kein Fehler, sondern nur ein fehlendes Extra – der Import
+  // soll deswegen nicht stehenbleiben.
+  const hint =
     'SPOTIFY_CLIENT_ID und SPOTIFY_CLIENT_SECRET fehlen.\n' +
-      '  App anlegen unter https://developer.spotify.com/dashboard, dann:\n' +
-      `  SPOTIFY_CLIENT_ID=... SPOTIFY_CLIENT_SECRET=... npm run lineup:spotify -- ${file}`
-  );
+    '  App anlegen unter https://developer.spotify.com/dashboard, Werte in .env.local.';
+  if (optional) {
+    console.log(`⏭  Spotify-Suche übersprungen: ${hint}`);
+    console.log('   Die betroffenen Bands bekommen im Band-Sheet keinen Spotify-Button.');
+    process.exit(0);
+  }
+  fail(hint);
 }
 
 const filePath = path.resolve(file);

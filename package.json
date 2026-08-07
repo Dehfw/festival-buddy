@@ -11,6 +11,7 @@
     "scrape": "node scripts/scrape-wacken.mjs",
     "import": "node scripts/import-lineup.mjs",
     "import:db": "node --env-file-if-exists=.env.local scripts/import-festival.mjs",
+    "lineup": "node --env-file-if-exists=.env.local scripts/lineup.mjs",
     "lineup:build": "node scripts/build-timetable.mjs",
     "lineup:check": "node --env-file-if-exists=.env.local scripts/validate-timetable.mjs",
     "lineup:spotify": "node --env-file-if-exists=.env.local scripts/spotify-ids.mjs",

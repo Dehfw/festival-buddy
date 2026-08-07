@@ -33,8 +33,9 @@ stehen in der DB bzw. als Seed in `src/lib/db.ts` – z. B. `woa2026`,
 legt die Zeile an, wenn sie fehlt.
 
 Klär außerdem, ob es ein **Erstimport** ist oder ein **Update** eines
-Lineups, das schon live ist. Beim Update ist Schritt 5 Pflicht, nicht
-Kür – dort zeigt sich, ob Eintragungen verloren gingen.
+Lineups, das schon live ist. Beim Update zählt vor allem der
+Vergleich mit dem Live-Stand in Schritt 3 – dort zeigt sich, ob
+Eintragungen verloren gingen.
 
 ### 2. Running Order als Textdatei erfassen
 
@@ -78,81 +79,57 @@ Zur Quelle je nach Material:
   Festival schon einen Parser gibt (`scripts/scrape-wacken.mjs`), nutze
   lieber den.
 - **Wacken**: nicht abtippen. Für den offiziellen Export gibt es
-  `npm run import` (`wackenlineup.json` → `data/timetable.json`), danach
-  weiter bei Schritt 4.
+  `npm run import` (`wackenlineup.json` → `data/timetable.json`). Danach
+  fehlen nur noch Spotify-Suche und Prüfung, beide nehmen die JSON-Datei
+  direkt: `npm run lineup:spotify -- data/timetable.json` und
+  `npm run lineup:check -- data/timetable.json --festival woa2026`.
 - **Nur eine Bandliste ohne Zeiten**: dann entsteht ein Gerüst (Tage und
   Bühnen, `slots: []`). Das ist ein legitimer Zwischenstand – die App
   zeigt „Lineup folgt", Gruppen lassen sich trotzdem gründen.
 
-### 3. Importdatei bauen
+### 3. Bauen, anreichern, prüfen
 
 ```bash
-npm run lineup:build -- lineups/<festivalId>.txt --festival <festivalId>
+npm run lineup -- lineups/<festivalId>.txt --festival <festivalId>
 ```
 
-Das erzeugt `data/<festivalId>.json` und vergibt die Slot-IDs nach der
-Konvention – derselbe `slugify`-Algorithmus wie in `src/lib/db.ts`,
-damit Import und Veranstalter-Editor dieselben IDs treffen. Schreib die
-JSON-Datei nicht von Hand; die IDs von Hand zu vergeben ist genau die
-Stelle, an der Eintragungen verloren gehen.
+Ein Kommando, drei Schritte: Spotify-IDs ergänzen → `data/<festivalId>.json`
+bauen → die Datei prüfen. Sie hängen in dieser Reihenfolge zusammen, denn
+die Spotify-Suche schreibt in die Textdatei und muss deshalb vor dem
+Bauen laufen. Ruf die Einzelscripts (`lineup:spotify`, `lineup:build`,
+`lineup:check`) nur auf, wenn du wirklich einen Schritt isoliert brauchst.
 
-### 4. Spotify-IDs ergänzen
+Schreib die JSON-Datei nie von Hand: Slot-IDs von Hand zu vergeben ist
+genau die Stelle, an der Eintragungen verloren gehen. Das Script nutzt
+denselben `slugify`-Algorithmus wie `src/lib/db.ts`, damit Import und
+Veranstalter-Editor dieselben IDs treffen.
 
-Ohne `spotifyArtistId` fehlt im Band-Sheet der „Auf Spotify anhören"-
-Button – und das ist der Normalfall, sobald ein Lineup von Hand
-gepflegt wird. Das Script löst die IDs über die Spotify-Suche auf:
-
-```bash
-npm run lineup:spotify -- lineups/<festivalId>.txt
-```
-
-Die Zugangsdaten (`SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`) liest
-das Script aus `.env.local`; sie lassen sich auch vor das Kommando
-schreiben. Sie sind reine Werkzeug-Zugangsdaten – die App zur Laufzeit
-spricht nie mit Spotify.
-
-Es schreibt die Treffer als `| spotify=<id>` in die Textdatei zurück,
-bleibt also über spätere Rebuilds erhalten – deshalb **vor** Schritt 3
-oder mit anschließendem Rebuild laufen lassen. Ein bestehendes
-Timetable-JSON nimmt es auch direkt entgegen.
-
-Übernommen wird nur, was exakt auf den Bandnamen passt; alles andere
-landet im Bericht. Zwei Dinge daraus gehören angesehen, nicht
-durchgewunken:
+**Zur Spotify-Suche.** Ohne `spotifyArtistId` fehlt im Band-Sheet der
+„Auf Spotify anhören"-Button – der Normalfall, sobald ein Lineup von
+Hand gepflegt wird. Die Zugangsdaten (`SPOTIFY_CLIENT_ID`,
+`SPOTIFY_CLIENT_SECRET`) kommen aus `.env.local`; fehlen sie, wird der
+Schritt übersprungen und der Rest läuft weiter. Übernommen wird nur, was
+exakt auf den Bandnamen passt, alles andere landet im Bericht. Zwei
+Dinge daraus gehören angesehen:
 
 - **Mehrere gleichnamige Künstler** – „Sacrifice", „Nirvana", „Sacred
   Reich" gibt es auf Spotify mehrfach. Das Script nimmt den mit den
-  meisten Followern und sagt, welche Alternativen es gab. Bei einer
-  Nischenband auf einem Underground-Festival ist der bekannteste
-  Treffer nicht automatisch der richtige.
+  meisten Followern und nennt die Alternativen. Bei einer Nischenband
+  auf einem Underground-Festival ist der bekannteste Treffer nicht
+  automatisch der richtige.
 - **Ohne Treffer** – Tribute-Projekte, Lesungen, DJ-Sets und lokale
   Bands sind oft nicht auf Spotify oder anders geschrieben. Der Bericht
   gibt zu jedem einen Suchlink; wer sich findet, bekommt seine ID von
-  Hand nachgetragen (`| spotify=<ID>` in der Textdatei oder im
-  Veranstalter-Editor). Wer nicht, bleibt eben ohne Button – das ist
-  kein Fehler.
+  Hand nachgetragen (`| spotify=<ID>` in der Textdatei). Wer nicht,
+  bleibt ohne Button – das ist kein Fehler.
 
-Ohne Zugangsdaten überspringst du den Schritt und sagst dazu, dass die
-Buttons fehlen werden.
+**Zur Prüfung.** Fehler (`✗`) brechen die Strecke ab, die Datei geht
+nicht in die DB. Warnungen (`⚠`) musst du **lesen und einordnen**:
 
-### 5. Prüfen – der wichtigste Schritt
-
-```bash
-# Erstimport
-npm run lineup:check -- data/<festivalId>.json
-
-# Update eines Lineups, das schon live ist
-npm run lineup:check -- data/<festivalId>.json --festival <festivalId>
-```
-
-Der Validator spiegelt die Regeln aus `upsertDay`/`upsertStage`/
-`upsertSlot` und vergleicht mit dem bisherigen Stand. Fehler (`✗`)
-blockieren den Import. Warnungen (`⚠`) sind Hinweise, die du **lesen und
-einordnen** musst, statt sie durchzuwinken:
-
-- **„N Slot-IDs verschwinden"** – die zentrale Warnung. Ist die Band
-  wirklich aus dem Lineup geflogen? Dann ist das korrekt. Spielt sie
-  weiter und nur die Schreibweise, der Tag oder die Bühne hat sich
+- **„N Slot-IDs verschwinden"** – die zentrale Warnung; sie erscheint
+  nur beim Vergleich mit dem Live-Stand (`DATABASE_URL` gesetzt). Ist
+  die Band wirklich aus dem Lineup geflogen? Dann ist das korrekt.
+  Spielt sie weiter und nur Schreibweise, Tag oder Bühne haben sich
   geändert, gehört die alte ID per `id=` in der Textdatei erhalten
   (siehe `references/format.md`), sonst verlieren die Crews ihre
   Eintragung.
@@ -166,7 +143,7 @@ entfallen und verschoben sind. Bei entfallenen IDs hol dir eine
 Bestätigung, bevor du importierst – das ist der Punkt, an dem Daten
 anderer Leute verloren gehen.
 
-### 6. Importieren
+### 4. Importieren
 
 ```bash
 npm run import:db -- --festival <festivalId> data/<festivalId>.json
@@ -175,7 +152,7 @@ npm run import:db -- --festival <festivalId> data/<festivalId>.json
 Das Script macht ein UPSERT auf die `festivals`-Zeile und erhöht
 `db_rev`, damit die Clients den neuen Stand ziehen. Ohne
 `DATABASE_URL` läuft nichts – wenn sie nicht gesetzt ist, brich ab und
-sag Bescheid, statt zu raten. Alles bis Schritt 5 lässt sich ohne
+sag Bescheid, statt zu raten. Alles bis Schritt 3 lässt sich ohne
 Datenbank erledigen; du kannst die Datei also fertig und geprüft
 übergeben, damit jemand mit Zugang sie einspielt.
 

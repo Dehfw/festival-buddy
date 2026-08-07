@@ -189,12 +189,16 @@ gebaut. Slot-IDs, Slugs und Sortierung erzeugt das Script, damit sie
 über Re-Importe stabil bleiben:
 
 ```bash
-npm run lineup:spotify -- lineups/pellmell2026.txt                   # Spotify-IDs ergänzen
-npm run lineup:build -- lineups/pellmell2026.txt --festival pellmell2026
-npm run lineup:check -- data/pellmell2026.json                       # Format prüfen
-npm run lineup:check -- data/pellmell2026.json --festival pellmell2026
+npm run lineup -- lineups/pellmell2026.txt --festival pellmell2026
 npm run import:db -- --festival pellmell2026 data/pellmell2026.json
 ```
+
+`npm run lineup` erledigt die drei Schritte davor in einem Rutsch:
+Spotify-IDs ergänzen, `data/pellmell2026.json` bauen, die Datei prüfen.
+Die Reihenfolge ist wichtig – die Spotify-Suche schreibt in die
+Textdatei und muss vor dem Bauen laufen. Die Einzelschritte gibt es
+weiterhin als `lineup:spotify`, `lineup:build` und `lineup:check`;
+`--no-spotify` lässt die Suche aus.
 
 `npm run lineup:check` spiegelt die Regeln aus `src/lib/db.ts` und zeigt
 mit `--festival` (oder `--against alt.json`) den Vergleich zum
