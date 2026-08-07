@@ -15,6 +15,7 @@
  * Exit-Code 1 bei Fehlern, 0 bei nur Warnungen (Warnungen sind Hinweise,
  * keine Blocker – z. B. Überschneidungen auf derselben Bühne).
  */
+import './env.mjs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 

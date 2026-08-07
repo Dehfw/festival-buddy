@@ -217,10 +217,10 @@ developer.spotify.com und gehören als `SPOTIFY_CLIENT_ID` /
 Script, nicht zur Laufzeit: die App selbst spricht nie mit Spotify, auf
 Vercel braucht es die Variablen also nicht.
 
-`import:db`, `lineup:check` und `lineup:spotify` lesen `.env.local`
-selbst ein (`node --env-file-if-exists`), `DATABASE_URL` muss also nicht
-mehr vor jedes Kommando geschrieben werden. Inline gesetzte Variablen
-haben weiterhin Vorrang.
+`lineup`, `import:db`, `lineup:check` und `lineup:spotify` lesen
+`.env.local` selbst ein (`scripts/env.mjs`), `DATABASE_URL` muss also
+nicht mehr vor jedes Kommando geschrieben werden. Inline gesetzte
+Variablen haben weiterhin Vorrang.
 
 Der Ablauf samt Textformat ist als Skill hinterlegt:
 `.claude/skills/lineup-import/`.
