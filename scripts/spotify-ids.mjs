@@ -21,6 +21,7 @@
  * verlinken fällt niemandem auf, führt aber alle in die Irre. Alles
  * Unklare landet im Bericht am Ende und will von Hand entschieden werden.
  */
+import './env.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 

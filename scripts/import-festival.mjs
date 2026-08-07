@@ -12,6 +12,7 @@
  * selben Format übergeben – Slot-IDs müssen stabil bleiben
  * (tag-buehne-bandslug), damit bestehende Auswahlen erhalten bleiben.
  */
+import './env.mjs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import pg from 'pg';

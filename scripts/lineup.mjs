@@ -23,6 +23,7 @@
  * Bestätigung, sobald der Vergleich entfallene Slot-IDs meldet (siehe
  * .claude/skills/lineup-import/SKILL.md).
  */
+import './env.mjs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
@@ -68,11 +69,18 @@ function run(label, script, args) {
 if (skipSpotify) {
   console.log('\n⏭  Spotify-Suche ausgelassen (--no-spotify)');
 } else {
-  run('Spotify-IDs ergänzen', 'spotify-ids.mjs', [
+  const enriched = run('Spotify-IDs ergänzen', 'spotify-ids.mjs', [
     file,
     '--optional',
     ...(force ? ['--force'] : []),
   ]);
+  // Auch ein echter Fehlschlag (falsche Zugangsdaten, Spotify nicht
+  // erreichbar) haelt die Strecke nicht auf – das Lineup ist dann eben
+  // ohne Buttons, und das ist besser als gar kein Import. Nur sichtbar
+  // muss es sein, sonst liest man das ✗ als Abbruch.
+  if (enriched !== 0) {
+    console.log('   Weiter ohne Spotify-IDs – die betroffenen Bands bekommen keinen Button.');
+  }
 }
 
 const built = run('Importdatei bauen', 'build-timetable.mjs', [
