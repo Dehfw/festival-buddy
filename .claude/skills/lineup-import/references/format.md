@@ -55,7 +55,7 @@ Optionen hinter dem Bandnamen, mit `|` getrennt:
 | Option | Wirkung |
 | --- | --- |
 | `unbestaetigt` (auch `tba`) | `confirmed: false` – Zeit steht noch nicht fest |
-| `spotify=<id>` | Spotify-Artist-ID für den „Auf Spotify anhören"-Button; nur die ID, nicht die URL |
+| `spotify=<id>` | Spotify-Artist-ID für den „Auf Spotify anhören"-Button; nur die ID, nicht die URL. Meist nicht von Hand nötig – `npm run lineup:spotify -- lineups/<id>.txt` trägt sie nach |
 | `id=<slotId>` | Erzwingt eine bestimmte Slot-ID statt der generierten – für umbenannte Bands, siehe unten |
 
 ```
@@ -150,6 +150,14 @@ verschwundene ID – das ist hier die richtige Antwort, nicht der Fehler.
 Wenn viele Leute eingetragen waren, ist das Löschen aber eine Nachricht
 wert; der Veranstalter-Editor kann so etwas per Push begleiten, der
 Import nicht.
+
+**Band ist nicht auf Spotify zu finden.** Tribute-Projekte
+(`Schirenc plays Pungent Stench`), Lesungen, DJ-Sets und lokale
+Newcomer haben oft kein Artist-Profil oder heißen dort anders. Das
+Anreicherungs-Script übernimmt nur exakte Namenstreffer und listet den
+Rest mit Suchlink auf – wer sich dort doch findet, bekommt die ID aus
+der URL (`open.spotify.com/artist/<ID>`) von Hand als `spotify=`
+eingetragen. Der Rest bleibt ohne Button, und das ist in Ordnung.
 
 **Ganze Bühne umbenannt.** Nur `name`/`short` in der `stage:`-Zeile
 ändern, die `id` unangetastet lassen – sonst ändern sich alle Slot-IDs

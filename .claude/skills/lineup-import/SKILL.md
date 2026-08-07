@@ -33,7 +33,7 @@ stehen in der DB bzw. als Seed in `src/lib/db.ts` – z. B. `woa2026`,
 legt die Zeile an, wenn sie fehlt.
 
 Klär außerdem, ob es ein **Erstimport** ist oder ein **Update** eines
-Lineups, das schon live ist. Beim Update ist Schritt 4 Pflicht, nicht
+Lineups, das schon live ist. Beim Update ist Schritt 5 Pflicht, nicht
 Kür – dort zeigt sich, ob Eintragungen verloren gingen.
 
 ### 2. Running Order als Textdatei erfassen
@@ -96,7 +96,42 @@ damit Import und Veranstalter-Editor dieselben IDs treffen. Schreib die
 JSON-Datei nicht von Hand; die IDs von Hand zu vergeben ist genau die
 Stelle, an der Eintragungen verloren gehen.
 
-### 4. Prüfen – der wichtigste Schritt
+### 4. Spotify-IDs ergänzen
+
+Ohne `spotifyArtistId` fehlt im Band-Sheet der „Auf Spotify anhören"-
+Button – und das ist der Normalfall, sobald ein Lineup von Hand
+gepflegt wird. Das Script löst die IDs über die Spotify-Suche auf:
+
+```bash
+SPOTIFY_CLIENT_ID=... SPOTIFY_CLIENT_SECRET=... \
+  npm run lineup:spotify -- lineups/<festivalId>.txt
+```
+
+Es schreibt die Treffer als `| spotify=<id>` in die Textdatei zurück,
+bleibt also über spätere Rebuilds erhalten – deshalb **vor** Schritt 3
+oder mit anschließendem Rebuild laufen lassen. Ein bestehendes
+Timetable-JSON nimmt es auch direkt entgegen.
+
+Übernommen wird nur, was exakt auf den Bandnamen passt; alles andere
+landet im Bericht. Zwei Dinge daraus gehören angesehen, nicht
+durchgewunken:
+
+- **Mehrere gleichnamige Künstler** – „Sacrifice", „Nirvana", „Sacred
+  Reich" gibt es auf Spotify mehrfach. Das Script nimmt den mit den
+  meisten Followern und sagt, welche Alternativen es gab. Bei einer
+  Nischenband auf einem Underground-Festival ist der bekannteste
+  Treffer nicht automatisch der richtige.
+- **Ohne Treffer** – Tribute-Projekte, Lesungen, DJ-Sets und lokale
+  Bands sind oft nicht auf Spotify oder anders geschrieben. Der Bericht
+  gibt zu jedem einen Suchlink; wer sich findet, bekommt seine ID von
+  Hand nachgetragen (`| spotify=<ID>` in der Textdatei oder im
+  Veranstalter-Editor). Wer nicht, bleibt eben ohne Button – das ist
+  kein Fehler.
+
+Ohne Zugangsdaten überspringst du den Schritt und sagst dazu, dass die
+Buttons fehlen werden.
+
+### 5. Prüfen – der wichtigste Schritt
 
 ```bash
 # Erstimport
@@ -127,7 +162,7 @@ entfallen und verschoben sind. Bei entfallenen IDs hol dir eine
 Bestätigung, bevor du importierst – das ist der Punkt, an dem Daten
 anderer Leute verloren gehen.
 
-### 5. Importieren
+### 6. Importieren
 
 ```bash
 DATABASE_URL=... npm run import:db -- --festival <festivalId> data/<festivalId>.json
@@ -136,7 +171,7 @@ DATABASE_URL=... npm run import:db -- --festival <festivalId> data/<festivalId>.
 Das Script macht ein UPSERT auf die `festivals`-Zeile und erhöht
 `db_rev`, damit die Clients den neuen Stand ziehen. Ohne
 `DATABASE_URL` läuft nichts – wenn sie nicht gesetzt ist, brich ab und
-sag Bescheid, statt zu raten. Alles bis Schritt 4 lässt sich ohne
+sag Bescheid, statt zu raten. Alles bis Schritt 5 lässt sich ohne
 Datenbank erledigen; du kannst die Datei also fertig und geprüft
 übergeben, damit jemand mit Zugang sie einspielt.
 

@@ -189,6 +189,8 @@ gebaut. Slot-IDs, Slugs und Sortierung erzeugt das Script, damit sie
 über Re-Importe stabil bleiben:
 
 ```bash
+SPOTIFY_CLIENT_ID=... SPOTIFY_CLIENT_SECRET=... \
+  npm run lineup:spotify -- lineups/pellmell2026.txt                 # Spotify-IDs ergänzen
 npm run lineup:build -- lineups/pellmell2026.txt --festival pellmell2026
 npm run lineup:check -- data/pellmell2026.json                       # Format prüfen
 DATABASE_URL=... npm run lineup:check -- data/pellmell2026.json --festival pellmell2026
@@ -199,8 +201,18 @@ DATABASE_URL=... npm run import:db -- --festival pellmell2026 data/pellmell2026.
 mit `--festival` (oder `--against alt.json`) den Vergleich zum
 bisherigen Stand: welche Slots neu, verschoben oder **entfallen** sind.
 Entfallene IDs nehmen die Eintragungen und Positionsmarker der Crews mit
-– deshalb vor jedem Update dort hinschauen. Der Ablauf samt Textformat
-ist als Skill hinterlegt: `.claude/skills/lineup-import/`.
+– deshalb vor jedem Update dort hinschauen.
+
+`npm run lineup:spotify` füllt die `spotifyArtistId`, an der im
+Band-Sheet der „Auf Spotify anhören"-Button hängt. Ohne sie fehlt der
+Button; von Hand gepflegte Lineups starten immer bei null (der
+Wacken-Export bringt seine IDs mit). Das Script nimmt nur exakte
+Namenstreffer aus der Spotify-Suche und meldet mehrdeutige und nicht
+gefundene Bands zum Nachsehen – Zugangsdaten kostenlos über
+developer.spotify.com, die App selbst spricht nie mit Spotify.
+
+Der Ablauf samt Textformat ist als Skill hinterlegt:
+`.claude/skills/lineup-import/`.
 
 Der eingecheckte Wacken-Stand ist aus dem **offiziellen W:O:A-Datenexport**
 (`wackenlineup.json`) generiert: 233 Slots auf 9 Bühnen und 7 Tagen
