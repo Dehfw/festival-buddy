@@ -87,7 +87,7 @@ Zur Quelle je nach Material:
 ### 3. Importdatei bauen
 
 ```bash
-node scripts/build-timetable.mjs lineups/<festivalId>.txt --festival <festivalId>
+npm run lineup:build -- lineups/<festivalId>.txt --festival <festivalId>
 ```
 
 Das erzeugt `data/<festivalId>.json` und vergibt die Slot-IDs nach der
@@ -103,9 +103,13 @@ Button – und das ist der Normalfall, sobald ein Lineup von Hand
 gepflegt wird. Das Script löst die IDs über die Spotify-Suche auf:
 
 ```bash
-SPOTIFY_CLIENT_ID=... SPOTIFY_CLIENT_SECRET=... \
-  npm run lineup:spotify -- lineups/<festivalId>.txt
+npm run lineup:spotify -- lineups/<festivalId>.txt
 ```
+
+Die Zugangsdaten (`SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`) liest
+das Script aus `.env.local`; sie lassen sich auch vor das Kommando
+schreiben. Sie sind reine Werkzeug-Zugangsdaten – die App zur Laufzeit
+spricht nie mit Spotify.
 
 Es schreibt die Treffer als `| spotify=<id>` in die Textdatei zurück,
 bleibt also über spätere Rebuilds erhalten – deshalb **vor** Schritt 3
@@ -135,10 +139,10 @@ Buttons fehlen werden.
 
 ```bash
 # Erstimport
-node scripts/validate-timetable.mjs data/<festivalId>.json
+npm run lineup:check -- data/<festivalId>.json
 
 # Update eines Lineups, das schon live ist
-DATABASE_URL=... node scripts/validate-timetable.mjs data/<festivalId>.json --festival <festivalId>
+npm run lineup:check -- data/<festivalId>.json --festival <festivalId>
 ```
 
 Der Validator spiegelt die Regeln aus `upsertDay`/`upsertStage`/
@@ -165,7 +169,7 @@ anderer Leute verloren gehen.
 ### 6. Importieren
 
 ```bash
-DATABASE_URL=... npm run import:db -- --festival <festivalId> data/<festivalId>.json
+npm run import:db -- --festival <festivalId> data/<festivalId>.json
 ```
 
 Das Script macht ein UPSERT auf die `festivals`-Zeile und erhöht

@@ -189,12 +189,11 @@ gebaut. Slot-IDs, Slugs und Sortierung erzeugt das Script, damit sie
 über Re-Importe stabil bleiben:
 
 ```bash
-SPOTIFY_CLIENT_ID=... SPOTIFY_CLIENT_SECRET=... \
-  npm run lineup:spotify -- lineups/pellmell2026.txt                 # Spotify-IDs ergänzen
+npm run lineup:spotify -- lineups/pellmell2026.txt                   # Spotify-IDs ergänzen
 npm run lineup:build -- lineups/pellmell2026.txt --festival pellmell2026
 npm run lineup:check -- data/pellmell2026.json                       # Format prüfen
-DATABASE_URL=... npm run lineup:check -- data/pellmell2026.json --festival pellmell2026
-DATABASE_URL=... npm run import:db -- --festival pellmell2026 data/pellmell2026.json
+npm run lineup:check -- data/pellmell2026.json --festival pellmell2026
+npm run import:db -- --festival pellmell2026 data/pellmell2026.json
 ```
 
 `npm run lineup:check` spiegelt die Regeln aus `src/lib/db.ts` und zeigt
@@ -208,8 +207,16 @@ Band-Sheet der „Auf Spotify anhören"-Button hängt. Ohne sie fehlt der
 Button; von Hand gepflegte Lineups starten immer bei null (der
 Wacken-Export bringt seine IDs mit). Das Script nimmt nur exakte
 Namenstreffer aus der Spotify-Suche und meldet mehrdeutige und nicht
-gefundene Bands zum Nachsehen – Zugangsdaten kostenlos über
-developer.spotify.com, die App selbst spricht nie mit Spotify.
+gefundene Bands zum Nachsehen. Zugangsdaten gibt es kostenlos über
+developer.spotify.com und gehören als `SPOTIFY_CLIENT_ID` /
+`SPOTIFY_CLIENT_SECRET` in die lokale `.env.local` – nur für dieses
+Script, nicht zur Laufzeit: die App selbst spricht nie mit Spotify, auf
+Vercel braucht es die Variablen also nicht.
+
+`import:db`, `lineup:check` und `lineup:spotify` lesen `.env.local`
+selbst ein (`node --env-file-if-exists`), `DATABASE_URL` muss also nicht
+mehr vor jedes Kommando geschrieben werden. Inline gesetzte Variablen
+haben weiterhin Vorrang.
 
 Der Ablauf samt Textformat ist als Skill hinterlegt:
 `.claude/skills/lineup-import/`.
