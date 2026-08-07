@@ -1,0 +1,1415 @@
+{
+  "festival": "Summer Breeze Open Air 2026",
+  "edition": "12.–15.08.2026, Dinkelsbühl (Warm-up ab Di 11.08.)",
+  "dataVersion": "2026-07-15 17:57 (Running-Order, breeze-ausgangsjson.json)",
+  "days": [
+    {
+      "id": "tue",
+      "label": "Di",
+      "longLabel": "Dienstag",
+      "date": "2026-08-11"
+    },
+    {
+      "id": "wed",
+      "label": "Mi",
+      "longLabel": "Mittwoch",
+      "date": "2026-08-12"
+    },
+    {
+      "id": "thu",
+      "label": "Do",
+      "longLabel": "Donnerstag",
+      "date": "2026-08-13"
+    },
+    {
+      "id": "fri",
+      "label": "Fr",
+      "longLabel": "Freitag",
+      "date": "2026-08-14"
+    },
+    {
+      "id": "sat",
+      "label": "Sa",
+      "longLabel": "Samstag",
+      "date": "2026-08-15"
+    }
+  ],
+  "stages": [
+    {
+      "id": "circus",
+      "name": "Camel Circus",
+      "short": "CIR",
+      "color": "#9d4edd"
+    },
+    {
+      "id": "main",
+      "name": "Main Stage",
+      "short": "MAIN",
+      "color": "#e63946"
+    },
+    {
+      "id": "tstage",
+      "name": "T Stage",
+      "short": "TST",
+      "color": "#f77f00"
+    },
+    {
+      "id": "toolrebel",
+      "name": "Wera Tool Rebel Stage",
+      "short": "WTR",
+      "color": "#2a9d8f"
+    }
+  ],
+  "slots": [
+    {
+      "id": "fri-circus-metalza-metal-workout",
+      "dayId": "fri",
+      "stageId": "circus",
+      "band": "Metalza – Metal Workout",
+      "start": "09:30",
+      "end": "10:15",
+      "confirmed": true
+    },
+    {
+      "id": "fri-circus-metal-yoga",
+      "dayId": "fri",
+      "stageId": "circus",
+      "band": "Metal Yoga",
+      "start": "10:30",
+      "end": "11:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-circus-harsh-vocals-mit-britta-goertz",
+      "dayId": "fri",
+      "stageId": "circus",
+      "band": "Harsh Vocals mit Britta Görtz",
+      "start": "14:00",
+      "end": "15:00",
+      "confirmed": true
+    },
+    {
+      "id": "fri-circus-sun-eater",
+      "dayId": "fri",
+      "stageId": "circus",
+      "band": "Sun Eater",
+      "start": "15:30",
+      "end": "16:15",
+      "confirmed": true
+    },
+    {
+      "id": "fri-circus-avalanche-effect",
+      "dayId": "fri",
+      "stageId": "circus",
+      "band": "Avalanche Effect",
+      "start": "16:45",
+      "end": "17:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-circus-heaven-exe",
+      "dayId": "fri",
+      "stageId": "circus",
+      "band": "Heaven.exe",
+      "start": "18:00",
+      "end": "18:45",
+      "confirmed": true
+    },
+    {
+      "id": "fri-circus-minus-youth",
+      "dayId": "fri",
+      "stageId": "circus",
+      "band": "Minus Youth",
+      "start": "19:15",
+      "end": "20:00",
+      "confirmed": true
+    },
+    {
+      "id": "fri-circus-perchta",
+      "dayId": "fri",
+      "stageId": "circus",
+      "band": "Perchta",
+      "start": "20:30",
+      "end": "21:15",
+      "confirmed": true
+    },
+    {
+      "id": "fri-circus-vulvarine",
+      "dayId": "fri",
+      "stageId": "circus",
+      "band": "Vulvarine",
+      "start": "21:45",
+      "end": "22:45",
+      "confirmed": true
+    },
+    {
+      "id": "fri-circus-emp-party",
+      "dayId": "fri",
+      "stageId": "circus",
+      "band": "EMP Party",
+      "start": "23:15",
+      "end": "25:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-nanowar-of-steel",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Nanowar Of Steel",
+      "start": "12:00",
+      "end": "12:40",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-das-lumpenpack",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Das Lumpenpack",
+      "start": "12:55",
+      "end": "13:35",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-future-palace",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Future Palace",
+      "start": "13:50",
+      "end": "14:35",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-brothers-of-metal",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Brothers Of Metal",
+      "start": "15:00",
+      "end": "15:45",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-the-butcher-sisters",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "The Butcher Sisters",
+      "start": "16:10",
+      "end": "17:10",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-the-ghost-inside",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "The Ghost Inside",
+      "start": "17:40",
+      "end": "18:40",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-lamb-of-god",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Lamb Of God",
+      "start": "19:10",
+      "end": "20:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-arch-enemy",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Arch Enemy",
+      "start": "21:15",
+      "end": "22:45",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-versengold",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Versengold",
+      "start": "23:25",
+      "end": "24:35",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-skindred",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Skindred",
+      "start": "25:00",
+      "end": "26:00",
+      "confirmed": true
+    },
+    {
+      "id": "fri-toolrebel-zerre",
+      "dayId": "fri",
+      "stageId": "toolrebel",
+      "band": "Zerre",
+      "start": "12:20",
+      "end": "12:50",
+      "confirmed": true
+    },
+    {
+      "id": "fri-toolrebel-pridian",
+      "dayId": "fri",
+      "stageId": "toolrebel",
+      "band": "Pridian",
+      "start": "13:45",
+      "end": "14:15",
+      "confirmed": true
+    },
+    {
+      "id": "fri-toolrebel-luna-kills",
+      "dayId": "fri",
+      "stageId": "toolrebel",
+      "band": "Luna Kills",
+      "start": "15:10",
+      "end": "15:40",
+      "confirmed": true
+    },
+    {
+      "id": "fri-toolrebel-brymir",
+      "dayId": "fri",
+      "stageId": "toolrebel",
+      "band": "Brymir",
+      "start": "16:35",
+      "end": "17:05",
+      "confirmed": true
+    },
+    {
+      "id": "fri-toolrebel-erdling",
+      "dayId": "fri",
+      "stageId": "toolrebel",
+      "band": "Erdling",
+      "start": "18:00",
+      "end": "18:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-toolrebel-blood-command",
+      "dayId": "fri",
+      "stageId": "toolrebel",
+      "band": "Blood Command",
+      "start": "19:40",
+      "end": "20:25",
+      "confirmed": true
+    },
+    {
+      "id": "fri-toolrebel-illdisposed",
+      "dayId": "fri",
+      "stageId": "toolrebel",
+      "band": "Illdisposed",
+      "start": "21:35",
+      "end": "22:20",
+      "confirmed": true
+    },
+    {
+      "id": "fri-toolrebel-ten56",
+      "dayId": "fri",
+      "stageId": "toolrebel",
+      "band": "ten56.",
+      "start": "23:30",
+      "end": "24:15",
+      "confirmed": true
+    },
+    {
+      "id": "fri-toolrebel-bizarrekult",
+      "dayId": "fri",
+      "stageId": "toolrebel",
+      "band": "Bizarrekult",
+      "start": "25:25",
+      "end": "26:10",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tstage-sety-ursails",
+      "dayId": "fri",
+      "stageId": "tstage",
+      "band": "SetYøurSails",
+      "start": "11:30",
+      "end": "12:15",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tstage-brainstorm",
+      "dayId": "fri",
+      "stageId": "tstage",
+      "band": "Brainstorm",
+      "start": "12:55",
+      "end": "13:40",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tstage-misery-index",
+      "dayId": "fri",
+      "stageId": "tstage",
+      "band": "Misery Index",
+      "start": "14:20",
+      "end": "15:05",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tstage-speed",
+      "dayId": "fri",
+      "stageId": "tstage",
+      "band": "Speed",
+      "start": "15:45",
+      "end": "16:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tstage-unprocessed",
+      "dayId": "fri",
+      "stageId": "tstage",
+      "band": "Unprocessed",
+      "start": "17:10",
+      "end": "17:55",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tstage-deicide",
+      "dayId": "fri",
+      "stageId": "tstage",
+      "band": "Deicide",
+      "start": "18:35",
+      "end": "19:35",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tstage-terror",
+      "dayId": "fri",
+      "stageId": "tstage",
+      "band": "Terror",
+      "start": "20:30",
+      "end": "21:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tstage-der-weg-einer-freiheit",
+      "dayId": "fri",
+      "stageId": "tstage",
+      "band": "Der Weg Einer Freiheit",
+      "start": "22:25",
+      "end": "23:25",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tstage-deafheaven",
+      "dayId": "fri",
+      "stageId": "tstage",
+      "band": "Deafheaven",
+      "start": "24:20",
+      "end": "25:20",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tstage-wolves-in-the-throne-room",
+      "dayId": "fri",
+      "stageId": "tstage",
+      "band": "Wolves In The Throne Room",
+      "start": "26:15",
+      "end": "27:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-circus-metalza-metal-workout",
+      "dayId": "sat",
+      "stageId": "circus",
+      "band": "Metalza – Metal Workout",
+      "start": "09:30",
+      "end": "10:15",
+      "confirmed": true
+    },
+    {
+      "id": "sat-circus-metal-yoga",
+      "dayId": "sat",
+      "stageId": "circus",
+      "band": "Metal Yoga",
+      "start": "10:30",
+      "end": "11:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-circus-rodscha-aus-kambodscha-tom-palme",
+      "dayId": "sat",
+      "stageId": "circus",
+      "band": "Rodscha aus Kambodscha & Tom Palme",
+      "start": "12:45",
+      "end": "13:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-circus-randale",
+      "dayId": "sat",
+      "stageId": "circus",
+      "band": "Randale",
+      "start": "14:00",
+      "end": "15:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-circus-plume",
+      "dayId": "sat",
+      "stageId": "circus",
+      "band": "Plume",
+      "start": "15:30",
+      "end": "16:15",
+      "confirmed": true
+    },
+    {
+      "id": "sat-circus-blacktoothed",
+      "dayId": "sat",
+      "stageId": "circus",
+      "band": "Blacktoothed",
+      "start": "16:45",
+      "end": "17:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-circus-hopsydian",
+      "dayId": "sat",
+      "stageId": "circus",
+      "band": "Hopsydian",
+      "start": "18:00",
+      "end": "18:45",
+      "confirmed": true
+    },
+    {
+      "id": "sat-circus-lost-in-hollywood",
+      "dayId": "sat",
+      "stageId": "circus",
+      "band": "Lost In Hollywood",
+      "start": "19:15",
+      "end": "20:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-circus-phantom-corporation",
+      "dayId": "sat",
+      "stageId": "circus",
+      "band": "Phantom Corporation",
+      "start": "20:30",
+      "end": "21:15",
+      "confirmed": true
+    },
+    {
+      "id": "sat-circus-h-resis",
+      "dayId": "sat",
+      "stageId": "circus",
+      "band": "Hæresis",
+      "start": "21:45",
+      "end": "22:45",
+      "confirmed": true
+    },
+    {
+      "id": "sat-circus-party-monium-disco",
+      "dayId": "sat",
+      "stageId": "circus",
+      "band": "Party.Monium Disco",
+      "start": "23:15",
+      "end": "25:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-heavysaurus",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Heavysaurus",
+      "start": "12:00",
+      "end": "12:40",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-parasite-inc",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Parasite Inc.",
+      "start": "12:55",
+      "end": "13:35",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-the-sons-of-huens",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "The Sons Of Huens",
+      "start": "13:50",
+      "end": "14:35",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-kadavar",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Kadavar",
+      "start": "15:00",
+      "end": "15:45",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-orbit-culture",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Orbit Culture",
+      "start": "16:10",
+      "end": "17:10",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-testament",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Testament",
+      "start": "17:40",
+      "end": "18:40",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-alestorm",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Alestorm",
+      "start": "19:10",
+      "end": "20:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-helloween",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Helloween",
+      "start": "21:15",
+      "end": "23:15",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-thy-art-is-murder",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Thy Art Is Murder",
+      "start": "23:55",
+      "end": "25:15",
+      "confirmed": true
+    },
+    {
+      "id": "sat-toolrebel-inner-space",
+      "dayId": "sat",
+      "stageId": "toolrebel",
+      "band": "Inner Space",
+      "start": "12:20",
+      "end": "12:50",
+      "confirmed": true
+    },
+    {
+      "id": "sat-toolrebel-skeleton-pit",
+      "dayId": "sat",
+      "stageId": "toolrebel",
+      "band": "Skeleton Pit",
+      "start": "13:45",
+      "end": "14:15",
+      "confirmed": true
+    },
+    {
+      "id": "sat-toolrebel-wucan",
+      "dayId": "sat",
+      "stageId": "toolrebel",
+      "band": "Wucan",
+      "start": "15:10",
+      "end": "15:40",
+      "confirmed": true
+    },
+    {
+      "id": "sat-toolrebel-haggefugg",
+      "dayId": "sat",
+      "stageId": "toolrebel",
+      "band": "Haggefugg",
+      "start": "16:35",
+      "end": "17:05",
+      "confirmed": true
+    },
+    {
+      "id": "sat-toolrebel-cabal",
+      "dayId": "sat",
+      "stageId": "toolrebel",
+      "band": "Cabal",
+      "start": "18:00",
+      "end": "18:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-toolrebel-manntra",
+      "dayId": "sat",
+      "stageId": "toolrebel",
+      "band": "Manntra",
+      "start": "19:40",
+      "end": "20:25",
+      "confirmed": true
+    },
+    {
+      "id": "sat-toolrebel-200-stab-wounds",
+      "dayId": "sat",
+      "stageId": "toolrebel",
+      "band": "200 Stab Wounds",
+      "start": "21:35",
+      "end": "22:20",
+      "confirmed": true
+    },
+    {
+      "id": "sat-toolrebel-slomosa",
+      "dayId": "sat",
+      "stageId": "toolrebel",
+      "band": "Slomosa",
+      "start": "23:30",
+      "end": "24:15",
+      "confirmed": true
+    },
+    {
+      "id": "sat-toolrebel-m-l",
+      "dayId": "sat",
+      "stageId": "toolrebel",
+      "band": "MØL",
+      "start": "25:25",
+      "end": "26:10",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tstage-soulbound",
+      "dayId": "sat",
+      "stageId": "tstage",
+      "band": "Soulbound",
+      "start": "11:30",
+      "end": "12:15",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tstage-sanguisugabogg",
+      "dayId": "sat",
+      "stageId": "tstage",
+      "band": "Sanguisugabogg",
+      "start": "12:55",
+      "end": "13:40",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tstage-bloodred-hourglass",
+      "dayId": "sat",
+      "stageId": "tstage",
+      "band": "Bloodred Hourglass",
+      "start": "14:20",
+      "end": "15:05",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tstage-municipal-waste",
+      "dayId": "sat",
+      "stageId": "tstage",
+      "band": "Municipal Waste",
+      "start": "15:45",
+      "end": "16:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tstage-thundermother",
+      "dayId": "sat",
+      "stageId": "tstage",
+      "band": "Thundermother",
+      "start": "17:10",
+      "end": "17:55",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tstage-decapitated",
+      "dayId": "sat",
+      "stageId": "tstage",
+      "band": "Decapitated",
+      "start": "18:35",
+      "end": "19:35",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tstage-soulfly",
+      "dayId": "sat",
+      "stageId": "tstage",
+      "band": "Soulfly",
+      "start": "20:30",
+      "end": "21:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tstage-paleface-swiss",
+      "dayId": "sat",
+      "stageId": "tstage",
+      "band": "Paleface Swiss",
+      "start": "22:25",
+      "end": "23:25",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tstage-soen",
+      "dayId": "sat",
+      "stageId": "tstage",
+      "band": "Soen",
+      "start": "24:20",
+      "end": "25:20",
+      "confirmed": true
+    },
+    {
+      "id": "thu-circus-metalza-metal-workout",
+      "dayId": "thu",
+      "stageId": "circus",
+      "band": "Metalza – Metal Workout",
+      "start": "09:30",
+      "end": "10:15",
+      "confirmed": true
+    },
+    {
+      "id": "thu-circus-metal-yoga",
+      "dayId": "thu",
+      "stageId": "circus",
+      "band": "Metal Yoga",
+      "start": "10:30",
+      "end": "11:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-circus-into-the-voidcast-podcast",
+      "dayId": "thu",
+      "stageId": "circus",
+      "band": "Into The Voidcast (Podcast)",
+      "start": "12:00",
+      "end": "13:00",
+      "confirmed": true
+    },
+    {
+      "id": "thu-circus-harsh-vocals-mit-britta-goertz",
+      "dayId": "thu",
+      "stageId": "circus",
+      "band": "Harsh Vocals mit Britta Görtz",
+      "start": "14:00",
+      "end": "15:00",
+      "confirmed": true
+    },
+    {
+      "id": "thu-circus-kllsignl",
+      "dayId": "thu",
+      "stageId": "circus",
+      "band": "KLLSIGNL",
+      "start": "15:30",
+      "end": "16:15",
+      "confirmed": true
+    },
+    {
+      "id": "thu-circus-serpents",
+      "dayId": "thu",
+      "stageId": "circus",
+      "band": "Serpents",
+      "start": "16:45",
+      "end": "17:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-circus-i-am-your-god",
+      "dayId": "thu",
+      "stageId": "circus",
+      "band": "I Am Your God",
+      "start": "18:00",
+      "end": "18:45",
+      "confirmed": true
+    },
+    {
+      "id": "thu-circus-aesthetic-perfection",
+      "dayId": "thu",
+      "stageId": "circus",
+      "band": "Aesthetic Perfection",
+      "start": "19:15",
+      "end": "20:00",
+      "confirmed": true
+    },
+    {
+      "id": "thu-circus-warfield",
+      "dayId": "thu",
+      "stageId": "circus",
+      "band": "Warfield",
+      "start": "20:30",
+      "end": "21:15",
+      "confirmed": true
+    },
+    {
+      "id": "thu-circus-katerfahrt",
+      "dayId": "thu",
+      "stageId": "circus",
+      "band": "Katerfahrt",
+      "start": "21:45",
+      "end": "22:45",
+      "confirmed": true
+    },
+    {
+      "id": "thu-circus-alternative-90ies-disco",
+      "dayId": "thu",
+      "stageId": "circus",
+      "band": "Alternative 90ies Disco",
+      "start": "23:15",
+      "end": "25:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-our-promise",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Our Promise",
+      "start": "12:00",
+      "end": "12:40",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-from-fall-to-spring",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "From Fall To Spring",
+      "start": "12:55",
+      "end": "13:35",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-alien-ant-farm",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Alien Ant Farm",
+      "start": "13:50",
+      "end": "14:35",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-northlane",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Northlane",
+      "start": "15:00",
+      "end": "15:45",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-kim-dracula",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Kim Dracula",
+      "start": "16:10",
+      "end": "17:10",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-imminence",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Imminence",
+      "start": "17:40",
+      "end": "18:40",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-saxon",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Saxon",
+      "start": "19:10",
+      "end": "20:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-eisbrecher",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Eisbrecher",
+      "start": "21:15",
+      "end": "22:45",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-amorphis",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Amorphis",
+      "start": "23:25",
+      "end": "24:35",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-dartagnan",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "dArtagnan",
+      "start": "25:00",
+      "end": "26:00",
+      "confirmed": true
+    },
+    {
+      "id": "thu-toolrebel-fireborn",
+      "dayId": "thu",
+      "stageId": "toolrebel",
+      "band": "Fireborn",
+      "start": "12:20",
+      "end": "12:50",
+      "confirmed": true
+    },
+    {
+      "id": "thu-toolrebel-broken-by-the-scream",
+      "dayId": "thu",
+      "stageId": "toolrebel",
+      "band": "Broken By The Scream",
+      "start": "13:45",
+      "end": "14:15",
+      "confirmed": true
+    },
+    {
+      "id": "thu-toolrebel-stam1na",
+      "dayId": "thu",
+      "stageId": "toolrebel",
+      "band": "Stam1na",
+      "start": "15:10",
+      "end": "15:40",
+      "confirmed": true
+    },
+    {
+      "id": "thu-toolrebel-rectal-smegma",
+      "dayId": "thu",
+      "stageId": "toolrebel",
+      "band": "Rectal Smegma",
+      "start": "16:35",
+      "end": "17:05",
+      "confirmed": true
+    },
+    {
+      "id": "thu-toolrebel-filth",
+      "dayId": "thu",
+      "stageId": "toolrebel",
+      "band": "Filth",
+      "start": "18:00",
+      "end": "18:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-toolrebel-mittel-alta",
+      "dayId": "thu",
+      "stageId": "toolrebel",
+      "band": "Mittel Alta",
+      "start": "19:40",
+      "end": "20:25",
+      "confirmed": true
+    },
+    {
+      "id": "thu-toolrebel-cryptopsy",
+      "dayId": "thu",
+      "stageId": "toolrebel",
+      "band": "Cryptopsy",
+      "start": "21:35",
+      "end": "22:20",
+      "confirmed": true
+    },
+    {
+      "id": "thu-toolrebel-groza",
+      "dayId": "thu",
+      "stageId": "toolrebel",
+      "band": "Groza",
+      "start": "23:30",
+      "end": "24:15",
+      "confirmed": true
+    },
+    {
+      "id": "thu-toolrebel-hindarfjaell",
+      "dayId": "thu",
+      "stageId": "toolrebel",
+      "band": "Hindarfjäll",
+      "start": "25:25",
+      "end": "26:10",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tstage-fulci",
+      "dayId": "thu",
+      "stageId": "tstage",
+      "band": "Fulci",
+      "start": "11:30",
+      "end": "12:15",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tstage-massive-wagons",
+      "dayId": "thu",
+      "stageId": "tstage",
+      "band": "Massive Wagons",
+      "start": "12:55",
+      "end": "13:40",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tstage-grand-magus",
+      "dayId": "thu",
+      "stageId": "tstage",
+      "band": "Grand Magus",
+      "start": "14:20",
+      "end": "15:05",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tstage-deserted-fear",
+      "dayId": "thu",
+      "stageId": "tstage",
+      "band": "Deserted Fear",
+      "start": "15:45",
+      "end": "16:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tstage-trollfest",
+      "dayId": "thu",
+      "stageId": "tstage",
+      "band": "Trollfest",
+      "start": "17:10",
+      "end": "17:55",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tstage-surprise-show",
+      "dayId": "thu",
+      "stageId": "tstage",
+      "band": "Surprise Show",
+      "start": "18:35",
+      "end": "19:35",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tstage-fit-for-an-autopsy",
+      "dayId": "thu",
+      "stageId": "tstage",
+      "band": "Fit For An Autopsy",
+      "start": "20:30",
+      "end": "21:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tstage-mushroomhead",
+      "dayId": "thu",
+      "stageId": "tstage",
+      "band": "Mushroomhead",
+      "start": "22:25",
+      "end": "23:25",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tstage-blackbraid",
+      "dayId": "thu",
+      "stageId": "tstage",
+      "band": "Blackbraid",
+      "start": "24:20",
+      "end": "25:20",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tstage-saor",
+      "dayId": "thu",
+      "stageId": "tstage",
+      "band": "Saor",
+      "start": "26:15",
+      "end": "27:00",
+      "confirmed": true
+    },
+    {
+      "id": "tue-circus-ghetto-justice",
+      "dayId": "tue",
+      "stageId": "circus",
+      "band": "Ghetto Justice",
+      "start": "17:00",
+      "end": "17:45",
+      "confirmed": true
+    },
+    {
+      "id": "tue-circus-die-habenichtse",
+      "dayId": "tue",
+      "stageId": "circus",
+      "band": "Die Habenichtse",
+      "start": "18:15",
+      "end": "19:00",
+      "confirmed": true
+    },
+    {
+      "id": "tue-circus-motorjesus",
+      "dayId": "tue",
+      "stageId": "circus",
+      "band": "Motorjesus",
+      "start": "19:30",
+      "end": "20:15",
+      "confirmed": true
+    },
+    {
+      "id": "tue-circus-hackneyed",
+      "dayId": "tue",
+      "stageId": "circus",
+      "band": "Hackneyed",
+      "start": "20:45",
+      "end": "21:45",
+      "confirmed": true
+    },
+    {
+      "id": "tue-circus-morecore-party",
+      "dayId": "tue",
+      "stageId": "circus",
+      "band": "Morecore Party",
+      "start": "22:15",
+      "end": "25:30",
+      "confirmed": true
+    },
+    {
+      "id": "wed-circus-born-hanged",
+      "dayId": "wed",
+      "stageId": "circus",
+      "band": "Born Hanged",
+      "start": "18:15",
+      "end": "18:45",
+      "confirmed": true
+    },
+    {
+      "id": "wed-circus-dethroned",
+      "dayId": "wed",
+      "stageId": "circus",
+      "band": "Dethroned",
+      "start": "19:10",
+      "end": "19:50",
+      "confirmed": true
+    },
+    {
+      "id": "wed-circus-backstabbed",
+      "dayId": "wed",
+      "stageId": "circus",
+      "band": "Backstabbed",
+      "start": "20:20",
+      "end": "21:00",
+      "confirmed": true
+    },
+    {
+      "id": "wed-circus-ochmoneks",
+      "dayId": "wed",
+      "stageId": "circus",
+      "band": "Ochmoneks",
+      "start": "21:30",
+      "end": "22:10",
+      "confirmed": true
+    },
+    {
+      "id": "wed-circus-waves-like-walls",
+      "dayId": "wed",
+      "stageId": "circus",
+      "band": "Waves Like Walls",
+      "start": "22:40",
+      "end": "23:20",
+      "confirmed": true
+    },
+    {
+      "id": "wed-circus-thormesis",
+      "dayId": "wed",
+      "stageId": "circus",
+      "band": "Thormesis",
+      "start": "23:50",
+      "end": "24:30",
+      "confirmed": true
+    },
+    {
+      "id": "wed-circus-partyschnaps-disco",
+      "dayId": "wed",
+      "stageId": "circus",
+      "band": "Partyschnaps Disco",
+      "start": "25:00",
+      "end": "26:00",
+      "confirmed": true
+    },
+    {
+      "id": "wed-main-excrementory-grindfuckers",
+      "dayId": "wed",
+      "stageId": "main",
+      "band": "Excrementory Grindfuckers",
+      "start": "16:10",
+      "end": "17:10",
+      "confirmed": true
+    },
+    {
+      "id": "wed-main-betontod",
+      "dayId": "wed",
+      "stageId": "main",
+      "band": "Betontod",
+      "start": "17:40",
+      "end": "18:40",
+      "confirmed": true
+    },
+    {
+      "id": "wed-main-airbourne",
+      "dayId": "wed",
+      "stageId": "main",
+      "band": "Airbourne",
+      "start": "19:10",
+      "end": "20:30",
+      "confirmed": true
+    },
+    {
+      "id": "wed-main-announcement-bands-2027",
+      "dayId": "wed",
+      "stageId": "main",
+      "band": "Announcement Bands 2027",
+      "start": "21:05",
+      "end": "21:15",
+      "confirmed": true
+    },
+    {
+      "id": "wed-main-in-flames",
+      "dayId": "wed",
+      "stageId": "main",
+      "band": "In Flames",
+      "start": "21:15",
+      "end": "22:45",
+      "confirmed": true
+    },
+    {
+      "id": "wed-main-hatebreed",
+      "dayId": "wed",
+      "stageId": "main",
+      "band": "Hatebreed",
+      "start": "23:25",
+      "end": "24:35",
+      "confirmed": true
+    },
+    {
+      "id": "wed-main-alcest",
+      "dayId": "wed",
+      "stageId": "main",
+      "band": "Alcest",
+      "start": "25:00",
+      "end": "26:00",
+      "confirmed": true
+    },
+    {
+      "id": "wed-toolrebel-persecutor",
+      "dayId": "wed",
+      "stageId": "toolrebel",
+      "band": "Persecutor",
+      "start": "16:05",
+      "end": "16:45",
+      "confirmed": true
+    },
+    {
+      "id": "wed-toolrebel-king-nugget-gang",
+      "dayId": "wed",
+      "stageId": "toolrebel",
+      "band": "King Nugget Gang",
+      "start": "17:40",
+      "end": "18:20",
+      "confirmed": true
+    },
+    {
+      "id": "wed-toolrebel-inhuman-nature",
+      "dayId": "wed",
+      "stageId": "toolrebel",
+      "band": "Inhuman Nature",
+      "start": "19:15",
+      "end": "19:55",
+      "confirmed": true
+    },
+    {
+      "id": "wed-toolrebel-urne",
+      "dayId": "wed",
+      "stageId": "toolrebel",
+      "band": "Urne",
+      "start": "20:50",
+      "end": "21:30",
+      "confirmed": true
+    },
+    {
+      "id": "wed-toolrebel-castle-rat",
+      "dayId": "wed",
+      "stageId": "toolrebel",
+      "band": "Castle Rat",
+      "start": "22:40",
+      "end": "23:20",
+      "confirmed": true
+    },
+    {
+      "id": "wed-toolrebel-c-n-bardd",
+      "dayId": "wed",
+      "stageId": "toolrebel",
+      "band": "Cân Bardd",
+      "start": "24:30",
+      "end": "25:10",
+      "confirmed": true
+    },
+    {
+      "id": "wed-toolrebel-802",
+      "dayId": "wed",
+      "stageId": "toolrebel",
+      "band": "802",
+      "start": "26:20",
+      "end": "27:00",
+      "confirmed": true
+    },
+    {
+      "id": "wed-tstage-blasmusik-illenschwang",
+      "dayId": "wed",
+      "stageId": "tstage",
+      "band": "Blasmusik Illenschwang",
+      "start": "15:00",
+      "end": "16:00",
+      "confirmed": true
+    },
+    {
+      "id": "wed-tstage-neckbreakker",
+      "dayId": "wed",
+      "stageId": "tstage",
+      "band": "Neckbreakker",
+      "start": "16:50",
+      "end": "17:35",
+      "confirmed": true
+    },
+    {
+      "id": "wed-tstage-the-narrator",
+      "dayId": "wed",
+      "stageId": "tstage",
+      "band": "The Narrator",
+      "start": "18:25",
+      "end": "19:10",
+      "confirmed": true
+    },
+    {
+      "id": "wed-tstage-green-lung",
+      "dayId": "wed",
+      "stageId": "tstage",
+      "band": "Green Lung",
+      "start": "20:00",
+      "end": "20:45",
+      "confirmed": true
+    },
+    {
+      "id": "wed-tstage-paradise-lost",
+      "dayId": "wed",
+      "stageId": "tstage",
+      "band": "Paradise Lost",
+      "start": "21:35",
+      "end": "22:35",
+      "confirmed": true
+    },
+    {
+      "id": "wed-tstage-eiv-r",
+      "dayId": "wed",
+      "stageId": "tstage",
+      "band": "Eivør",
+      "start": "23:25",
+      "end": "24:25",
+      "confirmed": true
+    },
+    {
+      "id": "wed-tstage-miracle-of-sound",
+      "dayId": "wed",
+      "stageId": "tstage",
+      "band": "Miracle Of Sound",
+      "start": "25:15",
+      "end": "26:15",
+      "confirmed": true
+    }
+  ]
+}
