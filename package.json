@@ -11,6 +11,8 @@
     "scrape": "node scripts/scrape-wacken.mjs",
     "import": "node scripts/import-lineup.mjs",
     "import:db": "node scripts/import-festival.mjs",
+    "lineup:build": "node scripts/build-timetable.mjs",
+    "lineup:check": "node scripts/validate-timetable.mjs",
     "organizer": "node scripts/organizer-code.mjs",
     "push:broadcast": "node scripts/push-broadcast.mjs"
   },

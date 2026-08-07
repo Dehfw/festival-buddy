@@ -1,0 +1,42 @@
+# Running Order Pell-Mell 2026 – Quelle für data/pellmell2026.json.
+# Bauen:  node scripts/build-timetable.mjs lineups/pellmell2026.txt --festival pellmell2026
+
+festival: Pell-Mell Festival 2026
+edition: Pell-Mell Festival – 04.–06.09.2026 (Einlass Camping & Caravan 04.09. 09:00 Uhr)
+dataVersion: 2026-07-16 (Zeitplan laut Festival-Plakat)
+
+stage: sparkasse | Sparkasse-Bitburger Stage | SBS | #f77f00
+stage: moonshine | Moonshine Stage | MOON | #2a9d8f
+
+day: fri | 2026-09-04
+day: sat | 2026-09-05
+
+[fri/sparkasse]
+14:45-15:30 Palebloom
+16:00-16:45 Never Back Down
+17:15-18:00 Tyna
+19:05-20:05 Samurai Pizza Cats
+21:10-22:10 Itchy
+23:15-00:30 Raised Fist
+
+[fri/moonshine]
+18:10-18:55 Treptow
+20:15-21:00 Venues
+22:20-23:05 The Narrator
+00:40-01:40 Damn It! (Aftershow) | id=fri-moonshine-damn-it
+
+[sat/sparkasse]
+13:00-13:45 Kaff Panda
+14:15-15:00 Left Betrayed
+15:30-16:15 Lost In Hollywood
+17:20-18:05 Monsters Of Liedermaching
+19:10-20:10 Rantanplan
+21:15-22:15 Caliban
+23:20-00:35 Hämatom
+
+[sat/moonshine]
+16:25-17:10 Stesy
+18:15-19:00 King Nugget Gang
+20:20-21:05 VMZT
+22:25-23:10 Destination Anywhere
+00:45-02:00 Evil Jared x Krogi (Aftershow) | id=sat-moonshine-evil-jared-x-krogi

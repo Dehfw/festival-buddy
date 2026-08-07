@@ -180,6 +180,28 @@ Parse-Logik des Scrapers lässt sich mit eigener Bühnen-Tabelle
 wiederverwenden. Slot-IDs (`tag-buehne-bandslug`) müssen über Re-Importe
 stabil bleiben, damit bestehende Auswahlen erhalten bleiben.
 
+### Lineup von Hand einpflegen
+
+Gibt es für ein Festival keinen Export – also meistens –, wird die
+Running Order als kompakte Textdatei unter `lineups/` gepflegt
+(Beispiel: `lineups/pellmell2026.txt`) und daraus die Importdatei
+gebaut. Slot-IDs, Slugs und Sortierung erzeugt das Script, damit sie
+über Re-Importe stabil bleiben:
+
+```bash
+npm run lineup:build -- lineups/pellmell2026.txt --festival pellmell2026
+npm run lineup:check -- data/pellmell2026.json                       # Format prüfen
+DATABASE_URL=... npm run lineup:check -- data/pellmell2026.json --festival pellmell2026
+DATABASE_URL=... npm run import:db -- --festival pellmell2026 data/pellmell2026.json
+```
+
+`npm run lineup:check` spiegelt die Regeln aus `src/lib/db.ts` und zeigt
+mit `--festival` (oder `--against alt.json`) den Vergleich zum
+bisherigen Stand: welche Slots neu, verschoben oder **entfallen** sind.
+Entfallene IDs nehmen die Eintragungen und Positionsmarker der Crews mit
+– deshalb vor jedem Update dort hinschauen. Der Ablauf samt Textformat
+ist als Skill hinterlegt: `.claude/skills/lineup-import/`.
+
 Der eingecheckte Wacken-Stand ist aus dem **offiziellen W:O:A-Datenexport**
 (`wackenlineup.json`) generiert: 233 Slots auf 9 Bühnen und 7 Tagen
 (Warm-up ab So 26.07.), inklusive Spotify-Artist-IDs für den
