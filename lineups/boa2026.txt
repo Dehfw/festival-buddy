@@ -1,0 +1,71 @@
+# Running Order Baltic Open Air 2026 – Quelle für data/boa2026.json.
+# Abgetippt vom Plakat baltic-open-air.png (Running Order).
+# Das Plakat nennt nur Beginn-Zeiten; alle Slots sind einheitlich auf
+# 45 Minuten gesetzt (Absprache mit dem Veranstalter-Stand vom Plakat).
+# Bauen:  npm run lineup -- lineups/boa2026.txt --festival boa2026
+
+festival: Baltic Open Air 2026
+edition: 19.–22.08.2026
+dataVersion: 2026-08-07 (Running Order laut Plakat, Set-Dauer pauschal 45 Min.)
+
+stage: valhalla | Valhalla Stage | VAL | #e85d04
+stage: viking | Viking Stage | VIK | #2a9d8f
+
+day: wed | 2026-08-19
+day: thu | 2026-08-20
+day: fri | 2026-08-21
+day: sat | 2026-08-22
+
+[thu/valhalla]
+14:00-14:45 Einlass / Infield
+15:00-15:45 Sagenbringer | spotify=66ezn48mPS89ukz6Fo3nqx
+16:15-17:00 Ochmoneks | spotify=2dQ2makimqVcaeM1hVObKm
+17:30-18:15 Hell Boulevard | spotify=0VwXOpHy8xm7pgphuMlPRS
+19:00-19:45 All For Metal | spotify=7pwIx2j4SX0cLAgPrIkv27
+20:30-21:15 H.E.A.T | spotify=7M4PCSo5DDasGginrPHSDd
+22:00-22:45 Wind Rose | spotify=67ps5pbKVO7V9Fcb4lTIXz
+23:30-00:15 Hämatom | spotify=6vg9BW5gHSjidGbypXQku2
+
+[fri/valhalla]
+13:00-13:45 Einlass / Infield
+14:00-14:45 Erdling | spotify=1YbFcjdUGqumvNIWLVGcJK
+15:15-16:00 Soulbound | spotify=77iKiudWCr75l34XsQAVpl
+16:30-17:15 Schattenmann | spotify=5zT9s2gWiwEEK15GiE49jq
+17:45-18:30 Mr Irish Bastard | spotify=5NhSUk5Sygly90DDO78eLK
+19:15-20:00 Warkings | spotify=7DXUeaMULtMVFmmaKFzH3E
+20:45-21:30 Nestor | spotify=0aO5KX4PsGlEqDM8rsH0ld
+22:15-23:00 Rose Tattoo | spotify=1WsfEkSfrPIhy1lK7ZLRRH
+23:45-00:30 Eisbrecher | spotify=6ul6vL8Hg5jTulDi0Ac8ao
+
+[sat/valhalla]
+13:00-13:45 Einlass / Infield
+14:00-14:45 Vogelfrey | spotify=3pyjoONcLKvzpSCtk3zAkh
+15:15-16:00 Lacrimas Profundere | spotify=4LtKoRSDo1uGlaGGEqsIhz
+16:30-17:15 Artefuckt | spotify=134WqmRnJ6U2KQsx9U1o1G
+18:00-18:45 Rauhbein | spotify=0neCOkQjYXJMLW7cvOw6fe
+19:30-20:15 Barock | spotify=4bemSGXfAIMgllgUai7agh
+21:00-21:45 Floor Jansen | spotify=2ZNTJ9Bu9QMJwBboMSpQgJ
+22:30-23:15 Axel Rudi Pell | spotify=7dWw3TXxNe2aEhng9vVRNl
+00:00-00:45 Saltatio Mortis | spotify=09Z51O0q4AwHl7FjUUlFKw
+
+[wed/viking]
+18:00-18:45 Sloppy Joes
+# Achtung: "Andersons" auf Spotify ist eine slowakische Band – nicht die hier.
+# Beim naechsten "npm run lineup" traegt die Suche sie evtl. wieder ein, dann bitte wieder loeschen.
+20:00-20:45 Andersons
+22:00-22:45 Metal Worx
+
+[thu/viking]
+10:00-10:45 Welcome Warmup DJ
+14:00-14:45 Vertical Blinds | spotify=5DDhj5koq19FdZFRun5FL1
+
+[fri/viking]
+10:00-10:45 Freaky Friday Warmup DJ
+11:00-11:45 Dosentier Wettbewerb
+20:15-21:00 Nördlust (Set 1) | spotify=6N89YSbYl5icRGEwUTd1bm
+21:45-22:30 Nördlust (Set 2) | spotify=6N89YSbYl5icRGEwUTd1bm
+
+[sat/viking]
+10:30-11:15 Gottesdienst (inkl. erste offizielle BOA-Hochzeit)
+12:15-13:00 Wet Shirt Contest
+13:00-13:45 Rückenwind | spotify=6qqW7tSqLl2PHbLu6q1ceK

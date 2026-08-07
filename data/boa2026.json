@@ -1,0 +1,416 @@
+{
+  "festival": "Baltic Open Air 2026",
+  "edition": "19.–22.08.2026",
+  "dataVersion": "2026-08-07 (Running Order laut Plakat, Set-Dauer pauschal 45 Min.)",
+  "days": [
+    {
+      "id": "wed",
+      "label": "Mi",
+      "longLabel": "Mittwoch",
+      "date": "2026-08-19"
+    },
+    {
+      "id": "thu",
+      "label": "Do",
+      "longLabel": "Donnerstag",
+      "date": "2026-08-20"
+    },
+    {
+      "id": "fri",
+      "label": "Fr",
+      "longLabel": "Freitag",
+      "date": "2026-08-21"
+    },
+    {
+      "id": "sat",
+      "label": "Sa",
+      "longLabel": "Samstag",
+      "date": "2026-08-22"
+    }
+  ],
+  "stages": [
+    {
+      "id": "valhalla",
+      "name": "Valhalla Stage",
+      "short": "VAL",
+      "color": "#e85d04"
+    },
+    {
+      "id": "viking",
+      "name": "Viking Stage",
+      "short": "VIK",
+      "color": "#2a9d8f"
+    }
+  ],
+  "slots": [
+    {
+      "id": "wed-viking-sloppy-joes",
+      "dayId": "wed",
+      "stageId": "viking",
+      "band": "Sloppy Joes",
+      "start": "18:00",
+      "end": "18:45",
+      "confirmed": true
+    },
+    {
+      "id": "wed-viking-andersons",
+      "dayId": "wed",
+      "stageId": "viking",
+      "band": "Andersons",
+      "start": "20:00",
+      "end": "20:45",
+      "confirmed": true
+    },
+    {
+      "id": "wed-viking-metal-worx",
+      "dayId": "wed",
+      "stageId": "viking",
+      "band": "Metal Worx",
+      "start": "22:00",
+      "end": "22:45",
+      "confirmed": true
+    },
+    {
+      "id": "thu-valhalla-einlass-infield",
+      "dayId": "thu",
+      "stageId": "valhalla",
+      "band": "Einlass / Infield",
+      "start": "14:00",
+      "end": "14:45",
+      "confirmed": true
+    },
+    {
+      "id": "thu-valhalla-sagenbringer",
+      "dayId": "thu",
+      "stageId": "valhalla",
+      "band": "Sagenbringer",
+      "start": "15:00",
+      "end": "15:45",
+      "confirmed": true,
+      "spotifyArtistId": "66ezn48mPS89ukz6Fo3nqx"
+    },
+    {
+      "id": "thu-valhalla-ochmoneks",
+      "dayId": "thu",
+      "stageId": "valhalla",
+      "band": "Ochmoneks",
+      "start": "16:15",
+      "end": "17:00",
+      "confirmed": true,
+      "spotifyArtistId": "2dQ2makimqVcaeM1hVObKm"
+    },
+    {
+      "id": "thu-valhalla-hell-boulevard",
+      "dayId": "thu",
+      "stageId": "valhalla",
+      "band": "Hell Boulevard",
+      "start": "17:30",
+      "end": "18:15",
+      "confirmed": true,
+      "spotifyArtistId": "0VwXOpHy8xm7pgphuMlPRS"
+    },
+    {
+      "id": "thu-valhalla-all-for-metal",
+      "dayId": "thu",
+      "stageId": "valhalla",
+      "band": "All For Metal",
+      "start": "19:00",
+      "end": "19:45",
+      "confirmed": true,
+      "spotifyArtistId": "7pwIx2j4SX0cLAgPrIkv27"
+    },
+    {
+      "id": "thu-valhalla-h-e-a-t",
+      "dayId": "thu",
+      "stageId": "valhalla",
+      "band": "H.E.A.T",
+      "start": "20:30",
+      "end": "21:15",
+      "confirmed": true,
+      "spotifyArtistId": "7M4PCSo5DDasGginrPHSDd"
+    },
+    {
+      "id": "thu-valhalla-wind-rose",
+      "dayId": "thu",
+      "stageId": "valhalla",
+      "band": "Wind Rose",
+      "start": "22:00",
+      "end": "22:45",
+      "confirmed": true,
+      "spotifyArtistId": "67ps5pbKVO7V9Fcb4lTIXz"
+    },
+    {
+      "id": "thu-valhalla-haematom",
+      "dayId": "thu",
+      "stageId": "valhalla",
+      "band": "Hämatom",
+      "start": "23:30",
+      "end": "00:15",
+      "confirmed": true,
+      "spotifyArtistId": "6vg9BW5gHSjidGbypXQku2"
+    },
+    {
+      "id": "thu-viking-welcome-warmup-dj",
+      "dayId": "thu",
+      "stageId": "viking",
+      "band": "Welcome Warmup DJ",
+      "start": "10:00",
+      "end": "10:45",
+      "confirmed": true
+    },
+    {
+      "id": "thu-viking-vertical-blinds",
+      "dayId": "thu",
+      "stageId": "viking",
+      "band": "Vertical Blinds",
+      "start": "14:00",
+      "end": "14:45",
+      "confirmed": true,
+      "spotifyArtistId": "5DDhj5koq19FdZFRun5FL1"
+    },
+    {
+      "id": "fri-valhalla-einlass-infield",
+      "dayId": "fri",
+      "stageId": "valhalla",
+      "band": "Einlass / Infield",
+      "start": "13:00",
+      "end": "13:45",
+      "confirmed": true
+    },
+    {
+      "id": "fri-valhalla-erdling",
+      "dayId": "fri",
+      "stageId": "valhalla",
+      "band": "Erdling",
+      "start": "14:00",
+      "end": "14:45",
+      "confirmed": true,
+      "spotifyArtistId": "1YbFcjdUGqumvNIWLVGcJK"
+    },
+    {
+      "id": "fri-valhalla-soulbound",
+      "dayId": "fri",
+      "stageId": "valhalla",
+      "band": "Soulbound",
+      "start": "15:15",
+      "end": "16:00",
+      "confirmed": true,
+      "spotifyArtistId": "77iKiudWCr75l34XsQAVpl"
+    },
+    {
+      "id": "fri-valhalla-schattenmann",
+      "dayId": "fri",
+      "stageId": "valhalla",
+      "band": "Schattenmann",
+      "start": "16:30",
+      "end": "17:15",
+      "confirmed": true,
+      "spotifyArtistId": "5zT9s2gWiwEEK15GiE49jq"
+    },
+    {
+      "id": "fri-valhalla-mr-irish-bastard",
+      "dayId": "fri",
+      "stageId": "valhalla",
+      "band": "Mr Irish Bastard",
+      "start": "17:45",
+      "end": "18:30",
+      "confirmed": true,
+      "spotifyArtistId": "5NhSUk5Sygly90DDO78eLK"
+    },
+    {
+      "id": "fri-valhalla-warkings",
+      "dayId": "fri",
+      "stageId": "valhalla",
+      "band": "Warkings",
+      "start": "19:15",
+      "end": "20:00",
+      "confirmed": true,
+      "spotifyArtistId": "7DXUeaMULtMVFmmaKFzH3E"
+    },
+    {
+      "id": "fri-valhalla-nestor",
+      "dayId": "fri",
+      "stageId": "valhalla",
+      "band": "Nestor",
+      "start": "20:45",
+      "end": "21:30",
+      "confirmed": true,
+      "spotifyArtistId": "0aO5KX4PsGlEqDM8rsH0ld"
+    },
+    {
+      "id": "fri-valhalla-rose-tattoo",
+      "dayId": "fri",
+      "stageId": "valhalla",
+      "band": "Rose Tattoo",
+      "start": "22:15",
+      "end": "23:00",
+      "confirmed": true,
+      "spotifyArtistId": "1WsfEkSfrPIhy1lK7ZLRRH"
+    },
+    {
+      "id": "fri-valhalla-eisbrecher",
+      "dayId": "fri",
+      "stageId": "valhalla",
+      "band": "Eisbrecher",
+      "start": "23:45",
+      "end": "00:30",
+      "confirmed": true,
+      "spotifyArtistId": "6ul6vL8Hg5jTulDi0Ac8ao"
+    },
+    {
+      "id": "fri-viking-freaky-friday-warmup-dj",
+      "dayId": "fri",
+      "stageId": "viking",
+      "band": "Freaky Friday Warmup DJ",
+      "start": "10:00",
+      "end": "10:45",
+      "confirmed": true
+    },
+    {
+      "id": "fri-viking-dosentier-wettbewerb",
+      "dayId": "fri",
+      "stageId": "viking",
+      "band": "Dosentier Wettbewerb",
+      "start": "11:00",
+      "end": "11:45",
+      "confirmed": true
+    },
+    {
+      "id": "fri-viking-noerdlust-set-1",
+      "dayId": "fri",
+      "stageId": "viking",
+      "band": "Nördlust (Set 1)",
+      "start": "20:15",
+      "end": "21:00",
+      "confirmed": true,
+      "spotifyArtistId": "6N89YSbYl5icRGEwUTd1bm"
+    },
+    {
+      "id": "fri-viking-noerdlust-set-2",
+      "dayId": "fri",
+      "stageId": "viking",
+      "band": "Nördlust (Set 2)",
+      "start": "21:45",
+      "end": "22:30",
+      "confirmed": true,
+      "spotifyArtistId": "6N89YSbYl5icRGEwUTd1bm"
+    },
+    {
+      "id": "sat-valhalla-einlass-infield",
+      "dayId": "sat",
+      "stageId": "valhalla",
+      "band": "Einlass / Infield",
+      "start": "13:00",
+      "end": "13:45",
+      "confirmed": true
+    },
+    {
+      "id": "sat-valhalla-vogelfrey",
+      "dayId": "sat",
+      "stageId": "valhalla",
+      "band": "Vogelfrey",
+      "start": "14:00",
+      "end": "14:45",
+      "confirmed": true,
+      "spotifyArtistId": "3pyjoONcLKvzpSCtk3zAkh"
+    },
+    {
+      "id": "sat-valhalla-lacrimas-profundere",
+      "dayId": "sat",
+      "stageId": "valhalla",
+      "band": "Lacrimas Profundere",
+      "start": "15:15",
+      "end": "16:00",
+      "confirmed": true,
+      "spotifyArtistId": "4LtKoRSDo1uGlaGGEqsIhz"
+    },
+    {
+      "id": "sat-valhalla-artefuckt",
+      "dayId": "sat",
+      "stageId": "valhalla",
+      "band": "Artefuckt",
+      "start": "16:30",
+      "end": "17:15",
+      "confirmed": true,
+      "spotifyArtistId": "134WqmRnJ6U2KQsx9U1o1G"
+    },
+    {
+      "id": "sat-valhalla-rauhbein",
+      "dayId": "sat",
+      "stageId": "valhalla",
+      "band": "Rauhbein",
+      "start": "18:00",
+      "end": "18:45",
+      "confirmed": true,
+      "spotifyArtistId": "0neCOkQjYXJMLW7cvOw6fe"
+    },
+    {
+      "id": "sat-valhalla-barock",
+      "dayId": "sat",
+      "stageId": "valhalla",
+      "band": "Barock",
+      "start": "19:30",
+      "end": "20:15",
+      "confirmed": true,
+      "spotifyArtistId": "4bemSGXfAIMgllgUai7agh"
+    },
+    {
+      "id": "sat-valhalla-floor-jansen",
+      "dayId": "sat",
+      "stageId": "valhalla",
+      "band": "Floor Jansen",
+      "start": "21:00",
+      "end": "21:45",
+      "confirmed": true,
+      "spotifyArtistId": "2ZNTJ9Bu9QMJwBboMSpQgJ"
+    },
+    {
+      "id": "sat-valhalla-axel-rudi-pell",
+      "dayId": "sat",
+      "stageId": "valhalla",
+      "band": "Axel Rudi Pell",
+      "start": "22:30",
+      "end": "23:15",
+      "confirmed": true,
+      "spotifyArtistId": "7dWw3TXxNe2aEhng9vVRNl"
+    },
+    {
+      "id": "sat-valhalla-saltatio-mortis",
+      "dayId": "sat",
+      "stageId": "valhalla",
+      "band": "Saltatio Mortis",
+      "start": "00:00",
+      "end": "00:45",
+      "confirmed": true,
+      "spotifyArtistId": "09Z51O0q4AwHl7FjUUlFKw"
+    },
+    {
+      "id": "sat-viking-gottesdienst-inkl-erste-offizielle-boa-hochzeit",
+      "dayId": "sat",
+      "stageId": "viking",
+      "band": "Gottesdienst (inkl. erste offizielle BOA-Hochzeit)",
+      "start": "10:30",
+      "end": "11:15",
+      "confirmed": true
+    },
+    {
+      "id": "sat-viking-wet-shirt-contest",
+      "dayId": "sat",
+      "stageId": "viking",
+      "band": "Wet Shirt Contest",
+      "start": "12:15",
+      "end": "13:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-viking-rueckenwind",
+      "dayId": "sat",
+      "stageId": "viking",
+      "band": "Rückenwind",
+      "start": "13:00",
+      "end": "13:45",
+      "confirmed": true,
+      "spotifyArtistId": "6qqW7tSqLl2PHbLu6q1ceK"
+    }
+  ]
+}
