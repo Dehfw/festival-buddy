@@ -29,6 +29,23 @@ body {
   letter-spacing: 0.04em;
 }
 
+/* App-Shell: exakt Viewport-Höhe, Inhalt scrollt intern.
+   Im Browser 100dvh, damit die Nav der URL-Leiste folgt. */
+.app-shell {
+  height: 100vh; /* Fallback für Browser ohne dvh */
+  height: 100dvh;
+}
+/* WebKit-Bug: Beim Kaltstart der installierten App sind die dynamischen
+   Viewport-Werte (100dvh, anfangs auch innerHeight/visualViewport) zu
+   klein und korrigieren sich erst beim ersten Scrollen – die Nav
+   "schwebt". Standalone gibt es keine Browser-UI, vh == dvh, aber nur
+   100vh stimmt schon beim Start. */
+@media (display-mode: standalone) {
+  .app-shell {
+    height: 100vh;
+  }
+}
+
 /* Header-Schimmer, DEFƎKT-dunkel mit Orange-Linie */
 .steel-sheen {
   background: linear-gradient(160deg, #1c1c1c 0%, #101010 50%, #141414 100%);

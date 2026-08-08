@@ -25,41 +25,8 @@ function todayFestivalDate(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/**
- * iOS-Standalone-Bug: Beim Kaltstart der installierten PWA berechnet WebKit
- * 100dvh zu klein (die Nav schwebt über dem unteren Rand) und korrigiert das
- * erst beim ersten Scrollen. Deshalb pflegen wir die echte Viewport-Höhe
- * selbst als --app-height; visualViewport meldet sie schon beim Start korrekt.
- */
-function useViewportHeightFix() {
-  useEffect(() => {
-    const root = document.documentElement;
-    const update = () => {
-      const vv = window.visualViewport;
-      // max(): die Bildschirmtastatur verkleinert nur den visualViewport –
-      // die Shell soll dann (wie bei 100dvh) NICHT mitschrumpfen.
-      const h = Math.max(window.innerHeight, vv ? Math.round(vv.height) : 0);
-      root.style.setProperty('--app-height', `${h}px`);
-    };
-    update();
-    // iOS meldet die finale Höhe nach dem App-Start teils verspätet
-    const late = setTimeout(update, 500);
-    window.addEventListener('resize', update);
-    window.addEventListener('orientationchange', update);
-    window.visualViewport?.addEventListener('resize', update);
-    return () => {
-      clearTimeout(late);
-      window.removeEventListener('resize', update);
-      window.removeEventListener('orientationchange', update);
-      window.visualViewport?.removeEventListener('resize', update);
-      root.style.removeProperty('--app-height');
-    };
-  }, []);
-}
-
 export function AppShell() {
   const { data, user, online, pending, organizerFestivals } = useApp();
-  useViewportHeightFix();
   const [tab, setTab] = useState<Tab>('timetable');
   const [dayId, setDayId] = useState('');
   const [activeSlot, setActiveSlot] = useState<Slot | null>(null);
@@ -96,7 +63,7 @@ export function AppShell() {
   if (!data || !user) return null;
 
   return (
-    <div className="flex h-[var(--app-height,100dvh)] flex-col">
+    <div className="app-shell flex flex-col">
       {/* Header */}
       <header className="steel-sheen flex items-center justify-between px-4 pb-2 pt-[max(0.6rem,env(safe-area-inset-top))]">
         <div className="flex min-w-0 items-center gap-2.5">
