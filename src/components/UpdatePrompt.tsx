@@ -16,7 +16,9 @@ import { useEffect, useRef, useState } from 'react';
  */
 export function UpdatePrompt() {
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
+  const [applying, setApplying] = useState(false);
   const applyingRef = useRef(false);
+  const fallbackRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
@@ -59,6 +61,7 @@ export function UpdatePrompt() {
 
     return () => {
       clearInterval(interval);
+      if (fallbackRef.current !== null) clearTimeout(fallbackRef.current);
       document.removeEventListener('visibilitychange', onVisible);
       navigator.serviceWorker.removeEventListener(
         'controllerchange',
@@ -70,8 +73,13 @@ export function UpdatePrompt() {
   if (!waiting) return null;
 
   const reload = () => {
+    if (applyingRef.current) return;
     applyingRef.current = true;
+    setApplying(true);
     waiting.postMessage({ type: 'SKIP_WAITING' });
+    // Falls controllerchange ausbleibt (SW hängt, Message verloren), laden
+    // wir trotzdem neu, damit der Dialog nicht dauerhaft blockiert bleibt.
+    fallbackRef.current = window.setTimeout(() => window.location.reload(), 8000);
   };
 
   return (
@@ -89,14 +97,24 @@ export function UpdatePrompt() {
             </p>
             <div className="mt-3 flex gap-2">
               <button
+                type="button"
                 onClick={reload}
-                className="rounded-lg bg-blood px-4 py-2 text-sm font-bold text-black transition active:scale-[0.97]"
+                disabled={applying}
+                className="flex items-center gap-2 rounded-lg bg-blood px-4 py-2 text-sm font-bold text-black transition active:scale-[0.97] disabled:opacity-70"
               >
-                Neu laden
+                {applying && (
+                  <span
+                    aria-hidden
+                    className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-black/30 border-t-black"
+                  />
+                )}
+                {applying ? 'Lädt neu …' : 'Neu laden'}
               </button>
               <button
+                type="button"
                 onClick={() => setWaiting(null)}
-                className="rounded-lg border border-rivet bg-steel-2 px-4 py-2 text-sm font-semibold text-ash transition active:scale-[0.97]"
+                disabled={applying}
+                className="rounded-lg border border-rivet bg-steel-2 px-4 py-2 text-sm font-semibold text-ash transition active:scale-[0.97] disabled:opacity-40"
               >
                 Später
               </button>
