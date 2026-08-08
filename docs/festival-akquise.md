@@ -104,7 +104,7 @@ Feature, das ohne Clashes trägt (Gruppen, Treffpunkte, Push).
 | 🔴 | Prophecy Fest | 03.–05.09. | Balver Höhle | ~1.200 | **1** | Alles in der Höhle, eine Bühne. Community wäre ideal, Produkt passt trotzdem nicht |
 | 🔴 | The Hard Circle (Storm/Pott/Rock/Knock Out) | 04./05./11./12.12. | Lichtenfels, Bochum, Augsburg, Karlsruhe | je ~2.000 | **1** | Ein Veranstalter für vier Events – verlockend, aber Ein-Bühnen-Hallenshows. Zurückgestellt, bis wir Gruppen-Features ohne Timetable-Bezug haben |
 | 🔴 | Highfield, Rocco del Schlacko, Taubertal, Open Flair | Aug. | — | 20–30.000 | mehrere | Größe passt, aber Agentur im Rücken und meist schon eine eigene App |
-| 🔴 | Summer Breeze | 12.–15.08. | Dinkelsbühl | ~45.000 | mehrere | Bereits als `sb2026` angelegt, eigene App vorhanden |
+| ⚪ | Summer Breeze | 12.–15.08. | Dinkelsbühl | ~45.000 | mehrere | Hat eine eigene App – aber ohne Gruppenfunktion. Versuch als **Ergänzung**, nicht als Ersatz. Größte Reichweite der Liste. Erst **nach** dem Festival anschreiben (siehe Kurzvariante unten). Veranstalter: Silverdust GmbH, Abtsgmünd |
 
 ## Pitch-Bausteine
 
@@ -190,6 +190,51 @@ Angaben aus dem Impressum, vor dem Versand bitte einmal gegenprüfen.
 > in der App taucht davon auch nichts auf.
 >
 > Anschauen könnt ihr es hier: \<Link\>
+>
+> Rock on
+> \<Name\>
+> \<Telefon / Mail\>
+
+### Kurzvariante: Festival hat schon eine eigene App
+
+Hier ist der Ton ein anderer. Wer selbst eine App gebaut hat, hört bei
+„wir haben da eine App für euch" nur **Konkurrenz** – und die App ist
+sein Kanal für Push, Sponsoren und Ticketverkäufe, den gibt niemand aus
+der Hand. Also: kurz halten, keine Feature-Schlacht, sofort klarstellen,
+dass wir nichts ersetzen und nicht auf ihren Kanälen werben wollen. Der
+einzige Haken, an dem wir hängen, ist die **Gruppenfunktion** – die hat
+praktisch keine Festival-App.
+
+Nicht mitten in der Aufbauwoche schicken. Die Woche **nach** dem
+Festival ist der richtige Moment: Debriefing-Zeit, und die
+Gruppenfrage ist ihnen gerade frisch begegnet.
+
+> **Betreff:** Gruppenfunktion als Ergänzung zur Summer-Breeze-App –
+> kurze Frage
+>
+> Moin zusammen,
+>
+> ihr habt eine eigene App, deshalb halte ich es kurz. Eine Sache kann
+> sie nicht: **gemeinsam** planen. Wer mit acht Leuten anreist, klärt
+> auch bei euch über WhatsApp, wer zu welcher Band geht und wo man sich
+> danach wiederfindet.
+>
+> Genau das macht Festival Buddy: Crew-Gruppe anlegen, jeder trägt sich
+> in den Timetable ein, alle sehen sofort, wer wo ist – inklusive
+> „Hier stehe ich"-Markierung auf dem Bühnenplan. Beim Party.San lief
+> das dieses Jahr.
+>
+> Wir wollen eure App nicht ersetzen und auch nicht auf euren Kanälen
+> werben. Die Frage ist nur, ob ihr euch vorstellen könnt, dass die
+> Gruppenfunktion daneben steht – Running Order und alles Offizielle
+> bleibt bei euch, wir ziehen uns die Zeiten einfach von eurer Seite.
+>
+> Kosten gibt es keine, jetzt nicht und später auch nicht. Unser Geld
+> verdienen wir mit MerchMaster, einem Kassensystem für Bandmerch auf
+> Tour.
+>
+> Wenn das interessant klingt: 15 Minuten, sobald bei euch die Luft
+> wieder raus ist?
 >
 > Rock on
 > \<Name\>
