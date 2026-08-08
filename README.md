@@ -180,6 +180,51 @@ Parse-Logik des Scrapers lässt sich mit eigener Bühnen-Tabelle
 wiederverwenden. Slot-IDs (`tag-buehne-bandslug`) müssen über Re-Importe
 stabil bleiben, damit bestehende Auswahlen erhalten bleiben.
 
+### Lineup von Hand einpflegen
+
+Gibt es für ein Festival keinen Export – also meistens –, wird die
+Running Order als kompakte Textdatei unter `lineups/` gepflegt
+(Beispiel: `lineups/pellmell2026.txt`) und daraus die Importdatei
+gebaut. Slot-IDs, Slugs und Sortierung erzeugt das Script, damit sie
+über Re-Importe stabil bleiben:
+
+```bash
+npm run lineup -- lineups/pellmell2026.txt --festival pellmell2026
+npm run import:db -- --festival pellmell2026 data/pellmell2026.json
+```
+
+`npm run lineup` erledigt die drei Schritte davor in einem Rutsch:
+Spotify-IDs ergänzen, `data/pellmell2026.json` bauen, die Datei prüfen.
+Die Reihenfolge ist wichtig – die Spotify-Suche schreibt in die
+Textdatei und muss vor dem Bauen laufen. Die Einzelschritte gibt es
+weiterhin als `lineup:spotify`, `lineup:build` und `lineup:check`;
+`--no-spotify` lässt die Suche aus.
+
+`npm run lineup:check` spiegelt die Regeln aus `src/lib/db.ts` und zeigt
+mit `--festival` (oder `--against alt.json`) den Vergleich zum
+bisherigen Stand: welche Slots neu, verschoben oder **entfallen** sind.
+Entfallene IDs nehmen die Eintragungen und Positionsmarker der Crews mit
+– deshalb vor jedem Update dort hinschauen.
+
+`npm run lineup:spotify` füllt die `spotifyArtistId`, an der im
+Band-Sheet der „Auf Spotify anhören"-Button hängt. Ohne sie fehlt der
+Button; von Hand gepflegte Lineups starten immer bei null (der
+Wacken-Export bringt seine IDs mit). Das Script nimmt nur exakte
+Namenstreffer aus der Spotify-Suche und meldet mehrdeutige und nicht
+gefundene Bands zum Nachsehen. Zugangsdaten gibt es kostenlos über
+developer.spotify.com und gehören als `SPOTIFY_CLIENT_ID` /
+`SPOTIFY_CLIENT_SECRET` in die lokale `.env.local` – nur für dieses
+Script, nicht zur Laufzeit: die App selbst spricht nie mit Spotify, auf
+Vercel braucht es die Variablen also nicht.
+
+`lineup`, `import:db`, `lineup:check` und `lineup:spotify` lesen
+`.env.local` selbst ein (`scripts/env.mjs`), `DATABASE_URL` muss also
+nicht mehr vor jedes Kommando geschrieben werden. Inline gesetzte
+Variablen haben weiterhin Vorrang.
+
+Der Ablauf samt Textformat ist als Skill hinterlegt:
+`.claude/skills/lineup-import/`.
+
 Der eingecheckte Wacken-Stand ist aus dem **offiziellen W:O:A-Datenexport**
 (`wackenlineup.json`) generiert: 233 Slots auf 9 Bühnen und 7 Tagen
 (Warm-up ab So 26.07.), inklusive Spotify-Artist-IDs für den
