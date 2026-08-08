@@ -12,10 +12,9 @@ import { GroupAvatar } from './GroupAvatar';
 import { InstallPrompt } from './InstallPrompt';
 import { ListView } from './ListView';
 import { PushPrompt } from './PushPrompt';
-import { StagesView } from './StagesView';
 import { TimetableView } from './TimetableView';
 
-type Tab = 'timetable' | 'list' | 'stages';
+type Tab = 'timetable' | 'list';
 
 /**
  * Datum des aktuellen FESTIVALtags: ein Festivaltag läuft bis 08:00 früh –
@@ -168,7 +167,6 @@ export function AppShell() {
           <TimetableView dayId={dayId} onSlotTap={setActiveSlot} />
         )}
         {tab === 'list' && <ListView onSlotTap={setActiveSlot} />}
-        {tab === 'stages' && <StagesView />}
       </main>
 
       {/* Bottom-Navigation */}
@@ -184,12 +182,6 @@ export function AppShell() {
           onClick={() => setTab('list')}
           icon="🤘"
           label="Unsere Bands"
-        />
-        <TabButton
-          active={tab === 'stages'}
-          onClick={() => setTab('stages')}
-          icon="🗺️"
-          label="Bühnen"
         />
         {/* Nur für Veranstalter sichtbar (organizerFestivals aus /api/me) */}
         {organizerFestivals > 0 && (

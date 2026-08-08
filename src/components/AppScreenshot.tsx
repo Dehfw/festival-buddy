@@ -311,7 +311,6 @@ export function AppScreenshot() {
           <div className="flex border-t border-rivet bg-steel">
             <NavItem icon="🗓️" label="Timetable" />
             <NavItem icon="🤘" label="Unsere Bands" active />
-            <NavItem icon="🗺️" label="Bühnen" />
             <NavItem icon="⚙️" label="Admin" />
           </div>
         </div>
