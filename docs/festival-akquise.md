@@ -8,6 +8,42 @@ Referenzkunde: **Party.San Metal Open Air** (`psoa2026`) – hatte keine
 eigene App, deshalb war Festival Buddy interessant. Genau dieses Profil
 suchen wir weiter.
 
+## Warum wir das machen
+
+Festival Buddy ist **kein Produkt, mit dem wir Geld verdienen wollen** –
+und wird es auch nicht. Unser Geschäft ist **MerchMaster.app**, das
+Kassensystem für Bandmerch auf Tour. Festival Buddy ist der Kanal
+dorthin: Auf einem Metal-Festival steht ein guter Teil des Publikums
+selbst in einer Band, und genau die erreichen wir hier – im
+entspanntesten Moment, ohne Kaltakquise.
+
+Daraus folgt für die Akquise:
+
+- **Der Veranstalterzugang ist dauerhaft kostenlos.** Nicht „für die
+  erste Ausgabe", nicht als Einführungspreis. Wer nach dem Haken fragt,
+  bekommt eine ehrliche Antwort statt einer Preisliste (siehe unten).
+- **Reichweite schlägt Umsatz.** Ein Festival ist für uns wertvoll nach
+  *Zahl der Besucher, die selbst Musik machen* – nicht nach Ticketpreis
+  oder Prestige.
+- **Die App bleibt vorerst ohne MerchMaster-Branding.** `festivalbuddy.app`
+  läuft eigenständig, solange wir das Tool testen. Der Übergang zu
+  MerchMaster kommt später und bewusst – nicht als Werbebanner im
+  Timetable.
+
+### Offene Entscheidung: erzählen wir es den Veranstaltern?
+
+Empfehlung: **ja, aber in einem Satz und nicht als Aufhänger.** Es
+erklärt glaubwürdig, warum es nichts kostet, und zeigt, dass hinter der
+App eine Firma steht und kein Hobbyprojekt, das nächstes Jahr weg ist.
+Verschweigen wäre riskant – wenn es später auffällt, steht die
+Partnerschaft in Frage.
+
+Zu bedenken: Viele Festivals verdienen an Bandmerch mit. „Kassensystem
+für Bandmerch" kann bei einem Veranstalter deshalb kurz die Alarmglocke
+auslösen. Deshalb knapp halten, und wenn nachgefragt wird, klar sagen:
+MerchMaster ist für Bands **auf Tour**, es rührt weder an der
+Festival-Abrechnung noch an ihrem Merch-Stand.
+
 ## Auswahlkriterien
 
 Ein Festival passt zu uns, wenn:
@@ -16,8 +52,15 @@ Ein Festival passt zu uns, wenn:
   K.-o.-Kriterium: ohne Überschneidungen gibt es nichts zu planen, und
   der Timetable-Planer – unser Kernnutzen – läuft leer. Ein-Bühnen-Fests
   fliegen raus, egal wie gut Größe und Genre passen.
-- **1.000–20.000 Besucher.** Groß genug für Crews, die sich verlieren,
-  klein genug für kein eigenes App-Budget.
+- **Viele Musiker im Publikum.** Unser eigentlicher Ertrag. Gute
+  Indikatoren: Newcomer-Bühne, Bandcontest (Metal Battle, Local
+  Heroes), viele regionale Bands im Line-up, Szene-Fest statt
+  Ausflugsziel.
+- **Ab ~4.000 Besucher.** Erfahrungswert aus der ersten Runde: darunter
+  hat fast jedes Festival nur eine Bühne und fällt am Kriterium oben
+  durch. Nach oben ist erst mal offen – mehr Besucher heißt mehr
+  Reichweite –, aber ab ~20.000 sitzt meist eine Agentur davor und eine
+  eigene App ist schon da.
 - **Keine eigene App.** Vor dem Anschreiben kurz im Play Store / App
   Store prüfen und das Ergebnis hier notieren.
 - **Running Order nur als Plakat/PDF/Website.** Zeigt, dass digital noch
@@ -28,6 +71,13 @@ Ein Festival passt zu uns, wenn:
 Timing: Onboarding braucht realistisch **zwei Wochen Vorlauf** vor dem
 Festival (Timetable-Import, Codes, Landingpage). Wer knapper dran ist,
 wird auf die nächste Ausgabe gepitcht.
+
+Spannungsfeld, das wir im Blick behalten: Die kleinen
+Underground-Festivals haben die **höchste** Musikerdichte im Publikum –
+und fallen trotzdem raus, weil eine Bühne keinen Timetable-Planer
+braucht. Solange der Planer unser einziger Aufhänger ist, kommen wir da
+nicht rein. Falls wir diese Fests erschließen wollen, bräuchte es ein
+Feature, das ohne Clashes trägt (Gruppen, Treffpunkte, Push).
 
 ## Status
 
@@ -132,9 +182,12 @@ Angaben aus dem Impressum, vor dem Versand bitte einmal gegenprüfen.
 > viel ist, verstehe ich das völlig; dann melde ich mich im Herbst
 > nochmal für 2027, mit ordentlich Vorlauf.
 >
-> Für die Kosten: Für die erste Ausgabe zahlt ihr nichts. Mir geht es
-> darum, dass es auf einem zweiten Festival unter echten Bedingungen
-> läuft.
+> Zum Preis, damit die Frage nicht offen bleibt: **Für euch ist das
+> dauerhaft kostenlos**, auch nächstes Jahr. Wir verdienen unser Geld
+> mit MerchMaster, einem Kassensystem für Bandmerch auf Tour – Festival
+> Buddy ist das Projekt, mit dem wir in der Szene bekannt werden. Mit
+> eurem Merch-Geschäft oder eurer Abrechnung hat das nichts zu tun, und
+> in der App taucht davon auch nichts auf.
 >
 > Anschauen könnt ihr es hier: \<Link\>
 >
