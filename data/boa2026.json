@@ -59,7 +59,8 @@
       "band": "Andersons",
       "start": "20:00",
       "end": "20:45",
-      "confirmed": true
+      "confirmed": true,
+      "spotifyArtistId": "52M1wliRUmkKIYmlT0r1UI"
     },
     {
       "id": "wed-viking-metal-worx",

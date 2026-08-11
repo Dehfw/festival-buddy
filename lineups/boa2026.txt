@@ -52,7 +52,7 @@ day: sat | 2026-08-22
 18:00-18:45 Sloppy Joes
 # Achtung: "Andersons" auf Spotify ist eine slowakische Band – nicht die hier.
 # Beim naechsten "npm run lineup" traegt die Suche sie evtl. wieder ein, dann bitte wieder loeschen.
-20:00-20:45 Andersons
+20:00-20:45 Andersons | spotify=52M1wliRUmkKIYmlT0r1UI
 22:00-22:45 Metal Worx
 
 [thu/viking]
