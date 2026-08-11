@@ -1,7 +1,7 @@
 {
   "festival": "Reload Festival 2026",
   "edition": "13.–15.08.2026 · Sulingen (Warm-up am 12.08.)",
-  "dataVersion": "2026-08-11 (Gerüst: Tage & Bühnen – Running Order noch nicht eingepflegt)",
+  "dataVersion": "2026-08-11 (offizieller Spielplan: 68 Slots, davon 13 Programmpunkte)",
   "days": [
     {
       "id": "wed",
@@ -36,17 +36,636 @@
       "color": "#e63946"
     },
     {
+      "id": "plaza",
+      "name": "Heist Plazastage",
+      "short": "PLAZA",
+      "color": "#f77f00"
+    },
+    {
+      "id": "bob",
+      "name": "Radio BOB Bühne",
+      "short": "BOB",
+      "color": "#84cc16"
+    },
+    {
       "id": "tent",
       "name": "Tentstage",
       "short": "TENT",
       "color": "#2a9d8f"
-    },
-    {
-      "id": "plaza",
-      "name": "Plazastage",
-      "short": "PLAZA",
-      "color": "#f77f00"
     }
   ],
-  "slots": []
+  "slots": [
+    {
+      "id": "wed-bob-hitster-bingo-mit-maschine",
+      "dayId": "wed",
+      "stageId": "bob",
+      "band": "Radio BOB Hitster-Bingo mit Maschine",
+      "start": "15:00",
+      "end": "16:05",
+      "confirmed": true
+    },
+    {
+      "id": "wed-tent-heartless-human-harvest",
+      "dayId": "wed",
+      "stageId": "tent",
+      "band": "Heartless Human Harvest",
+      "start": "18:00",
+      "end": "19:00",
+      "confirmed": true
+    },
+    {
+      "id": "wed-tent-dramatist",
+      "dayId": "wed",
+      "stageId": "tent",
+      "band": "Dramatist",
+      "start": "20:00",
+      "end": "21:00",
+      "confirmed": true
+    },
+    {
+      "id": "wed-tent-morecore-warm-up",
+      "dayId": "wed",
+      "stageId": "tent",
+      "band": "MoreCore Warm-Up",
+      "start": "21:30",
+      "end": "28:00",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-stick-to-your-guns",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Stick To Your Guns",
+      "start": "16:35",
+      "end": "17:15",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-orbit-culture",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Orbit Culture",
+      "start": "18:05",
+      "end": "18:45",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-thy-art-is-murder",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Thy Art Is Murder",
+      "start": "19:35",
+      "end": "20:20",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-lamb-of-god",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Lamb Of God",
+      "start": "21:10",
+      "end": "22:25",
+      "confirmed": true
+    },
+    {
+      "id": "thu-main-arch-enemy",
+      "dayId": "thu",
+      "stageId": "main",
+      "band": "Arch Enemy",
+      "start": "23:30",
+      "end": "25:00",
+      "confirmed": true
+    },
+    {
+      "id": "thu-plaza-wrestlemaniacs",
+      "dayId": "thu",
+      "stageId": "plaza",
+      "band": "Wrestlemaniacs",
+      "start": "12:00",
+      "end": "12:35",
+      "confirmed": true
+    },
+    {
+      "id": "thu-plaza-vulvarine",
+      "dayId": "thu",
+      "stageId": "plaza",
+      "band": "Vulvarine",
+      "start": "12:50",
+      "end": "13:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-plaza-allt",
+      "dayId": "thu",
+      "stageId": "plaza",
+      "band": "Allt",
+      "start": "13:50",
+      "end": "14:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-plaza-self-deception",
+      "dayId": "thu",
+      "stageId": "plaza",
+      "band": "Self Deception",
+      "start": "14:50",
+      "end": "15:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-plaza-zsk",
+      "dayId": "thu",
+      "stageId": "plaza",
+      "band": "ZSK",
+      "start": "15:50",
+      "end": "16:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-plaza-deafheaven",
+      "dayId": "thu",
+      "stageId": "plaza",
+      "band": "Deafheaven",
+      "start": "17:20",
+      "end": "18:00",
+      "confirmed": true
+    },
+    {
+      "id": "thu-plaza-terror",
+      "dayId": "thu",
+      "stageId": "plaza",
+      "band": "Terror",
+      "start": "18:50",
+      "end": "19:30",
+      "confirmed": true
+    },
+    {
+      "id": "thu-plaza-soulfly",
+      "dayId": "thu",
+      "stageId": "plaza",
+      "band": "Soulfly",
+      "start": "20:25",
+      "end": "21:05",
+      "confirmed": true
+    },
+    {
+      "id": "thu-plaza-black-label-society",
+      "dayId": "thu",
+      "stageId": "plaza",
+      "band": "Black Label Society",
+      "start": "22:30",
+      "end": "23:25",
+      "confirmed": true
+    },
+    {
+      "id": "thu-plaza-perturbator",
+      "dayId": "thu",
+      "stageId": "plaza",
+      "band": "Perturbator",
+      "start": "25:05",
+      "end": "25:55",
+      "confirmed": true
+    },
+    {
+      "id": "thu-bob-fit-fuern-pit-mit-sima-und-bero",
+      "dayId": "thu",
+      "stageId": "bob",
+      "band": "Fit für'n Pit mit Sima und Bero",
+      "start": "10:15",
+      "end": "10:45",
+      "confirmed": true
+    },
+    {
+      "id": "thu-bob-wsgmn-podcast",
+      "dayId": "thu",
+      "stageId": "bob",
+      "band": "WSGMN Podcast",
+      "start": "13:30",
+      "end": "14:15",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tent-from-march-to-may",
+      "dayId": "thu",
+      "stageId": "tent",
+      "band": "From March to May",
+      "start": "19:00",
+      "end": "20:00",
+      "confirmed": true
+    },
+    {
+      "id": "thu-tent-dj-thenia-af",
+      "dayId": "thu",
+      "stageId": "tent",
+      "band": "DJ Thenia AF.",
+      "start": "21:30",
+      "end": "28:00",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-signs-of-the-swarm",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Signs Of The Swarm",
+      "start": "11:05",
+      "end": "11:45",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-alien-ant-farm",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Alien Ant Farm",
+      "start": "12:30",
+      "end": "13:10",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-fit-for-an-autopsy",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Fit for an Autopsy",
+      "start": "13:55",
+      "end": "14:35",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-paleface-swiss",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Paleface Swiss",
+      "start": "15:25",
+      "end": "16:05",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-imminence",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Imminence",
+      "start": "16:55",
+      "end": "17:35",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-alestorm",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Alestorm",
+      "start": "18:25",
+      "end": "19:20",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-airbourne",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Airbourne",
+      "start": "20:10",
+      "end": "21:25",
+      "confirmed": true
+    },
+    {
+      "id": "fri-main-judas-priest",
+      "dayId": "fri",
+      "stageId": "main",
+      "band": "Judas Priest",
+      "start": "22:15",
+      "end": "23:45",
+      "confirmed": true
+    },
+    {
+      "id": "fri-plaza-gutalax",
+      "dayId": "fri",
+      "stageId": "plaza",
+      "band": "Gutalax",
+      "start": "09:30",
+      "end": "10:10",
+      "confirmed": true
+    },
+    {
+      "id": "fri-plaza-excrementory-grindfuckers",
+      "dayId": "fri",
+      "stageId": "plaza",
+      "band": "Excrementory Grindfuckers",
+      "start": "10:30",
+      "end": "11:00",
+      "confirmed": true
+    },
+    {
+      "id": "fri-plaza-inhuman-nature",
+      "dayId": "fri",
+      "stageId": "plaza",
+      "band": "Inhuman Nature",
+      "start": "11:50",
+      "end": "12:25",
+      "confirmed": true
+    },
+    {
+      "id": "fri-plaza-cytotoxin",
+      "dayId": "fri",
+      "stageId": "plaza",
+      "band": "Cytotoxin",
+      "start": "13:15",
+      "end": "13:50",
+      "confirmed": true
+    },
+    {
+      "id": "fri-plaza-broken-by-the-scream",
+      "dayId": "fri",
+      "stageId": "plaza",
+      "band": "Broken by the Scream",
+      "start": "14:40",
+      "end": "15:20",
+      "confirmed": true
+    },
+    {
+      "id": "fri-plaza-thundermother",
+      "dayId": "fri",
+      "stageId": "plaza",
+      "band": "Thundermother",
+      "start": "16:10",
+      "end": "16:50",
+      "confirmed": true
+    },
+    {
+      "id": "fri-plaza-dead-by-april",
+      "dayId": "fri",
+      "stageId": "plaza",
+      "band": "Dead By April",
+      "start": "17:40",
+      "end": "18:20",
+      "confirmed": true
+    },
+    {
+      "id": "fri-plaza-kim-dracula",
+      "dayId": "fri",
+      "stageId": "plaza",
+      "band": "Kim Dracula",
+      "start": "19:25",
+      "end": "20:05",
+      "confirmed": true
+    },
+    {
+      "id": "fri-plaza-thrown",
+      "dayId": "fri",
+      "stageId": "plaza",
+      "band": "Thrown",
+      "start": "21:30",
+      "end": "22:10",
+      "confirmed": true
+    },
+    {
+      "id": "fri-plaza-northlane",
+      "dayId": "fri",
+      "stageId": "plaza",
+      "band": "Northlane",
+      "start": "23:55",
+      "end": "24:55",
+      "confirmed": true
+    },
+    {
+      "id": "fri-bob-fit-fuern-pit-mit-sima-und-bero",
+      "dayId": "fri",
+      "stageId": "bob",
+      "band": "Fit für'n Pit mit Sima und Bero",
+      "start": "10:15",
+      "end": "10:45",
+      "confirmed": true
+    },
+    {
+      "id": "fri-bob-radio-bob-harte-saite-live-interview",
+      "dayId": "fri",
+      "stageId": "bob",
+      "band": "Radio BOB Harte Saite Live Interview",
+      "start": "12:30",
+      "end": "13:15",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tent-screaming-workshop-mit-david-dannenberg",
+      "dayId": "fri",
+      "stageId": "tent",
+      "band": "Screaming Workshop mit David Dannenberg",
+      "start": "14:30",
+      "end": "15:30",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tent-muldinger",
+      "dayId": "fri",
+      "stageId": "tent",
+      "band": "Muldinger",
+      "start": "19:00",
+      "end": "20:00",
+      "confirmed": true
+    },
+    {
+      "id": "fri-tent-morecore-hard-floor-special",
+      "dayId": "fri",
+      "stageId": "tent",
+      "band": "MoreCore Hard-Floor-Special",
+      "start": "21:30",
+      "end": "28:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-from-fall-to-spring",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "From Fall to Spring",
+      "start": "11:40",
+      "end": "12:20",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-vended",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Vended",
+      "start": "13:10",
+      "end": "13:50",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-dominum",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Dominum",
+      "start": "14:40",
+      "end": "15:20",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-future-palace",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Future Palace",
+      "start": "16:10",
+      "end": "16:50",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-the-ghost-inside",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "The Ghost Inside",
+      "start": "17:40",
+      "end": "18:25",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-avatar",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Avatar",
+      "start": "19:15",
+      "end": "20:15",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-godsmack",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "Godsmack",
+      "start": "21:05",
+      "end": "22:20",
+      "confirmed": true
+    },
+    {
+      "id": "sat-main-in-flames",
+      "dayId": "sat",
+      "stageId": "main",
+      "band": "In Flames",
+      "start": "23:30",
+      "end": "25:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-plaza-vengaboys",
+      "dayId": "sat",
+      "stageId": "plaza",
+      "band": "Vengaboys",
+      "start": "10:00",
+      "end": "10:40",
+      "confirmed": true
+    },
+    {
+      "id": "sat-plaza-dead-phoenix",
+      "dayId": "sat",
+      "stageId": "plaza",
+      "band": "Dead Phoenix",
+      "start": "11:00",
+      "end": "11:35",
+      "confirmed": true
+    },
+    {
+      "id": "sat-plaza-luna-kills",
+      "dayId": "sat",
+      "stageId": "plaza",
+      "band": "Luna Kills",
+      "start": "12:25",
+      "end": "13:05",
+      "confirmed": true
+    },
+    {
+      "id": "sat-plaza-100-kilo-herz",
+      "dayId": "sat",
+      "stageId": "plaza",
+      "band": "100 Kilo Herz",
+      "start": "13:55",
+      "end": "14:35",
+      "confirmed": true
+    },
+    {
+      "id": "sat-plaza-misery-index",
+      "dayId": "sat",
+      "stageId": "plaza",
+      "band": "Misery Index",
+      "start": "15:25",
+      "end": "16:05",
+      "confirmed": true
+    },
+    {
+      "id": "sat-plaza-gaerea",
+      "dayId": "sat",
+      "stageId": "plaza",
+      "band": "Gaerea",
+      "start": "16:55",
+      "end": "17:35",
+      "confirmed": true
+    },
+    {
+      "id": "sat-plaza-kittie",
+      "dayId": "sat",
+      "stageId": "plaza",
+      "band": "Kittie",
+      "start": "18:35",
+      "end": "19:15",
+      "confirmed": true
+    },
+    {
+      "id": "sat-plaza-agnostic-front",
+      "dayId": "sat",
+      "stageId": "plaza",
+      "band": "Agnostic Front",
+      "start": "20:20",
+      "end": "21:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-plaza-amorphis",
+      "dayId": "sat",
+      "stageId": "plaza",
+      "band": "Amorphis",
+      "start": "22:25",
+      "end": "23:25",
+      "confirmed": true
+    },
+    {
+      "id": "sat-bob-fit-fuern-pit-mit-sima-und-bero",
+      "dayId": "sat",
+      "stageId": "bob",
+      "band": "Fit für'n Pit mit Sima und Bero",
+      "start": "09:30",
+      "end": "10:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-bob-kerngeschaeft-podcast",
+      "dayId": "sat",
+      "stageId": "bob",
+      "band": "Kerngeschäft Podcast",
+      "start": "13:30",
+      "end": "13:55",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tent-kaffeekraenzchen-mit-den-veranstaltern",
+      "dayId": "sat",
+      "stageId": "tent",
+      "band": "Kaffeekränzchen mit den Veranstaltern",
+      "start": "15:30",
+      "end": "16:30",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tent-godzilla-in-the-kitchen",
+      "dayId": "sat",
+      "stageId": "tent",
+      "band": "Godzilla in the Kitchen",
+      "start": "19:00",
+      "end": "20:00",
+      "confirmed": true
+    },
+    {
+      "id": "sat-tent-dj-fuchs-ballroom-hamburg",
+      "dayId": "sat",
+      "stageId": "tent",
+      "band": "DJ Fuchs / Ballroom Hamburg",
+      "start": "21:30",
+      "end": "28:00",
+      "confirmed": true
+    }
+  ]
 }
