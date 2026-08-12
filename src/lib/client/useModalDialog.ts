@@ -31,9 +31,12 @@ function focusablesIn(dialog: HTMLElement): HTMLElement[] {
  * Ausnahme `data-inert-exempt`: System-Overlays wie der Update-Hinweis
  * (<UpdatePrompt />) liegen VISUELL über den Sheets und müssen dort auch
  * tippbar bleiben – inert würde jeden Tap stumm verschlucken, obwohl der
- * Button aktiv aussieht. Die Ausnahme gilt nur für Pointer: Der Focus Trap
- * des Dialogs bleibt unangetastet, per Tastatur erreicht man das Overlay
- * weiterhin erst nach dem Schließen (Escape) des Sheets.
+ * Button aktiv aussieht. So markierte Elemente werden schlicht NICHT inert:
+ * Sie bleiben damit nicht nur klickbar, sondern auch fokussierbar und für
+ * Assistive Tech sichtbar (sofern der Screenreader sie trotz aria-modal
+ * des Dialogs anbietet). Per Tab landet man trotzdem nicht dort, denn der
+ * Focus Trap des Dialogs bleibt unangetastet – Tastatur-Nutzer erreichen
+ * das Overlay wie bisher erst nach dem Schließen (Escape) des Sheets.
  */
 function inertSiblings(el: HTMLElement): () => void {
   const made: HTMLElement[] = [];
