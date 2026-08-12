@@ -251,6 +251,14 @@ const EN: Record<string, string> = {
   '+ Gruppe gründen oder beitreten': '+ Create or join a group',
   'Deine Icon-Farbe': 'Your icon colour',
   'So erscheint dein Avatar bei den anderen': 'How others see your avatar',
+  'Dein Name und deine Icon-Farbe – so erscheinst du bei den anderen':
+    'Your name and icon colour – how others see you',
+  'Namen ändern': 'Change name',
+  'Name geändert': 'Name changed',
+  'Name konnte nicht gespeichert werden – braucht Netz':
+    'The name could not be saved – requires internet access',
+  'Der Name ist nur dein Anzeigename – Login (Passkey bzw. E-Mail) bleibt unverändert. Ein früher angelegter Passkey zeigt beim Login evtl. noch den alten Namen, funktioniert aber weiterhin.':
+    'The name is only your display name – your login (passkey or email) stays the same. A previously created passkey may still show your old name at sign-in, but it keeps working.',
   'Login & Sicherheit': 'Login & security',
   'Passkey bleibt auf dem Gerät': 'Passkey stays on this device',
   Abmelden: 'Sign out',

@@ -66,6 +66,8 @@ interface AppState {
   refreshMe: () => Promise<void>;
   /** Eigene Icon-/Avatar-Farbe ändern; false = fehlgeschlagen (z. B. offline) */
   setUserColor: (color: string) => Promise<boolean>;
+  /** Eigenen Anzeigenamen ändern; false = fehlgeschlagen (z. B. offline) */
+  setUserName: (name: string) => Promise<boolean>;
   /** Nach Erstellen/Beitreten: Gruppe übernehmen und aktiv schalten */
   adoptGroup: (group: GroupSummary) => void;
   setActiveGroup: (groupId: string) => void;
@@ -380,20 +382,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [refreshMe, refresh]
   );
 
-  const setUserColor = useCallback(
-    async (color: string): Promise<boolean> => {
+  /** Eigenes Profil (Name/Farbe) per PATCH /api/me ändern */
+  const patchProfile = useCallback(
+    async (patch: { name?: string; color?: string }): Promise<boolean> => {
       try {
         const res = await fetch('/api/me', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ color }),
+          body: JSON.stringify(patch),
         });
         if (!res.ok) return false;
         const { user: serverUser } = (await res.json()) as { user: User };
         saveUser(serverUser);
         setUser(serverUser);
-        // Frische Daten holen, damit die eigene Farbe auch in der
-        // Mitgliederliste (data.users) der Gruppe aktualisiert wird.
+        // Frische Daten holen, damit Name/Farbe auch in der
+        // Mitgliederliste (data.users) der Gruppe aktualisiert werden.
         await refresh();
         return true;
       } catch {
@@ -401,6 +404,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     },
     [refresh]
+  );
+
+  const setUserColor = useCallback(
+    (color: string) => patchProfile({ color }),
+    [patchProfile]
+  );
+
+  const setUserName = useCallback(
+    (name: string) => patchProfile({ name }),
+    [patchProfile]
   );
 
   const logout = useCallback(() => {
@@ -505,6 +518,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         logout,
         refreshMe,
         setUserColor,
+        setUserName,
         adoptGroup,
         setActiveGroup,
         setSelection,

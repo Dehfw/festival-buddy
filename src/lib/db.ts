@@ -1091,14 +1091,19 @@ export async function getUserById(id: string): Promise<User | null> {
 }
 
 /**
- * Icon-/Avatar-Farbe eines Nutzers ändern. Bumpt die Revision, damit die
- * neue Farbe bei den Mitgliedern (deren Avatare) beim nächsten Poll ankommt.
- * Gibt null zurück, wenn es den Nutzer nicht (mehr) gibt.
+ * Anzeigename und/oder Icon-Farbe eines Nutzers ändern. Bumpt die Revision,
+ * damit die Änderung bei den Mitgliedern (Avatare, Mitgliederliste) beim
+ * nächsten Poll ankommt. Gibt null zurück, wenn es den Nutzer nicht (mehr)
+ * gibt.
  */
-export async function updateUserColor(id: string, color: string): Promise<User | null> {
+export async function updateUserProfile(
+  id: string,
+  fields: { name?: string; color?: string }
+): Promise<User | null> {
   const res = await query<UserRow>(
-    'UPDATE users SET color = $2 WHERE id = $1 RETURNING id, name, color, created_at',
-    [id, color]
+    `UPDATE users SET name = COALESCE($2, name), color = COALESCE($3, color)
+      WHERE id = $1 RETURNING id, name, color, created_at`,
+    [id, fields.name ?? null, fields.color ?? null]
   );
   if (!res.rows[0]) return null;
   await bumpRev();

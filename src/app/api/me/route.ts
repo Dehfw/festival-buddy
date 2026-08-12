@@ -5,7 +5,7 @@ import {
   getGroupsForUser,
   getPasswordEmailForUser,
   getUserById,
-  updateUserColor,
+  updateUserProfile,
 } from '@/lib/db';
 import { USER_COLORS } from '@/lib/ids';
 
@@ -38,9 +38,12 @@ export async function GET(req: Request) {
 }
 
 /**
- * Eigenes Profil ändern – aktuell nur die Icon-/Avatar-Farbe. Die Farbe muss
- * aus der vorgegebenen Palette (USER_COLORS) stammen; freie Hex-Werte werden
- * abgelehnt, damit die Avatare überall gut lesbar bleiben.
+ * Eigenes Profil ändern – Anzeigename und/oder Icon-/Avatar-Farbe. Die Farbe
+ * muss aus der vorgegebenen Palette (USER_COLORS) stammen; freie Hex-Werte
+ * werden abgelehnt, damit die Avatare überall gut lesbar bleiben. Für den
+ * Namen gelten dieselben Regeln wie bei der Registrierung (2–30 Zeichen);
+ * er ist nur Anzeigename und hängt an keinem Login-Verfahren, darf sich
+ * also frei ändern.
  */
 export async function PATCH(req: Request) {
   const userId = readSessionUserId(req);
@@ -48,11 +51,31 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
   const body = await req.json().catch(() => null);
-  const color = typeof body?.color === 'string' ? body.color : '';
-  if (!(USER_COLORS as readonly string[]).includes(color)) {
+  const color =
+    body?.color === undefined
+      ? undefined
+      : typeof body.color === 'string'
+        ? body.color
+        : '';
+  const name =
+    body?.name === undefined
+      ? undefined
+      : typeof body.name === 'string'
+        ? body.name.trim()
+        : '';
+  if (color === undefined && name === undefined) {
+    return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 });
+  }
+  if (color !== undefined && !(USER_COLORS as readonly string[]).includes(color)) {
     return NextResponse.json({ error: 'Unbekannte Farbe' }, { status: 400 });
   }
-  const user = await updateUserColor(userId, color);
+  if (name !== undefined && (name.length < 2 || name.length > 30)) {
+    return NextResponse.json(
+      { error: 'Name muss 2–30 Zeichen lang sein' },
+      { status: 400 }
+    );
+  }
+  const user = await updateUserProfile(userId, { name, color });
   if (!user) {
     return NextResponse.json({ error: 'Nutzer existiert nicht mehr' }, { status: 401 });
   }

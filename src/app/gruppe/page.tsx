@@ -19,7 +19,7 @@ import { formatInviteCode, isGroupAdmin } from '@/lib/types';
  * und Gruppen-Chip im Header. Zwei Tabs (?tab=konto als Deep-Link):
  *   Gruppe – aktive Gruppe (Einladen, Mitglieder, Admin-Einstellungen,
  *            Verlassen) und "Meine Gruppen" (wechseln, gründen/beitreten)
- *   Konto  – Icon-Farbe, Login & Sicherheit, Push-Mitteilungen, Abmelden
+ *   Konto  – Name & Icon-Farbe, Login & Sicherheit, Push-Mitteilungen, Abmelden
  */
 function GroupPageInner() {
   const { locale } = useLanguage();
@@ -33,12 +33,14 @@ function GroupPageInner() {
     refresh,
     refreshMe,
     setUserColor,
+    setUserName,
     logout,
   } = useApp();
   const router = useRouter();
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
   const [editName, setEditName] = useState<string | null>(null);
+  const [editUserName, setEditUserName] = useState<string | null>(null);
   const [showGroupGate, setShowGroupGate] = useState(false);
   // Zwei Bereiche als Tabs, damit die Konto-Einstellungen (Icon-Farbe,
   // Mitteilungen, Abmelden) nicht unsichtbar unter den Gruppen versinken.
@@ -257,6 +259,26 @@ function GroupPageInner() {
     }
   };
 
+  const saveUserName = async () => {
+    const name = editUserName?.trim() ?? '';
+    if (busy || name.length < 2) return;
+    if (name === user.name) {
+      setEditUserName(null);
+      return;
+    }
+    setBusy(true);
+    try {
+      if (await setUserName(name)) {
+        setEditUserName(null);
+        flash('Name geändert');
+      } else {
+        flash('Name konnte nicht gespeichert werden – braucht Netz');
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <main className="mx-auto max-w-lg px-4 pb-16 pt-[max(0.75rem,env(safe-area-inset-top))]">
       <div className="flex items-center justify-between">
@@ -362,7 +384,7 @@ function GroupPageInner() {
                     disabled={busy || (editName?.trim().length ?? 0) < 2}
                     className="shrink-0 rounded-lg bg-blood px-3 text-sm font-bold text-black disabled:opacity-40"
                   >
-                    ✓
+                    Speichern
                   </button>
                 </div>
               )}
@@ -610,7 +632,7 @@ function GroupPageInner() {
 
       {tab === 'konto' && (
         <>
-          {/* ---------- 3) Konto: Icon-Farbe, Mitteilungen, Abmelden ---------- */}
+          {/* ---------- 3) Konto: Name & Icon-Farbe, Mitteilungen, Abmelden ---------- */}
           <div className="mt-4 flex items-center justify-between rounded-xl border border-rivet bg-steel px-3.5 py-3">
             <div>
               <div className="text-sm font-bold text-bone">Sprache</div>
@@ -619,18 +641,73 @@ function GroupPageInner() {
             <LanguageSwitch placement="profile" />
           </div>
 
-          {/* Eigene Icon-Farbe */}
+          {/* Eigenes Profil: Anzeigename + Icon-Farbe */}
           <div className="mb-3 mt-3 rounded-xl border border-rivet bg-steel p-3.5">
             <div className="flex items-center gap-2.5">
               <Avatar user={user} size={40} ring />
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-bold text-bone">Deine Icon-Farbe</div>
-                <div className="text-[11px] text-ash">
-                  So erscheint dein Avatar bei den anderen
-                </div>
+                {editUserName === null ? (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <div className="truncate text-sm font-bold text-bone">
+                        {user.name}
+                      </div>
+                      <button
+                        onClick={() => setEditUserName(user.name)}
+                        disabled={busy}
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-rivet bg-steel-2 text-sm text-ash transition-colors hover:border-blood hover:bg-rivet hover:text-bone active:scale-95 disabled:opacity-40"
+                        title="Namen ändern"
+                        aria-label="Namen ändern"
+                      >
+                        ✏️
+                      </button>
+                    </div>
+                    <div className="text-[11px] text-ash">
+                      Dein Name und deine Icon-Farbe – so erscheinst du bei den
+                      anderen
+                    </div>
+                  </>
+                ) : (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={editUserName}
+                    maxLength={30}
+                    onChange={(e) => setEditUserName(e.target.value)}
+                    className="w-full rounded-lg border border-rivet bg-steel-2 px-2 py-1.5 text-base text-bone outline-none focus:border-blood"
+                  />
+                )}
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-10 gap-2">
+            {editUserName !== null && (
+              <>
+                <div className="mt-2.5 flex gap-2">
+                  <button
+                    onClick={() => setEditUserName(null)}
+                    disabled={busy}
+                    className="flex-1 rounded-lg border border-rivet px-3.5 py-2.5 text-sm font-bold text-bone active:scale-[0.97] disabled:opacity-40"
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    onClick={saveUserName}
+                    disabled={busy || (editUserName?.trim().length ?? 0) < 2}
+                    className="flex-1 rounded-lg bg-blood px-3.5 py-2.5 text-sm font-bold text-black active:scale-[0.97] disabled:opacity-40"
+                  >
+                    Speichern
+                  </button>
+                </div>
+                <p className="mt-2 text-[11px] leading-relaxed text-ash/70">
+                  Der Name ist nur dein Anzeigename – Login (Passkey bzw. E-Mail)
+                  bleibt unverändert. Ein früher angelegter Passkey zeigt beim
+                  Login evtl. noch den alten Namen, funktioniert aber weiterhin.
+                </p>
+              </>
+            )}
+            <div className="mt-3.5 text-xs font-semibold uppercase tracking-wider text-ash">
+              Deine Icon-Farbe
+            </div>
+            <div className="mt-2 grid grid-cols-10 gap-2">
               {USER_COLORS.map((c) => {
                 const active = c === user.color;
                 return (
