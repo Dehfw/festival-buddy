@@ -74,7 +74,7 @@ export async function POST(req: Request) {
   }
   if (!user) {
     return NextResponse.json(
-      { error: 'Name ist inzwischen vergeben – bitte nochmal versuchen' },
+      { error: 'Registrierung fehlgeschlagen – bitte nochmal versuchen' },
       { status: 409 }
     );
   }

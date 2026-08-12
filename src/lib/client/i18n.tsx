@@ -629,8 +629,8 @@ const EN: Record<string, string> = {
   'Nutzer existiert nicht mehr': 'The user no longer exists',
   'Registrierung abgelaufen – bitte nochmal versuchen':
     'Registration expired – please try again',
-  'Name ist inzwischen vergeben – bitte nochmal versuchen':
-    'That name has been taken – please try again',
+  'Registrierung fehlgeschlagen – bitte nochmal versuchen':
+    'Registration failed – please try again',
   'Unbekanntes Festival': 'Unknown festival',
   'Das Festival ist schon vorbei – dafür lässt sich keine Gruppe mehr gründen':
     'This festival is already over – a new group can no longer be created for it',

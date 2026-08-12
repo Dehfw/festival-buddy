@@ -1,5 +1,5 @@
-// Nutzer-IDs sind seit dem Passkey-Login zufällig (bzw. geerbt aus der
-// Nur-Name-Ära); hier lebt nur noch die deterministische Farbwahl.
+// Nutzer-IDs sind seit dem Passkey-Login zufällig; hier lebt nur noch
+// die deterministische Farbwahl.
 
 export function hashString(s: string): number {
   let h = 5381;
