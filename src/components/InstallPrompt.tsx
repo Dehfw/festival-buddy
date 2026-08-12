@@ -90,7 +90,17 @@ export function InstallPrompt() {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 mx-auto max-w-lg">
+    // data-inert-exempt: schwebt über offenen Sheets (BandSheet,
+    // Mitteilungen – gleiche z-Ebene, aber später im DOM) und muss dort
+    // tippbar bleiben statt von useModalDialog inert geschaltet zu werden.
+    // Bewusst KEIN z-[60] wie beim UpdatePrompt: Beim GroupGate-Overlay
+    // (liegt im DOM hinter der AppShell) ist der Coaster über den inerten
+    // Vorfahren ohnehin deaktiviert und soll dann auch hinter dessen
+    // Backdrop verschwinden statt tot darüber zu schweben.
+    <div
+      data-inert-exempt
+      className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 mx-auto max-w-lg"
+    >
       <div className="rounded-2xl border border-blood/40 bg-steel p-4 shadow-2xl shadow-black/60">
         <div className="flex items-start gap-3">
           <span className="text-2xl leading-none">🤘</span>
