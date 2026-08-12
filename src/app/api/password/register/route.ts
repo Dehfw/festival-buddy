@@ -7,7 +7,7 @@ import {
   SESSION_MAX_AGE_S,
   setAuthCookie,
 } from '@/lib/auth';
-import { createUserWithPassword, findAdoptableUser } from '@/lib/db';
+import { createUserWithPassword } from '@/lib/db';
 import { notifyUserRegistered } from '@/lib/discord';
 import { colorForName } from '@/lib/ids';
 import {
@@ -22,8 +22,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * Konto mit E-Mail+Passwort anlegen: { name, email, password } -> Nutzer
- * entsteht (oder Legacy-Übernahme per Name, gleiche Regel wie beim
- * Passkey-Register) und die Session wird direkt gesetzt. Die E-Mail wird
+ * entsteht und die Session wird direkt gesetzt. Die E-Mail wird
  * bewusst NICHT verifiziert – sie ist nur Login-Name und Empfänger der
  * "Passwort vergessen"-Mail.
  */
@@ -57,11 +56,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // Alt-Account aus der Nur-Name-Ära übernehmen, sonst frische Zufalls-ID
-  // (siehe webauthn/register/options – hier gilt dieselbe Abwägung).
-  const adopt =
-    process.env.LEGACY_NAME_ADOPTION === 'off' ? null : await findAdoptableUser(name);
-  const userId = adopt?.id ?? `u-${randomUUID()}`;
+  const userId = `u-${randomUUID()}`;
 
   const user = await createUserWithPassword(
     { id: userId, name, color: colorForName(name) },

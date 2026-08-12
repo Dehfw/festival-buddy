@@ -1111,28 +1111,9 @@ export async function updateUserProfile(
 }
 
 /**
- * Bestandsnutzer ohne Login-Verfahren mit diesem Namen (case-insensitiv)
- * – darf bei der Registrierung übernommen werden, damit Alt-Accounts aus
- * der Nur-Name-Ära ihre Auswahlen behalten. Sobald ein Passkey ODER ein
- * Passwort dran hängt, ist der Account nicht mehr übernehmbar.
- */
-export async function findAdoptableUser(name: string): Promise<User | null> {
-  const res = await query<UserRow>(
-    `SELECT u.id, u.name, u.color, u.created_at FROM users u
-      WHERE lower(u.name) = lower($1)
-        AND NOT EXISTS (SELECT 1 FROM webauthn_credentials c WHERE c.user_id = u.id)
-        AND NOT EXISTS (SELECT 1 FROM password_credentials pc WHERE pc.user_id = u.id)
-      ORDER BY u.created_at LIMIT 1`,
-    [name]
-  );
-  return res.rows[0] ? toUser(res.rows[0]) : null;
-}
-
-/**
- * Registrierung abschließen: Nutzer anlegen (oder namensgleichen
- * Alt-Account ohne Passkey übernehmen) und das Credential daran binden.
- * Gibt null zurück, wenn die ID inzwischen anderweitig belegt ist –
- * das schützt vor manipulierten Challenge-Cookies.
+ * Registrierung abschließen: Nutzer anlegen und das Credential daran
+ * binden. Gibt null zurück, wenn die ID inzwischen anderweitig belegt
+ * ist – das schützt vor manipulierten Challenge-Cookies.
  */
 export async function createUserWithCredential(
   user: { id: string; name: string; color: string },
@@ -1147,19 +1128,8 @@ export async function createUserWithCredential(
       [user.id, user.name, user.color]
     );
     if (inserted.rowCount === 0) {
-      // ID existiert schon: nur als Legacy-Übernahme okay (gleicher Name,
-      // noch kein Passkey/Passwort) – sonst abbrechen.
-      const adoptable = await client.query(
-        `SELECT 1 FROM users u
-          WHERE u.id = $1 AND lower(u.name) = lower($2)
-            AND NOT EXISTS (SELECT 1 FROM webauthn_credentials c WHERE c.user_id = u.id)
-            AND NOT EXISTS (SELECT 1 FROM password_credentials pc WHERE pc.user_id = u.id)`,
-        [user.id, user.name]
-      );
-      if ((adoptable.rowCount ?? 0) === 0) {
-        await client.query('ROLLBACK');
-        return null;
-      }
+      await client.query('ROLLBACK');
+      return null;
     }
     await client.query(
       `INSERT INTO webauthn_credentials (id, user_id, public_key, counter, transports)
@@ -1336,9 +1306,8 @@ export async function getUserByEmail(
 }
 
 /**
- * Registrierung per E-Mail+Passwort: Nutzer anlegen (oder namensgleichen
- * Alt-Account ohne Login-Verfahren übernehmen – dieselbe Legacy-Regel wie
- * beim Passkey) und das Passwort-Credential daran binden.
+ * Registrierung per E-Mail+Passwort: Nutzer anlegen und das
+ * Passwort-Credential daran binden.
  * 'email-taken' = Adresse hat schon ein Konto; null = ID-Kollision.
  */
 export async function createUserWithPassword(
@@ -1355,19 +1324,8 @@ export async function createUserWithPassword(
       [user.id, user.name, user.color]
     );
     if (inserted.rowCount === 0) {
-      // ID existiert schon: nur als Legacy-Übernahme okay (gleicher Name,
-      // noch kein Passkey/Passwort) – sonst abbrechen.
-      const adoptable = await client.query(
-        `SELECT 1 FROM users u
-          WHERE u.id = $1 AND lower(u.name) = lower($2)
-            AND NOT EXISTS (SELECT 1 FROM webauthn_credentials c WHERE c.user_id = u.id)
-            AND NOT EXISTS (SELECT 1 FROM password_credentials pc WHERE pc.user_id = u.id)`,
-        [user.id, user.name]
-      );
-      if ((adoptable.rowCount ?? 0) === 0) {
-        await client.query('ROLLBACK');
-        return null;
-      }
+      await client.query('ROLLBACK');
+      return null;
     }
     try {
       await client.query(
