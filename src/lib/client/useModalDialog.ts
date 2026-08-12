@@ -27,6 +27,13 @@ function focusablesIn(dialog: HTMLElement): HTMLElement[] {
  * werden auf jeder Ebene bis zum <body> alle Geschwister deaktiviert.
  * Gibt eine Funktion zurück, die genau die selbst gesetzten inert-Attribute
  * wieder entfernt (bereits inerte Elemente bleiben unberührt).
+ *
+ * Ausnahme `data-inert-exempt`: System-Overlays wie der Update-Hinweis
+ * (<UpdatePrompt />) liegen VISUELL über den Sheets und müssen dort auch
+ * tippbar bleiben – inert würde jeden Tap stumm verschlucken, obwohl der
+ * Button aktiv aussieht. Die Ausnahme gilt nur für Pointer: Der Focus Trap
+ * des Dialogs bleibt unangetastet, per Tastatur erreicht man das Overlay
+ * weiterhin erst nach dem Schließen (Escape) des Sheets.
  */
 function inertSiblings(el: HTMLElement): () => void {
   const made: HTMLElement[] = [];
@@ -38,6 +45,7 @@ function inertSiblings(el: HTMLElement): () => void {
     for (const sib of Array.from(node.parentElement.children)) {
       if (sib === node || !(sib instanceof HTMLElement)) continue;
       if (sib.hasAttribute('inert')) continue;
+      if (sib.hasAttribute('data-inert-exempt')) continue;
       sib.setAttribute('inert', '');
       made.push(sib);
     }

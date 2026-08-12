@@ -83,7 +83,14 @@ export function UpdatePrompt() {
   };
 
   return (
-    <div className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 mx-auto max-w-lg">
+    // data-inert-exempt + z-[60]: Der Hinweis schwebt auch über offenen
+    // Sheets (z. B. BandSheet, z-50) und muss dort tippbar bleiben – ohne
+    // die Ausnahme schaltet useModalDialog ihn mit dem restlichen
+    // Hintergrund inert und "Neu laden" verschluckt jeden Tap.
+    <div
+      data-inert-exempt
+      className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-[60] mx-auto max-w-lg"
+    >
       <div className="rounded-2xl border border-blood/40 bg-steel p-4 shadow-2xl shadow-black/60">
         <div className="flex items-start gap-3">
           <span className="text-2xl leading-none">⚡</span>
