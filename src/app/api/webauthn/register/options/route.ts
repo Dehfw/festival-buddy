@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { generateRegistrationOptions } from '@simplewebauthn/server';
 import { randomUUID } from 'crypto';
-import { findAdoptableUser } from '@/lib/db';
 import {
   CHALLENGE_MAX_AGE_S,
   getRpConfig,
@@ -27,18 +26,11 @@ export async function POST(req: Request) {
     );
   }
 
-  // Alt-Account aus der Nur-Name-Ära übernehmen, sonst frische Zufalls-ID.
-  // Namen sind seit der Mandantenfähigkeit NICHT mehr global eindeutig –
-  // fremde Gruppen sollen sich nicht gegenseitig die Vornamen blockieren.
-  // Doppelte Namen in einer Gruppe unterscheidet die Avatar-Farbe.
-  //
-  // ACHTUNG: Sobald die App öffentlich für fremde Gruppen läuft, ist die
-  // Übernahme per Name ein Einfallstor in die Bestands-Gruppe (Alt-Account
-  // ohne Passkey = per Namen kaperbar). Wenn die ganze Crew ihren Passkey
-  // hat: LEGACY_NAME_ADOPTION=off setzen.
-  const adopt =
-    process.env.LEGACY_NAME_ADOPTION === 'off' ? null : await findAdoptableUser(name);
-  const userId = adopt?.id ?? `u-${randomUUID()}`;
+  // Frische Zufalls-ID. Namen sind seit der Mandantenfähigkeit NICHT mehr
+  // global eindeutig – fremde Gruppen sollen sich nicht gegenseitig die
+  // Vornamen blockieren. Doppelte Namen in einer Gruppe unterscheidet die
+  // Avatar-Farbe.
+  const userId = `u-${randomUUID()}`;
 
   const rp = getRpConfig(req);
   const options = await generateRegistrationOptions({

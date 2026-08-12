@@ -64,8 +64,8 @@ Passkey-Support, fremde Geräte oder als Fallback bei Geräteverlust.
   pro Nutzer; `email` UNIQUE, immer lowercase). Passwörter werden mit
   **scrypt** aus `node:crypto` gehasht (`src/lib/password.ts`, Format
   `scrypt$N$r$p$salt$hash` – Kostenparameter stecken im Wert).
-- **Routen** (`src/app/api/password/`): `register` (Konto anlegen, mit
-  derselben Legacy-Adoption wie beim Passkey), `login` (neutrale
+- **Routen** (`src/app/api/password/`): `register` (Konto anlegen),
+  `login` (neutrale
   Fehlermeldung + Dummy-scrypt-Lauf bei unbekannter Adresse, damit
   weder Antwort noch Timing verraten, ob ein Konto existiert),
   `forgot`, `reset`, `set` (eingeloggt: Credential anlegen/ändern;
@@ -112,17 +112,6 @@ entfernen – unter *Gruppe → Konto → „Login & Sicherheit“*:
   ein weiterer Passkey bleibt; das Passwort nur, wenn mindestens ein
   Passkey existiert. Die UI blendet die Entfernen-Aktion in diesen
   Fällen aus („einziger Login-Weg“), der Server antwortet sonst 409.
-
-## Alt-Account-Übernahme (Legacy-Adoption)
-
-Aus der Nur-Name-Ära können noch Accounts **ohne Login-Verfahren**
-existieren. Registriert sich jemand mit exakt diesem Namen
-(case-insensitiv) – egal ob per Passkey oder per E-Mail+Passwort –,
-übernimmt er den Alt-Account samt Teilnahmen (`findAdoptableUser` in
-`src/lib/db.ts`). Sobald ein Passkey oder ein Passwort am Account
-hängt, ist er nicht mehr übernehmbar. Das ist ein bewusstes
-Migrations-Einfallstor – per `LEGACY_NAME_ADOPTION=off` abschalten,
-sobald die ganze Crew ihren Passkey hat.
 
 ## Logout
 

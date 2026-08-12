@@ -49,12 +49,9 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
   Gruppen.
 - **Passkey-Login mit Autodiscovery** – kein Passwort: einmal registrieren,
   danach schlägt iPhone/Android den Passkey am Namensfeld automatisch vor
-  (`@simplewebauthn`, discoverable Credentials). Alt-Accounts aus der
-  Nur-Name-Ära werden bei der ersten Passkey-Registrierung mit gleichem
-  Namen übernommen (Auswahlen bleiben erhalten; abschaltbar über
-  `LEGACY_NAME_ADOPTION=off`, empfohlen sobald alle migriert sind).
-  Passkeys syncen über iCloud-Schlüsselbund bzw. Google Passwortmanager;
-  für ein fremdes Gerät gibt es beim Login den QR-Code-Flow.
+  (`@simplewebauthn`, discoverable Credentials). Passkeys syncen über
+  iCloud-Schlüsselbund bzw. Google Passwortmanager; für ein fremdes Gerät
+  gibt es beim Login den QR-Code-Flow.
 - **Timetable-Grid** – alle 8 Bühnen nebeneinander (X-Achse), Zeit auf der
   Y-Achse, Tabs für die vier Festivaltage. In den Band-Slots zeigen bunte
   Kreise mit Initialen, wer hingeht. Band antippen → eintragen.
@@ -113,10 +110,6 @@ Damit Service Worker **und Passkeys** laufen, muss die App über **HTTPS**
 | `WEBAUTHN_ORIGIN` | Erwartete Origin (`https://…`). Default: Request-Origin.  |
 | `DEFAULT_GROUP_NAME` | Name der Migrations-Gruppe für Bestandsnutzer          |
 |                   | (Default: `DEFEKT`). Greift nur beim allerersten Anlegen. |
-| `LEGACY_NAME_ADOPTION` | `off` = Alt-Accounts ohne Passkey können nicht mehr  |
-|                   | per Namensgleichheit übernommen werden. Empfohlen, sobald |
-|                   | die ganze Crew ihren Passkey hat (sonst könnte sich ein   |
-|                   | Fremder per Namen in die Bestands-Gruppe setzen).         |
 
 Achtung: Passkeys sind an die Domain (RP ID) gebunden. Zieht die App auf
 eine andere Domain um, sind bestehende Passkeys dort nicht mehr nutzbar.

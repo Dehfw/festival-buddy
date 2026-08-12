@@ -10,7 +10,7 @@ ursprüngliche Entwurf des Gruppen-Features in
 | Seite | Inhalt |
 | --- | --- |
 | [Architektur & Datenmodell](architektur.md) | Überblick, Mandanten-Modell (Gruppe → Festival), Tabellen, Schema-Migration, Revisionszähler |
-| [Login: Passkeys & E-Mail/Passwort](auth-passkeys.md) | WebAuthn-Registrierung/-Login, E-Mail+Passwort inkl. Reset per SendGrid, Session-Cookies, Alt-Account-Übernahme |
+| [Login: Passkeys & E-Mail/Passwort](auth-passkeys.md) | WebAuthn-Registrierung/-Login, E-Mail+Passwort inkl. Reset per SendGrid, Session-Cookies |
 | [Gruppen](gruppen.md) | Rollen, Einladungscodes, Beitritt, Verlassen (Owner-Nachrücken), Mitglieder entfernen – und was dabei mit den Teilnahmen passiert |
 | [Teilnahmen & Positionen](teilnahmen-positionen.md) | Band-Zusagen (`going`/`interested`), ✕-Marker auf dem Blueprint, Feuerrahmen 🔥 |
 | [Sync & Offline](sync-offline.md) | Polling, optimistische Updates, Offline-Warteschlange, PWA/Service Worker |
