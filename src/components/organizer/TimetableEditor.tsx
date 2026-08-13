@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import {
   ConfirmDialog,
   type ConfirmRequest,
-} from '@/components/organizer/ConfirmDialog';
+} from '@/components/ConfirmDialog';
 import {
   formatTime,
   isValidTime,

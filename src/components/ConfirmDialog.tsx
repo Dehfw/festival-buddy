@@ -4,20 +4,21 @@ import { useId, useRef } from 'react';
 import { useModalDialog } from '@/lib/client/useModalDialog';
 
 /**
- * In-App-Bestätigungsdialog für den Veranstalter-Bereich (Löschen,
- * Verschieben mit Push, Mitteilung an alle senden).
+ * In-App-Bestätigungsdialog für alle destruktiven bzw. weitreichenden
+ * Aktionen (Löschen, Mitteilung an alle, Gruppe verlassen, Abmelden, …).
  *
  * Bewusst KEIN window.confirm(): Installierte PWAs (Standalone-Modus,
  * v. a. iOS-Homescreen) unterdrücken native Dialoge teils stumm –
  * confirm() liefert dann sofort false und der Tap auf den auslösenden
  * Button bewirkt scheinbar gar nichts. Desktop-Browser schalten confirm()
  * außerdem dauerhaft ab, sobald jemand einmal „weitere Dialoge
- * verhindern“ angehakt hat. Deshalb bestätigt der Veranstalter-Bereich
- * grundsätzlich über dieses Overlay.
+ * verhindern“ angehakt hat. Deshalb bestätigt die App grundsätzlich über
+ * dieses Overlay.
  */
 export interface ConfirmRequest {
   title: string;
-  message: string;
+  /** Folge der Aktion; entfällt, wenn der Titel schon alles sagt */
+  message?: string;
   /** Besucher-Einträge, die mit gelöscht würden – > 0 gibt eine deutliche Warnung */
   affectedSelections?: number;
   /** Hinweis ohne Lösch-Drama (z. B. "X Eingetragene bekommen einen Push") */
@@ -59,7 +60,7 @@ export function ConfirmDialog({
         <h3 id={titleId} className="font-metal text-lg font-black uppercase">
           {req.title}
         </h3>
-        <p className="mt-2 text-sm text-ash">{req.message}</p>
+        {req.message && <p className="mt-2 text-sm text-ash">{req.message}</p>}
         {affected > 0 && (
           <p className="mt-3 rounded-xl border border-blood/60 bg-blood/10 px-3 py-2 text-sm font-bold text-blood">
             ⚠️ Daran hängen bereits {affected}{' '}

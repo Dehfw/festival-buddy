@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   ConfirmDialog,
   type ConfirmRequest,
-} from '@/components/organizer/ConfirmDialog';
+} from '@/components/ConfirmDialog';
 import { formatAgo, type AnnouncementWithAuthor } from '@/lib/types';
 
 /** Muss zu PUSH_TITLE_MAX/PUSH_BODY_MAX in src/lib/push.ts passen. */

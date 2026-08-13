@@ -237,15 +237,23 @@ const EN: Record<string, string> = {
   'Gruppe umbenennen': 'Rename group',
   'Code neu würfeln': 'Generate new code',
   'Gruppe verlassen': 'Leave group',
-  'Gruppe wirklich verlassen?': 'Really leave the group?',
-  'Abmelden? Dein Passkey bleibt auf dem Gerät.':
-    'Sign out? Your passkey will remain on this device.',
-  'Neuen Code würfeln? Der alte Link/Code wird sofort ungültig.':
-    'Generate a new code? The old link and code will stop working immediately.',
-  'Du bist das letzte Mitglied – die Gruppe wird dabei gelöscht. Sicher?':
-    'You are the last member – leaving will delete the group. Are you sure?',
-  'Gruppe verlassen? Der dienstälteste Admin (sonst das dienstälteste Mitglied) wird neuer Owner.':
-    'Leave the group? The longest-serving admin (or member) will become the new owner.',
+  'Gruppe verlassen?': 'Leave the group?',
+  Verlassen: 'Leave',
+  'Abmelden?': 'Sign out?',
+  'Dein Passkey bleibt auf dem Gerät.': 'Your passkey will remain on this device.',
+  'Neuen Code würfeln?': 'Generate a new code?',
+  'Der alte Link/Code wird sofort ungültig.':
+    'The old link and code will stop working immediately.',
+  'Neu würfeln': 'Generate',
+  'Du bist das letzte Mitglied – die Gruppe wird dabei gelöscht.':
+    'You are the last member – leaving will delete the group.',
+  'Der dienstälteste Admin (sonst das dienstälteste Mitglied) wird neuer Owner.':
+    'The longest-serving admin (or member) will become the new owner.',
+  'Mitglied entfernen?': 'Remove member?',
+  'Zum Admin machen?': 'Make an admin?',
+  'Admin-Rechte entziehen?': 'Remove admin rights?',
+  Ernennen: 'Appoint',
+  Entziehen: 'Remove',
   'Meine Gruppen': 'My groups',
   wechseln: 'switch',
   '+ Gruppe gründen oder beitreten': '+ Create or join a group',
@@ -308,8 +316,10 @@ const EN: Record<string, string> = {
   'Passkey entfernt': 'Passkey removed',
   '+ Passkey hinzufügen': '+ Add passkey',
   'Passwort-Login entfernt': 'Password login removed',
-  'Login mit E-Mail & Passwort wirklich entfernen? Du kommst dann nur noch per Passkey rein.':
-    'Really remove email and password login? You will only be able to sign in with a passkey.',
+  'Passkey entfernen?': 'Remove passkey?',
+  'Passwort-Login entfernen?': 'Remove password login?',
+  'Du kommst dann nur noch per Passkey rein.':
+    'You will then only be able to sign in with a passkey.',
   'Unbekannter Fehler': 'Unknown error',
   'Die Passwörter stimmen nicht überein': 'The passwords do not match',
 
@@ -875,15 +885,6 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       document.head.querySelector(selector)?.setAttribute('content', metadata.description);
     }
   }, [locale, pathname]);
-
-  useEffect(() => {
-    const nativeConfirm = window.confirm.bind(window);
-    window.confirm = (message?: string) =>
-      nativeConfirm(locale === 'en' && message ? translated(message) : message);
-    return () => {
-      window.confirm = nativeConfirm;
-    };
-  }, [locale]);
 
   const value = useMemo(
     () => ({ locale, setLocale, t: (text: string) => (locale === 'en' ? translated(text) : text) }),

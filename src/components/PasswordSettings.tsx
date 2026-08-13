@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { ConfirmDialog, type ConfirmRequest } from '@/components/ConfirmDialog';
 import {
   removePassword,
   setPassword as apiSetPassword,
@@ -39,6 +40,8 @@ export function PasswordSettings() {
   const [flash, setFlash] = useState<string | null>(null);
   // Erst nach dem Mount prüfen – kein window beim Server-Render
   const [waSupported, setWaSupported] = useState(false);
+  // In-App-Bestätigung statt window.confirm – siehe ConfirmDialog.tsx
+  const [confirmReq, setConfirmReq] = useState<ConfirmRequest | null>(null);
 
   useEffect(() => {
     setWaSupported(browserSupportsWebAuthn());
@@ -100,14 +103,21 @@ export function PasswordSettings() {
     }, 'Passkey angelegt');
 
   const onDeletePasskey = (id: string, label: string) => {
-    if (!confirm(`${label} wirklich entfernen? Damit kannst du dich dann nicht mehr einloggen.`)) return;
-    void run(() => deletePasskey(id), 'Passkey entfernt');
+    setConfirmReq({
+      title: 'Passkey entfernen?',
+      message: `${label} wirklich entfernen? Damit kannst du dich dann nicht mehr einloggen.`,
+      confirmLabel: 'Entfernen',
+      onConfirm: () => void run(() => deletePasskey(id), 'Passkey entfernt'),
+    });
   };
 
   const onRemovePassword = () => {
-    if (!confirm('Login mit E-Mail & Passwort wirklich entfernen? Du kommst dann nur noch per Passkey rein.'))
-      return;
-    void run(() => removePassword(), 'Passwort-Login entfernt');
+    setConfirmReq({
+      title: 'Passwort-Login entfernen?',
+      message: 'Du kommst dann nur noch per Passkey rein.',
+      confirmLabel: 'Entfernen',
+      onConfirm: () => void run(() => removePassword(), 'Passwort-Login entfernt'),
+    });
   };
 
   const toggleForm = () => {
@@ -287,6 +297,10 @@ export function PasswordSettings() {
             </form>
           )}
         </>
+      )}
+
+      {confirmReq && (
+        <ConfirmDialog req={confirmReq} onClose={() => setConfirmReq(null)} />
       )}
     </div>
   );
