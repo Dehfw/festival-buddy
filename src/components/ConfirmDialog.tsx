@@ -35,6 +35,7 @@ export function ConfirmDialog({
   onClose: () => void;
 }) {
   const titleId = useId();
+  const messageId = useId();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
@@ -54,13 +55,18 @@ export function ConfirmDialog({
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-describedby={req.message ? messageId : undefined}
         className="w-full max-w-sm rounded-2xl border border-rivet bg-steel p-4"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 id={titleId} className="font-metal text-lg font-black uppercase">
           {req.title}
         </h3>
-        {req.message && <p className="mt-2 text-sm text-ash">{req.message}</p>}
+        {req.message && (
+          <p id={messageId} className="mt-2 text-sm text-ash">
+            {req.message}
+          </p>
+        )}
         {affected > 0 && (
           <p className="mt-3 rounded-xl border border-blood/60 bg-blood/10 px-3 py-2 text-sm font-bold text-blood">
             ⚠️ Daran hängen bereits {affected}{' '}
@@ -76,15 +82,21 @@ export function ConfirmDialog({
         )}
         <div className="mt-4 flex gap-2">
           <button
+            type="button"
             onClick={onClose}
             className="flex-1 rounded-xl border border-rivet px-4 py-2.5 text-sm font-bold text-ash"
           >
             Abbrechen
           </button>
           <button
+            type="button"
             onClick={() => {
-              req.onConfirm();
-              onClose();
+              // finally: Dialog auch schließen, wenn onConfirm synchron wirft
+              try {
+                req.onConfirm();
+              } finally {
+                onClose();
+              }
             }}
             className="flex-1 rounded-xl bg-blood px-4 py-2.5 text-sm font-bold uppercase text-black"
           >
