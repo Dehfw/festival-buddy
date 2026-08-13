@@ -530,8 +530,10 @@ const EN: Record<string, string> = {
   Einträge: 'entries',
   'von Besuchern (Zusagen/Interessen samt Treffpunkt-Markern) – die werden unwiderruflich mit gelöscht!':
     'from visitors (attendance, interests and meeting-point markers) – these will be permanently deleted too!',
-  'Diese Mitteilung geht an ALLE Mitglieder aller Gruppen dieses Festivals – in der App und als Push. Senden?':
-    'This notification will go to ALL members of every group for this festival – in the app and by push. Send it?',
+  'Diese Mitteilung geht an ALLE Mitglieder aller Gruppen dieses Festivals – in der App und als Push.':
+    'This notification will go to ALL members of every group for this festival – in the app and by push.',
+  'An alle senden?': 'Send to everyone?',
+  'Mitteilung löschen?': 'Delete notification?',
   'Was sollen alle wissen?': 'What should everyone know?',
   'Zu viele Mitteilungen – bitte kurz warten':
     'Too many notifications – please wait a moment',

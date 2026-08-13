@@ -2,6 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import {
+  ConfirmDialog,
+  type ConfirmRequest,
+} from '@/components/organizer/ConfirmDialog';
+import {
   formatTime,
   isValidTime,
   toMinutes,
@@ -83,74 +87,6 @@ async function callApi(path: string, method: string, body: unknown): Promise<Api
   } catch {
     return { ok: false, error: 'Keine Verbindung – der Editor braucht Netz' };
   }
-}
-
-/* ------------------------------------------------------------------ */
-/* Bestätigungs-Dialog                                                 */
-/* ------------------------------------------------------------------ */
-
-export interface ConfirmRequest {
-  title: string;
-  message: string;
-  /** Besucher-Einträge, die mit gelöscht würden – > 0 gibt eine deutliche Warnung */
-  affectedSelections: number;
-  /** Hinweis ohne Lösch-Drama (z. B. "X Eingetragene bekommen einen Push") */
-  notice?: string;
-  confirmLabel: string;
-  onConfirm: () => void;
-}
-
-function ConfirmDialog({
-  req,
-  onClose,
-}: {
-  req: ConfirmRequest;
-  onClose: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-sm rounded-2xl border border-rivet bg-steel p-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 className="font-metal text-lg font-black uppercase">{req.title}</h3>
-        <p className="mt-2 text-sm text-ash">{req.message}</p>
-        {req.affectedSelections > 0 && (
-          <p className="mt-3 rounded-xl border border-blood/60 bg-blood/10 px-3 py-2 text-sm font-bold text-blood">
-            ⚠️ Daran hängen bereits {req.affectedSelections}{' '}
-            {req.affectedSelections === 1 ? 'Eintrag' : 'Einträge'} von Besuchern
-            (Zusagen/Interessen samt Treffpunkt-Markern) – die werden
-            unwiderruflich mit gelöscht!
-          </p>
-        )}
-        {req.notice && (
-          <p className="mt-3 rounded-xl border border-ember/60 bg-ember/10 px-3 py-2 text-sm font-bold text-ember">
-            {req.notice}
-          </p>
-        )}
-        <div className="mt-4 flex gap-2">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-rivet px-4 py-2.5 text-sm font-bold text-ash"
-          >
-            Abbrechen
-          </button>
-          <button
-            onClick={() => {
-              req.onConfirm();
-              onClose();
-            }}
-            className="flex-1 rounded-xl bg-blood px-4 py-2.5 text-sm font-bold uppercase text-black"
-          >
-            {req.confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 const inputClass =
