@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
+import { computeLanesByStage } from '@/lib/timetableLayout';
 import {
   DEFAULT_HOT_THRESHOLD,
   formatTime,
@@ -35,42 +36,6 @@ const ZOOMS: Record<
   detail: { pxPerMin: 1.05, colW: 128, avatar: 18, maxAvatars: 4, showTimes: true, stackedMinH: 54 },
 };
 
-/** Position eines Slots bei Zeitüberschneidungen: Spur + Spuranzahl im Cluster */
-type SlotLane = { lane: number; lanes: number };
-
-/**
- * Überlappen sich zwei Slots einer Bühne zeitlich, werden sie nebeneinander
- * in "Spuren" gelegt statt übereinander gezeichnet. Klassisches Kalender-
- * Layout: nach Startzeit sortieren, jeden Slot gierig in die erste freie
- * Spur legen; alle Slots eines zusammenhängenden Überlappungs-Clusters
- * teilen sich die Spaltenbreite durch die Spuranzahl des Clusters.
- */
-function computeLanes(slots: Slot[]): Map<string, SlotLane> {
-  const sorted = [...slots].sort(
-    (a, b) =>
-      toMinutes(a.start) - toMinutes(b.start) || toMinutes(b.end) - toMinutes(a.end)
-  );
-  const layout = new Map<string, SlotLane>();
-  let cluster: { id: string; lane: number }[] = [];
-  let laneEnds: number[] = [];
-  const flush = () => {
-    for (const s of cluster) layout.set(s.id, { lane: s.lane, lanes: laneEnds.length });
-    cluster = [];
-    laneEnds = [];
-  };
-  for (const slot of sorted) {
-    const start = toMinutes(slot.start);
-    // Berührt der Slot keinen laufenden mehr, ist der Cluster abgeschlossen
-    if (laneEnds.length > 0 && laneEnds.every((end) => end <= start)) flush();
-    let lane = laneEnds.findIndex((end) => end <= start);
-    if (lane === -1) lane = laneEnds.length;
-    laneEnds[lane] = toMinutes(slot.end);
-    cluster.push({ id: slot.id, lane });
-  }
-  flush();
-  return layout;
-}
-
 /**
  * Hauptansicht 1: Timetable-Grid.
  * Y-Achse = Zeit, X-Achse = Bühnen, Tabs für die Festivaltage.
@@ -100,19 +65,7 @@ export function TimetableView({
   );
 
   // Spur-Zuordnung pro Bühne, damit zeitgleiche Slots nebeneinander liegen
-  const slotLanes = useMemo(() => {
-    const byStage = new Map<string, Slot[]>();
-    for (const slot of daySlots) {
-      const list = byStage.get(slot.stageId);
-      if (list) list.push(slot);
-      else byStage.set(slot.stageId, [slot]);
-    }
-    const layout = new Map<string, SlotLane>();
-    for (const stageSlots of byStage.values()) {
-      computeLanes(stageSlots).forEach((v, id) => layout.set(id, v));
-    }
-    return layout;
-  }, [daySlots]);
+  const slotLanes = useMemo(() => computeLanesByStage(daySlots), [daySlots]);
 
   const [startMin, endMin] = useMemo(() => {
     if (daySlots.length === 0) return [600, 1500];

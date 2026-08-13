@@ -55,12 +55,13 @@ const isVercelPreview = process.env.VERCEL_ENV === 'preview';
  * Eine spätere Verschärfung (Nonces/Hashes) kann unabhängig von den
  * übrigen Basisheadern erfolgen.
  */
-const contentSecurityPolicy = [
+const buildCsp = (frameAncestors) => [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
   // Primärer Framing-Schutz; X-Frame-Options: DENY dient als Fallback.
-  "frame-ancestors 'none'",
+  // Einzige Ausnahme: das Website-Embed unter /embed (siehe headers()).
+  `frame-ancestors ${frameAncestors}`,
   "form-action 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}${
     isVercelPreview ? ' https://vercel.live' : ''
@@ -81,6 +82,8 @@ const contentSecurityPolicy = [
   "manifest-src 'self'",
   ...(isVercelPreview ? ['frame-src https://vercel.live'] : []),
 ].join('; ');
+
+const contentSecurityPolicy = buildCsp("'none'");
 
 /**
  * Globale Sicherheitsheader für alle Antworten (HTML, API, Assets, Fehler).
@@ -118,6 +121,19 @@ const nextConfig = {
       // Alle Routen inklusive API, /sw.js und Fehlerantworten.
       source: '/:path*',
       headers: securityHeaders,
+    },
+    {
+      // Website-Embed: /embed darf – als einzige Route – von fremden Seiten
+      // per iframe eingebunden werden. Bei gleichem Header-Key gewinnt die
+      // spätere Regel, daher überschreibt sie hier CSP und X-Frame-Options.
+      // Moderne Browser ignorieren X-Frame-Options ohnehin, sobald
+      // frame-ancestors gesetzt ist; ALLOWALL ist bewusst kein gültiger
+      // Wert und wirkt damit auch in Alt-Browsern nicht als DENY.
+      source: '/embed/:path*',
+      headers: [
+        { key: 'Content-Security-Policy', value: buildCsp('*') },
+        { key: 'X-Frame-Options', value: 'ALLOWALL' },
+      ],
     },
     {
       source: '/sw.js',

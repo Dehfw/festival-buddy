@@ -108,6 +108,41 @@ Bühnen-Beschriftung setzen. Gespeichert wird pro Bühne komplett
 0–100 geklemmt). Bühnen ohne gepflegten Grundriss bekommen zur Laufzeit
 einen Default (`defaultBlueprint()` in `src/lib/db.ts`).
 
+## Website-Embed (Widget)
+
+Veranstalter können den Timetable ihres Festivals als Widget auf der
+eigenen Festival-Website einbinden – wie bei FestPlan & Co., aber aus
+derselben Datenquelle, die sie im Veranstalter-Bereich pflegen:
+
+```html
+<div data-festival-buddy="woa2026"></div>
+<script async src="https://DEINE-BUDDY-DOMAIN/embed.js"></script>
+```
+
+Die Bausteine:
+
+- **`/embed/<festivalId>`** (`src/app/embed/[festivalId]/page.tsx`) –
+  öffentliche, read-only Widget-Seite: Tag-Tabs, Bühnen-Grid,
+  Jetzt-Linie, im App-Theme. Kein Login, keine Gruppen-/Nutzerdaten,
+  `noindex`. Mit `?height=auto` wächst die Seite mit dem Inhalt und
+  meldet ihre Höhe per `postMessage` an die einbettende Seite.
+- **`GET /api/embed/<festivalId>`** – öffentlicher Timetable als JSON
+  (nur Tage/Bühnen/Slots), CORS offen, CDN-Cache 30 s. Das Widget pollt
+  darüber jede Minute Updates – Änderungen aus dem Editor erscheinen
+  ohne Reload auf der Festival-Website.
+- **`public/embed.js`** – Loader fürs Copy-Paste-Snippet: baut pro
+  `div[data-festival-buddy]` ein iframe, Standardhöhe 640 px
+  (`data-height`-Attribut, `"auto"` = an Inhalt anpassen via
+  postMessage). Setzt keine Cookies.
+- **CSP-Ausnahme** (`next.config.mjs`): Die App sendet global
+  `frame-ancestors 'none'` + `X-Frame-Options: DENY`; nur `/embed/*`
+  bekommt `frame-ancestors *`, damit fremde Seiten framen dürfen.
+  Im Embed wird außerdem kein Service Worker registriert
+  (`UpdatePrompt` überspringt `/embed`).
+
+Den fertigen Schnipsel samt Vorschau-Link zeigt der Veranstalter-Bereich
+im Tab „Festival“.
+
 ## Neues Festival aufsetzen (Betreiber)
 
 Festivals entstehen weiterhin per Skript – für ein leeres Festival

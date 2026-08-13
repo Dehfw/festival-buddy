@@ -69,6 +69,15 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
   Einladungscode vom Betreiber (`npm run organizer -- generate <id>`),
   eingelöst mit dem normalen Passkey-Konto. Löschen warnt, wenn an
   betroffenen Slots schon Zusagen der Crews hängen.
+- **Website-Embed für Veranstalter** – der Timetable als Widget für die
+  eigene Festival-Website: zwei Zeilen Copy-Paste
+  (`<div data-festival-buddy="woa2026">` + `<script src=".../embed.js">`),
+  fertig. Das iframe zeigt `/embed/<festivalId>` (öffentlich, read-only,
+  ohne Gruppen-/Nutzerdaten) im App-Look, pollt minütlich
+  `GET /api/embed/<festivalId>` und ist damit immer auf dem Stand des
+  Veranstalter-Editors. Höhe fix (Standard 640 px) oder per
+  `data-height="auto"` an den Inhalt angepasst. Den fertigen Schnipsel
+  gibt's im Veranstalter-Bereich, Tab „Festival“.
 - **PWA mit Offline-Modus** – App auf dem Homescreen installierbar. Der
   Service Worker cached Shell + Daten; die App pollt alle paar Sekunden neue
   Daten. Ohne Netz (Wacken-Funkloch!) läuft alles aus dem Cache weiter, und
@@ -248,6 +257,7 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | `GET  /api/me`                       | Nutzer + Gruppenliste + Veranstalter-Zähler zur Session (401 = raus) |
 | `POST /api/logout`                   | Session-Cookie löschen                       |
 | `GET  /api/festivals`                | Festival-Liste für die Gruppengründung       |
+| `GET  /api/embed/[festivalId]`       | Öffentlicher Timetable fürs Website-Embed (nur Tage/Bühnen/Slots, CORS offen) |
 | `POST /api/groups`                   | Gruppe erstellen (`{ name, festivalId }`)    |
 | `GET  /api/groups/mine`              | Meine Mitgliedschaften                       |
 | `POST /api/groups/join`              | Beitritt per Einladungscode (`{ code }`)     |

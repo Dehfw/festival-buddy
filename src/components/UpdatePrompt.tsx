@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 /**
@@ -15,12 +16,17 @@ import { useEffect, useRef, useState } from 'react';
  *    aktiv nach Updates (die PWA bleibt oft tagelang offen).
  */
 export function UpdatePrompt() {
+  const pathname = usePathname();
+  // Das Website-Embed (/embed) läuft im iframe fremder Seiten: dort weder
+  // den Service Worker registrieren noch ein Update-Banner einblenden.
+  const isEmbed = pathname?.startsWith('/embed') ?? false;
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
   const [applying, setApplying] = useState(false);
   const applyingRef = useRef(false);
   const fallbackRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (isEmbed) return;
     if (!('serviceWorker' in navigator)) return;
 
     let reg: ServiceWorkerRegistration | null = null;
@@ -68,9 +74,9 @@ export function UpdatePrompt() {
         onControllerChange
       );
     };
-  }, []);
+  }, [isEmbed]);
 
-  if (!waiting) return null;
+  if (isEmbed || !waiting) return null;
 
   const reload = () => {
     if (applyingRef.current) return;

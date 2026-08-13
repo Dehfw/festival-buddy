@@ -21,6 +21,7 @@ export const metadata: Metadata = {
     'Festival Timetable pflegen',
     'Line-up App Veranstalter',
     'Festival Push Mitteilungen',
+    'Timetable Widget Website einbinden',
     'Bühnenplan App',
     'Festival Buddy',
     'DEFƎKT',
@@ -87,6 +88,11 @@ const FEATURES: { icon: string; title: string; body: string }[] = [
     icon: '📣',
     title: 'Mitteilungen mit Push',
     body: 'Slot verschoben, Band ausgefallen, Unwetterwarnung? Eine Mitteilung erreicht alle, die dein Festival in der App planen – auf Wunsch als Push direkt aufs Handy.',
+  },
+  {
+    icon: '🧩',
+    title: 'Widget für deine Website',
+    body: 'Zwei Zeilen Code, und dein Timetable steckt in deiner eigenen Website – im selben Look, immer aktuell, ohne PDF. Den fertigen Schnipsel bekommst du im Veranstalter-Bereich.',
   },
   {
     icon: '👥',

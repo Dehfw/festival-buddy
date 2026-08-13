@@ -364,6 +364,7 @@ function VeranstalterInner() {
                 onTimetable={editorApi.onTimetable}
                 onRenamed={() => void loadMe()}
               />
+              <EmbedCodeSection festivalId={festivalId} />
               <OrganizerTeam organizers={state!.organizers} meId={state!.meId} />
             </>
           )}
@@ -550,6 +551,71 @@ function MetaEditor({
         {status && <span className="text-xs text-ash">{status}</span>}
       </div>
     </form>
+  );
+}
+
+/**
+ * Timetable auf der eigenen Festival-Website einbinden: fertiger
+ * Copy-Paste-Schnipsel für public/embed.js samt Vorschau-Link. Das Widget
+ * unter /embed zeigt nur öffentliche Festival-Daten (Tage, Bühnen, Slots)
+ * und aktualisiert sich selbst, sobald der Timetable hier gepflegt wird.
+ */
+function EmbedCodeSection({ festivalId }: { festivalId: string }) {
+  const [copied, setCopied] = useState(false);
+  // window.location.origin gibt es erst im Browser – nach dem Mount setzen,
+  // damit Server- und Client-HTML nicht auseinanderlaufen (Hydration).
+  const [origin, setOrigin] = useState('');
+  useEffect(() => setOrigin(window.location.origin), []);
+
+  const snippet = `<div data-festival-buddy="${festivalId}"></div>\n<script async src="${origin}/embed.js"></script>`;
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(snippet);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Kein Clipboard-Zugriff (ältere Browser): Snippet steht ja im Feld
+    }
+  };
+
+  return (
+    <section className="mt-8 md:max-w-xl">
+      <h2 className="font-metal text-sm font-black uppercase tracking-wide text-bone">
+        Auf deiner Website einbinden
+      </h2>
+      <p className="mt-1 text-xs leading-relaxed text-ash">
+        Häng den Timetable als Widget an deine Festival-Website – er
+        aktualisiert sich von selbst, sobald du hier etwas änderst. Einfach
+        diesen Schnipsel dort einfügen, wo der Timetable erscheinen soll:
+      </p>
+      <pre className="mt-2 overflow-x-auto rounded-lg border border-rivet bg-steel-2 px-3 py-2.5 font-mono text-[11px] leading-relaxed text-bone scrollbar-thin">
+        {snippet}
+      </pre>
+      <div className="mt-2 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={copy}
+          className="rounded-lg bg-blood px-3 py-2 text-xs font-bold uppercase text-black transition active:scale-[0.97]"
+        >
+          {copied ? '✓ Kopiert' : 'Code kopieren'}
+        </button>
+        <a
+          href={`/embed/${encodeURIComponent(festivalId)}`}
+          target="_blank"
+          rel="noopener"
+          className="text-xs text-ash underline"
+        >
+          Vorschau öffnen
+        </a>
+      </div>
+      <p className="mt-2 text-[11px] leading-relaxed text-ash/70">
+        Standardhöhe 640 px (scrollt innen); mit{' '}
+        <code className="font-mono">data-height=&quot;auto&quot;</code> wächst das
+        Widget mit dem Inhalt. Es setzt keine Cookies und sammelt keine
+        Besucherdaten.
+      </p>
+    </section>
   );
 }
 
