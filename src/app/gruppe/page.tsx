@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Avatar } from '@/components/Avatars';
+import { ConfirmDialog, type ConfirmRequest } from '@/components/ConfirmDialog';
 import { GroupAvatar } from '@/components/GroupAvatar';
 import { GroupGate } from '@/components/GroupGate';
 import { PasswordSettings } from '@/components/PasswordSettings';
@@ -42,6 +43,8 @@ function GroupPageInner() {
   const [editName, setEditName] = useState<string | null>(null);
   const [editUserName, setEditUserName] = useState<string | null>(null);
   const [showGroupGate, setShowGroupGate] = useState(false);
+  // In-App-Bestätigung statt window.confirm – siehe ConfirmDialog.tsx
+  const [confirmReq, setConfirmReq] = useState<ConfirmRequest | null>(null);
   // Zwei Bereiche als Tabs, damit die Konto-Einstellungen (Icon-Farbe,
   // Mitteilungen, Abmelden) nicht unsichtbar unter den Gruppen versinken.
   const [tab, setTab] = useState<'gruppe' | 'konto'>('gruppe');
@@ -159,10 +162,13 @@ function GroupPageInner() {
     await copyText(url, 'Link kopiert 📋');
   };
 
-  const rotateCode = async () => {
-    if (!confirm('Neuen Code würfeln? Der alte Link/Code wird sofort ungültig.'))
-      return;
-    await patch({ rotateCode: true }, 'Neuer Code aktiv');
+  const rotateCode = () => {
+    setConfirmReq({
+      title: 'Neuen Code würfeln?',
+      message: 'Der alte Link/Code wird sofort ungültig.',
+      confirmLabel: 'Neu würfeln',
+      onConfirm: () => void patch({ rotateCode: true }, 'Neuer Code aktiv'),
+    });
   };
 
   const saveName = async () => {
@@ -189,40 +195,56 @@ function GroupPageInner() {
     );
   };
 
-  const kick = async (userId: string, name: string) => {
-    if (!confirm(`${name} wirklich aus der Gruppe entfernen?`)) return;
-    await api(
-      `/api/groups/${encodeURIComponent(group.id)}/members/${encodeURIComponent(userId)}`,
-      { method: 'DELETE' },
-      `${name} entfernt`
-    );
+  const kick = (userId: string, name: string) => {
+    setConfirmReq({
+      title: 'Mitglied entfernen?',
+      message: `${name} wirklich aus der Gruppe entfernen?`,
+      confirmLabel: 'Entfernen',
+      onConfirm: () =>
+        void api(
+          `/api/groups/${encodeURIComponent(group.id)}/members/${encodeURIComponent(userId)}`,
+          { method: 'DELETE' },
+          `${name} entfernt`
+        ),
+    });
   };
 
-  const setRole = async (userId: string, name: string, role: 'admin' | 'member') => {
-    const question =
-      role === 'admin'
-        ? `${name} zum Admin machen? Admins können die Gruppe bearbeiten, Mitglieder entfernen und weitere Admins ernennen.`
-        : `${name} die Admin-Rechte entziehen?`;
-    if (!confirm(question)) return;
-    await api(
-      `/api/groups/${encodeURIComponent(group.id)}/members/${encodeURIComponent(userId)}`,
-      {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role }),
-      },
-      role === 'admin' ? `${name} ist jetzt Admin` : `${name} ist kein Admin mehr`
-    );
+  const setRole = (userId: string, name: string, role: 'admin' | 'member') => {
+    setConfirmReq({
+      title: role === 'admin' ? 'Zum Admin machen?' : 'Admin-Rechte entziehen?',
+      message:
+        role === 'admin'
+          ? `${name} zum Admin machen? Admins können die Gruppe bearbeiten, Mitglieder entfernen und weitere Admins ernennen.`
+          : `${name} die Admin-Rechte entziehen?`,
+      confirmLabel: role === 'admin' ? 'Ernennen' : 'Entziehen',
+      onConfirm: () =>
+        void api(
+          `/api/groups/${encodeURIComponent(group.id)}/members/${encodeURIComponent(userId)}`,
+          {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role }),
+          },
+          role === 'admin' ? `${name} ist jetzt Admin` : `${name} ist kein Admin mehr`
+        ),
+    });
   };
 
-  const leave = async () => {
-    const warning =
-      isOwner && members.length > 1
-        ? 'Gruppe verlassen? Der dienstälteste Admin (sonst das dienstälteste Mitglied) wird neuer Owner.'
-        : members.length === 1
-          ? 'Du bist das letzte Mitglied – die Gruppe wird dabei gelöscht. Sicher?'
-          : 'Gruppe wirklich verlassen?';
-    if (!confirm(warning)) return;
+  const leave = () => {
+    setConfirmReq({
+      title: 'Gruppe verlassen?',
+      message:
+        isOwner && members.length > 1
+          ? 'Der dienstälteste Admin (sonst das dienstälteste Mitglied) wird neuer Owner.'
+          : members.length === 1
+            ? 'Du bist das letzte Mitglied – die Gruppe wird dabei gelöscht.'
+            : undefined,
+      confirmLabel: 'Verlassen',
+      onConfirm: () => void doLeave(),
+    });
+  };
+
+  const doLeave = async () => {
     const ok = await api(
       `/api/groups/${encodeURIComponent(group.id)}/leave`,
       { method: 'POST' }
@@ -234,10 +256,16 @@ function GroupPageInner() {
   };
 
   const doLogout = () => {
-    if (!confirm('Abmelden? Dein Passkey bleibt auf dem Gerät.')) return;
-    logout();
-    // Nach dem Abmelden zurück auf die öffentliche Startseite (mit Login).
-    router.push('/');
+    setConfirmReq({
+      title: 'Abmelden?',
+      message: 'Dein Passkey bleibt auf dem Gerät.',
+      confirmLabel: 'Abmelden',
+      onConfirm: () => {
+        logout();
+        // Nach dem Abmelden zurück auf die öffentliche Startseite (mit Login).
+        router.push('/');
+      },
+    });
   };
 
   const switchTo = (id: string) => {
@@ -760,6 +788,9 @@ function GroupPageInner() {
       )}
 
       {showGroupGate && <GroupGate onClose={() => setShowGroupGate(false)} />}
+      {confirmReq && (
+        <ConfirmDialog req={confirmReq} onClose={() => setConfirmReq(null)} />
+      )}
     </main>
   );
 }

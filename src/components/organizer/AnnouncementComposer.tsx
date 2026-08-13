@@ -1,6 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import {
+  ConfirmDialog,
+  type ConfirmRequest,
+} from '@/components/ConfirmDialog';
 import { formatAgo, type AnnouncementWithAuthor } from '@/lib/types';
 
 /** Muss zu PUSH_TITLE_MAX/PUSH_BODY_MAX in src/lib/push.ts passen. */
@@ -22,6 +26,8 @@ export function AnnouncementComposer({ festivalId }: { festivalId: string }) {
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<AnnouncementWithAuthor[] | null>(null);
+  // In-App-Bestätigung statt window.confirm – siehe ConfirmDialog.tsx
+  const [confirmReq, setConfirmReq] = useState<ConfirmRequest | null>(null);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -42,15 +48,18 @@ export function AnnouncementComposer({ festivalId }: { festivalId: string }) {
     void loadHistory();
   }, [loadHistory]);
 
-  const send = async (e: React.FormEvent) => {
+  const send = (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !confirm(
-        'Diese Mitteilung geht an ALLE Mitglieder aller Gruppen dieses Festivals – in der App und als Push. Senden?'
-      )
-    ) {
-      return;
-    }
+    setConfirmReq({
+      title: 'An alle senden?',
+      message:
+        'Diese Mitteilung geht an ALLE Mitglieder aller Gruppen dieses Festivals – in der App und als Push.',
+      confirmLabel: 'Senden',
+      onConfirm: () => void doSend(),
+    });
+  };
+
+  const doSend = async () => {
     setBusy(true);
     setStatus('Sende …');
     try {
@@ -79,14 +88,16 @@ export function AnnouncementComposer({ festivalId }: { festivalId: string }) {
     setBusy(false);
   };
 
-  const remove = async (a: AnnouncementWithAuthor) => {
-    if (
-      !confirm(
-        `„${a.title}“ für alle löschen? Die Mitteilung verschwindet aus der App aller Nutzer – bereits zugestellte Push-Benachrichtigungen lassen sich aber nicht zurückholen.`
-      )
-    ) {
-      return;
-    }
+  const remove = (a: AnnouncementWithAuthor) => {
+    setConfirmReq({
+      title: 'Mitteilung löschen?',
+      message: `„${a.title}“ für alle löschen? Die Mitteilung verschwindet aus der App aller Nutzer – bereits zugestellte Push-Benachrichtigungen lassen sich aber nicht zurückholen.`,
+      confirmLabel: 'Löschen',
+      onConfirm: () => void doRemove(a),
+    });
+  };
+
+  const doRemove = async (a: AnnouncementWithAuthor) => {
     try {
       const res = await fetch(
         `/api/organizer/announcement?festival=${encodeURIComponent(festivalId)}&id=${encodeURIComponent(a.id)}`,
@@ -180,7 +191,7 @@ export function AnnouncementComposer({ festivalId }: { festivalId: string }) {
                   {/* App-weite Betreiber-Nachrichten kann nur der Betreiber löschen */}
                   {a.festivalId !== null && (
                     <button
-                      onClick={() => void remove(a)}
+                      onClick={() => remove(a)}
                       className="shrink-0 text-[10px] font-bold text-blood"
                     >
                       🗑 Löschen
@@ -192,6 +203,10 @@ export function AnnouncementComposer({ festivalId }: { festivalId: string }) {
           </ul>
         )}
       </div>
+
+      {confirmReq && (
+        <ConfirmDialog req={confirmReq} onClose={() => setConfirmReq(null)} />
+      )}
     </div>
   );
 }
