@@ -40,6 +40,7 @@ Payload schlicht nicht auf – Details in [Gruppen](gruppen.md).
 | `blueprints` | `(festival_id, stage_id)` | Bühnen-Grundriss + POIs als JSONB |
 | `festival_organizers` | `(festival_id, user_id)` | Veranstalter-Zuweisung; CASCADE zu Festival und Nutzer |
 | `organizer_invites` | `code` | Einmal-Codes für die Veranstalter-Zuweisung (`used_by`/`used_at`, `revoked_at`) |
+| `app_installs` | `install_id` | Lebenszeichen der installierten PWA (Home-Screen-Start, Plattform); siehe [Installationen](installationen.md) |
 
 Dazu die Sequenz `db_rev` als globaler **Revisionszähler**: Jede
 Mutation ruft `bumpRev()` auf, der aktuelle Stand wird im Daten-Payload

@@ -218,6 +218,28 @@ Eintragungen der Crew erhalten bleiben. Alternativ die Datei von Hand
 pflegen – Zeiten nach Mitternacht schreibt man als `24:30` (= 00:30 am
 Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 
+## Wie viele haben die App auf dem Home-Screen?
+
+Deinstallationen meldet kein Browser – messbar ist nur, wer sich noch
+aus der installierten App meldet. Genau das tut die PWA: Startet sie im
+Standalone-Modus, schickt sie (höchstens alle 12 h) ein Lebenszeichen an
+`POST /api/install/ping`; gespeichert werden eine zufällige
+Installations-ID aus dem `localStorage`, die grobe Plattform und
+Zeitstempel – kein Fingerprint, kein Tracking-Dienst.
+
+```bash
+DATABASE_URL=... npm run stats:installs                  # Kennzahlen im Terminal
+DATABASE_URL=... npm run stats:installs -- --json        # maschinenlesbar
+DATABASE_URL=... npm run stats:installs -- --prune 365   # Karteileichen löschen
+DATABASE_URL=... DISCORD_WEBHOOK_URL=... npm run stats:installs -- --discord
+```
+
+„Aktiv installiert“ heißt: hat sich in den letzten 7/30/90 Tagen aus der
+installierten App gemeldet; wer länger schweigt, hat deinstalliert oder
+nutzt die App nicht mehr. Details, Grenzen und die Gegenprobe über die
+iOS-Push-Abos stehen im Wiki:
+[Installationen](docs/wiki/installationen.md).
+
 ## Technik
 
 | Baustein   | Wahl                                                        |
@@ -267,6 +289,7 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | `PUT/DELETE /api/organizer/stage`    | Bühne anlegen/ändern bzw. löschen (löscht Slots + Blueprint mit) |
 | `PUT/DELETE /api/organizer/slot`     | Slot anlegen/ändern bzw. löschen (löscht Auswahlen/Positionen mit) |
 | `POST /api/organizer/blueprint`      | Blueprint einer Bühne speichern (`{ festivalId, stageId, blueprint }`) |
+| `POST /api/install/ping`             | Lebenszeichen der installierten PWA (`{ installId, standalone, platform }`, ohne Login nutzbar) |
 
 ### Icons neu erzeugen
 

@@ -9,6 +9,7 @@ import React, {
   useState,
 } from 'react';
 import type { DataPayload, GroupSummary, SelectionStatus, User } from '../types';
+import { pingInstall } from './install';
 import { resyncPushSubscription } from './push';
 import {
   applyMutation,
@@ -268,6 +269,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Session/Abo passiert schlicht nichts.
     void resyncPushSubscription();
 
+    // Lebenszeichen dieser Installation (gedrosselt auf ~12 h): daraus
+    // ergibt sich, wie viele Leute die App noch auf dem Home-Screen haben.
+    void pingInstall();
+
     // Poll-Loop als setTimeout-Kette statt setInterval: Der nächste
     // Lauf wird erst NACH Abschluss des vorherigen geplant (keine
     // überlappenden Reads bei langsamen Antworten), im ausgeblendeten
@@ -378,6 +383,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .then(() => refresh());
       // Push-Abo des Geräts auf den neuen Nutzer umbinden (Upsert)
       void resyncPushSubscription();
+      // Dito für die Installation – sofort (force), damit die Statistik
+      // hinter den Geräten auch Personen zählen kann.
+      void pingInstall(true);
     },
     [refreshMe, refresh]
   );

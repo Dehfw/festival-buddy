@@ -95,6 +95,16 @@ export default function DatenschutzPage() {
                 technisch notwendiges, signiertes Cookie, das dich nach dem
                 Login angemeldet hält.
               </li>
+              <li>
+                <span className="text-bone">Installations-Kennung</span> – eine
+                zufällige ID, die deine App-Installation beim ersten Start
+                selbst erzeugt und lokal speichert. Beim App-Start meldet sie
+                (höchstens alle 12 Stunden) nur, dass die App noch da ist und
+                ob sie vom Home-Screen oder im Browser läuft, dazu die grobe
+                Geräteklasse (iOS/Android/Desktop). Damit sehen wir, wie viele
+                Leute die App installiert haben – kein Fingerprint, kein
+                Tracking-Dienst, keine Auswertung deines Verhaltens.
+              </li>
             </ul>
             <p className="mt-2 text-ash">
               Die IP-Adresse wird kurzzeitig verarbeitet, um Anfragen gegen

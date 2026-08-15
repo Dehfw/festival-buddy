@@ -298,6 +298,27 @@ async function createSchema(): Promise<void> {
         sent_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
         PRIMARY KEY (user_id, festival_id, slot_id)
       );
+      -- Installations-Telemetrie: eine Zeile pro App-Installation, also pro
+      -- Browser-Profil bzw. Home-Screen-App. Die install_id ist eine
+      -- zufällige ID aus dem localStorage des Geräts (kein Fingerprint) –
+      -- auf iOS hat die installierte PWA einen eigenen Storage, bekommt also
+      -- automatisch eine eigene ID. Ob jemand die App DEINSTALLIERT, meldet
+      -- kein Browser; gemessen wird deshalb "zuletzt vom Home-Screen
+      -- gestartet" (last_standalone_at) – wer lange fehlt, gilt als weg.
+      CREATE TABLE IF NOT EXISTS app_installs (
+        install_id         TEXT PRIMARY KEY,
+        user_id            TEXT REFERENCES users(id) ON DELETE CASCADE,
+        platform           TEXT NOT NULL DEFAULT 'other',
+        -- letzter Start: aus der installierten App (true) oder im Browser-Tab
+        standalone         BOOLEAN NOT NULL DEFAULT FALSE,
+        first_seen_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+        last_seen_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+        -- erster bzw. letzter Start im Home-Screen-Modus (NULL = nie installiert)
+        installed_at       TIMESTAMPTZ,
+        last_standalone_at TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS app_installs_standalone_idx
+        ON app_installs (last_standalone_at DESC);
       CREATE SEQUENCE IF NOT EXISTS db_rev START 1;
 
       -- Primärschlüssel der Bestandstabellen um festival_id erweitern
@@ -2370,4 +2391,50 @@ export function defaultBlueprint(stageLabel: string): Blueprint {
     ],
     pois: [],
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* Installationen (PWA auf dem Home-Screen)                            */
+/* ------------------------------------------------------------------ */
+
+/** Grobe Plattform-Klasse aus dem User-Agent – mehr braucht die Statistik nicht. */
+export const INSTALL_PLATFORMS = ['ios', 'android', 'desktop', 'other'] as const;
+export type InstallPlatform = (typeof INSTALL_PLATFORMS)[number];
+
+/**
+ * Lebenszeichen einer Installation (max. alle paar Stunden pro Gerät).
+ * Idempotenter Upsert auf die install_id:
+ *  - `standalone` = wie die App DIESES Mal gestartet wurde,
+ *  - `installed_at` merkt sich den ERSTEN Home-Screen-Start,
+ *  - `last_standalone_at` den letzten – das ist die Zahl, aus der die
+ *    Statistik "noch installiert" ableitet.
+ * Ein Browser-Start überschreibt `last_standalone_at` bewusst NICHT:
+ * unter Android teilen sich Tab und installierte App denselben Storage,
+ * dieselbe Installation meldet sich also mal so, mal so.
+ */
+export async function recordInstallPing(
+  installId: string,
+  standalone: boolean,
+  platform: InstallPlatform,
+  userId: string | null
+): Promise<void> {
+  await query(
+    `INSERT INTO app_installs
+       (install_id, user_id, platform, standalone, installed_at, last_standalone_at)
+     VALUES ($1, $2, $3, $4::boolean,
+             CASE WHEN $4::boolean THEN now() END,
+             CASE WHEN $4::boolean THEN now() END)
+     ON CONFLICT (install_id) DO UPDATE SET
+       user_id    = COALESCE(EXCLUDED.user_id, app_installs.user_id),
+       platform   = EXCLUDED.platform,
+       standalone = EXCLUDED.standalone,
+       last_seen_at = now(),
+       installed_at = CASE WHEN EXCLUDED.standalone
+                           THEN COALESCE(app_installs.installed_at, now())
+                           ELSE app_installs.installed_at END,
+       last_standalone_at = CASE WHEN EXCLUDED.standalone
+                                 THEN now()
+                                 ELSE app_installs.last_standalone_at END`,
+    [installId, userId, platform, standalone]
+  );
 }

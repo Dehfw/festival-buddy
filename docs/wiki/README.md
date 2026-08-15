@@ -17,6 +17,7 @@ ursprüngliche Entwurf des Gruppen-Features in
 | [Festivals & Timetable](festivals-timetable.md) | Timetables in der DB, Slot-IDs, Lineup-Import ohne Redeploy |
 | [Veranstalter-Bereich](veranstalter.md) | Festival-Zuweisung per Code, Timetable-/Bühnen-/Blueprint-Pflege |
 | [Push & Mitteilungen](push-mitteilungen.md) | Web Push (VAPID), Veranstalter-Durchsagen, Betreiber-Broadcast, Band-Erinnerungen per Cron |
+| [Installationen](installationen.md) | Wie viele haben die PWA noch auf dem Home-Screen? Lebenszeichen, `app_installs`, `npm run stats:installs` |
 
 ## Die App in einem Absatz
 
