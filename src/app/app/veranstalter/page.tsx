@@ -48,13 +48,13 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 /**
- * Veranstalter-Bereich (/veranstalter/bereich): Nutzer mit
+ * Veranstalter-Bereich (/app/veranstalter): Nutzer mit
  * Veranstalter-Zuweisung (per Code aus scripts/organizer-code.mjs)
  * pflegen hier Timetable, Tage, Bühnen, Bühnenpläne und Metadaten IHRES
  * Festivals. Eigenständige Seite wie früher das Admin-Panel –
  * authentifiziert über die normale Passkey-Session (Cookie fb_session),
- * autorisiert pro Festival. Eine Ebene darüber liegt die öffentliche
- * Seite, die erklärt, was das hier ist.
+ * autorisiert pro Festival. Die öffentliche Seite, die erklärt was das
+ * hier ist, liegt unter /veranstalter.
  */
 function VeranstalterInner() {
   // null = Session wird geprüft, false = Login nötig, true = eingeloggt

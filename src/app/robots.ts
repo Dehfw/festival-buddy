@@ -3,15 +3,16 @@ import { resolveSiteUrl } from '@/lib/siteUrl';
 
 /**
  * robots.txt: Marketing-Seiten rein, Admin/API/Invite-Links raus.
- * "/veranstalter/" mit Schrägstrich sperrt nur den Veranstalter-Bereich
- * darunter – die öffentliche Seite "/veranstalter" bleibt indexierbar.
+ * Der Veranstalter-Bereich braucht keine eigene Regel – er liegt unter
+ * "/app/veranstalter" und damit schon in der "/app"-Sperre. Die
+ * öffentliche Seite "/veranstalter" bleibt dadurch indexierbar.
  */
 export default async function robots(): Promise<MetadataRoute.Robots> {
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/app', '/gruppe', '/veranstalter/', '/api/', '/join/'],
+      disallow: ['/app', '/gruppe', '/api/', '/join/'],
     },
     sitemap: `${await resolveSiteUrl()}/sitemap.xml`,
   };

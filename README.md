@@ -71,7 +71,7 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
   Eintragung.
 - **Bühnen-Karten mit POIs** – Toiletten 🚻, Wasser 💧, Merch 🛍️,
   Erste Hilfe ⛑️ und Eingänge 🚪 auf jedem Blueprint, für alle sichtbar.
-- **Veranstalter-Bereich** (`/veranstalter/bereich`) – Veranstalter pflegen den
+- **Veranstalter-Bereich** (`/app/veranstalter`) – Veranstalter pflegen den
   Timetable (Tage, Bühnen, Slots), die Festival-Metadaten und die
   Bühnenpläne inkl. POIs **ihres** Festivals selbst. Zugang per
   Einladungscode vom Betreiber (`npm run organizer -- generate <id>`),
@@ -138,15 +138,15 @@ Ein Passwort-Admin existiert nicht mehr – Festival-Daten pflegen
 **Veranstalter** direkt in der App, strikt beschränkt auf ihr(e)
 zugewiesene(n) Festival(s). Die öffentliche Seite dazu liegt unter
 `/veranstalter` und erklärt Interessenten, was der Bereich kann; das
-Werkzeug selbst eine Ebene tiefer:
+Werkzeug selbst gehört zur eingeloggten App:
 
-- URL: `/veranstalter/bereich` (Veranstalter sehen zusätzlich den 🎪-Tab in der
+- URL: `/app/veranstalter` (Veranstalter sehen zusätzlich den 🎪-Tab in der
   unteren Navigation). Bearbeitbar: Timetable (Tage, Bühnen, Slots),
   Festival-Name/Edition und die Bühnenpläne inkl. POIs.
 - Zugang: der Betreiber erzeugt per CLI einen **einmaligen
   Einladungscode** und schickt ihn dem Veranstalter; der löst ihn –
   eingeloggt mit seinem normalen Passkey-Konto – unter
-  `/veranstalter/bereich?code=…` ein.
+  `/app/veranstalter?code=…` ein.
 
 ```bash
 DATABASE_URL=... npm run organizer -- generate woa2026   # Code erzeugen

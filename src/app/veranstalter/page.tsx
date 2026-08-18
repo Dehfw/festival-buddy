@@ -70,9 +70,10 @@ async function jsonLd() {
 /* Öffentliche Veranstalter-Seite (/veranstalter). Erklärt den         */
 /* Veranstalter-Bereich und sammelt Anfragen per Mail ein – Zugänge    */
 /* entstehen weiterhin per Einladungscode (docs/wiki/veranstalter.md). */
-/* Das eigentliche Werkzeug lebt eine Ebene tiefer unter              */
-/* "/veranstalter/bereich": Die merkbare URL gehört auf den Flyer,     */
-/* nicht auf ein Werkzeug, das nur eine Handvoll Leute öffnet.         */
+/* Das Werkzeug selbst gehört zur eingeloggten App und liegt deshalb   */
+/* unter "/app/veranstalter": Die merkbare URL gehört auf den Flyer,   */
+/* nicht auf ein Werkzeug, das nur eine Handvoll Leute öffnet – und    */
+/* alles unter /app ist ohnehin schon von robots.txt ausgenommen.      */
 /* ------------------------------------------------------------------ */
 
 const FEATURES: { icon: string; title: string; body: string }[] = [
@@ -153,7 +154,7 @@ export default async function VeranstalterPage() {
               Für Crews
             </Link>
             <Link
-              href="/veranstalter/bereich"
+              href="/app/veranstalter"
               className="rounded-lg bg-blood px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-black transition active:scale-[0.98]"
             >
               Veranstalter-Bereich
@@ -204,7 +205,7 @@ export default async function VeranstalterPage() {
                 Zugang anfragen
               </a>
               <Link
-                href="/veranstalter/bereich"
+                href="/app/veranstalter"
                 className="w-full rounded-xl border border-rivet bg-steel px-8 py-4 text-sm font-semibold uppercase tracking-wider text-bone transition active:scale-[0.98] sm:w-auto"
               >
                 Ich habe schon einen Code

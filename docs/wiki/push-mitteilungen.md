@@ -65,7 +65,7 @@ Erinnerungen kommt `CRON_SECRET` dazu (siehe unten).
 
 ## Wer darf senden?
 
-- **Veranstalter**: Tab „Mitteilungen“ unter `/veranstalter/bereich`
+- **Veranstalter**: Tab „Mitteilungen“ unter `/app/veranstalter`
   (`POST /api/organizer/announcement`, Guard `canManageFestival`,
   Rate-Limit 5 pro 10 Min.). Zielgruppe: alle Mitglieder aller Gruppen
   des Festivals; als Absender erscheint der **Festivalname**, nicht das

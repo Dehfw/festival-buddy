@@ -118,7 +118,7 @@ const nextConfig = {
    * /fuer-veranstalter und ist auf /veranstalter umgezogen (die kürzere
    * URL gehört auf den Flyer). Der Redirect hält alte Links und die
    * Suchmaschinen-Historie am Leben; das Werkzeug selbst liegt seither
-   * unter /veranstalter/bereich.
+   * unter /app/veranstalter, wo die eingeloggte App lebt.
    */
   redirects: async () => [
     {

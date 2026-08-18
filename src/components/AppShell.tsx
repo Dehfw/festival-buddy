@@ -191,7 +191,7 @@ export function AppShell() {
         {/* Nur für Veranstalter sichtbar (organizerFestivals aus /api/me) */}
         {organizerFestivals > 0 && (
           <Link
-            href="/veranstalter/bereich"
+            href="/app/veranstalter"
             className="flex flex-1 flex-col items-center gap-0.5 py-2 text-ash"
           >
             <span className="text-lg leading-none">🎪</span>
