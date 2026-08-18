@@ -3,10 +3,12 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '@/lib/client/store';
 import {
-  bandInterestUsers,
+  bandSlug,
   formatTime,
-  slotsForBand,
+  toMinutes,
   type FestivalBand,
+  type Slot,
+  type User,
 } from '@/lib/types';
 import { AvatarStack } from './Avatars';
 
@@ -47,13 +49,51 @@ export function LineupView({ onBandTap }: { onBandTap: (band: FestivalBand) => v
 
   const bands = data?.timetable.bands ?? [];
   const interests = data?.bandInterests ?? [];
+  const users = data?.users;
+  const timetable = data?.timetable;
+
+  // Beide Zuordnungen einmal pro Datenstand aufbauen, nicht pro Band: Bei
+  // einem großen Festival (200 Bands, 233 Slots) liefe sonst bei jedem
+  // Tastendruck im Suchfeld eine Schleife über alles.
+  const fansBySlug = useMemo(() => {
+    const byId = new Map((users ?? []).map((u) => [u.id, u]));
+    const map = new Map<string, User[]>();
+    for (const i of interests) {
+      const u = byId.get(i.userId);
+      if (!u) continue;
+      const list = map.get(i.slug);
+      if (list) list.push(u);
+      else map.set(i.slug, [u]);
+    }
+    return map;
+  }, [users, interests]);
+
+  const slotsBySlug = useMemo(() => {
+    const map = new Map<string, Slot[]>();
+    if (!timetable) return map;
+    const dayOrder = new Map(timetable.days.map((d, i) => [d.id, i]));
+    for (const slot of timetable.slots) {
+      const slug = bandSlug(slot.band);
+      const list = map.get(slug);
+      if (list) list.push(slot);
+      else map.set(slug, [slot]);
+    }
+    for (const list of map.values()) {
+      list.sort(
+        (a, b) =>
+          (dayOrder.get(a.dayId) ?? 0) - (dayOrder.get(b.dayId) ?? 0) ||
+          toMinutes(a.start) - toMinutes(b.start)
+      );
+    }
+    return map;
+  }, [timetable]);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = bands
       .filter((b) => q === '' || b.name.toLowerCase().includes(q))
       .map((band) => {
-        const fans = bandInterestUsers(data?.users ?? [], interests, band.slug);
+        const fans = fansBySlug.get(band.slug) ?? [];
         return {
           band,
           fans,
@@ -68,7 +108,7 @@ export function LineupView({ onBandTap }: { onBandTap: (band: FestivalBand) => v
           (a, b) => b.fans.length - a.fans.length || a.band.name.localeCompare(b.band.name, 'de')
         )
       : list;
-  }, [bands, data?.users, interests, onlyMine, query, sort, user]);
+  }, [bands, fansBySlug, onlyMine, query, sort, user]);
 
   if (!data) return null;
 
@@ -147,6 +187,7 @@ export function LineupView({ onBandTap }: { onBandTap: (band: FestivalBand) => v
                   key={band.slug}
                   band={band}
                   fans={fans}
+                  slots={slotsBySlug.get(band.slug) ?? EMPTY_SLOTS}
                   mine={mine}
                   onOpen={() => onBandTap(band)}
                   onToggle={() => setBandInterest(band.slug, !mine)}
@@ -185,15 +226,21 @@ function Chip({
   );
 }
 
+/** Stabile leere Liste – spart eine neue Referenz pro Render */
+const EMPTY_SLOTS: Slot[] = [];
+
 function LineupRow({
   band,
   fans,
+  slots,
   mine,
   onOpen,
   onToggle,
 }: {
   band: FestivalBand;
-  fans: ReturnType<typeof bandInterestUsers>;
+  fans: User[];
+  /** Spielzeiten dieser Band; leer, solange nur das Lineup steht */
+  slots: Slot[];
   mine: boolean;
   onOpen: () => void;
   onToggle: () => void;
@@ -201,7 +248,6 @@ function LineupRow({
   const { data } = useApp();
   // Sobald der Timetable steht, zeigt die Zeile die Spielzeit mit an –
   // dieselbe Liste dient dann als A–Z-Register über alle Bands.
-  const slots = data ? slotsForBand(data.timetable, band.slug) : [];
   const first = slots[0];
   const day = first ? data?.timetable.days.find((d) => d.id === first.dayId) : undefined;
   const stage = first ? data?.timetable.stages.find((s) => s.id === first.stageId) : undefined;
