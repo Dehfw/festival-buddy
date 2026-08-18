@@ -54,4 +54,11 @@ der Import füllt später. `GET /api/festivals` liefert dafür das Flag
   (JSON-LD, eingebettete JSON-Blobs, referenzierte API-URLs, zuletzt
   der Clashfinder-Export).
 - **Andere Festivals:** jede Datei im App-Timetable-Format über
-  `scripts/import-festival.mjs`.
+  `scripts/import-festival.mjs`. Ohne Export wird die Running Order als
+  Textdatei unter `lineups/` gepflegt und mit
+  `scripts/build-timetable.mjs` in die Importdatei übersetzt – das
+  Script vergibt die Slot-IDs nach derselben `slugify`-Regel wie der
+  Editor, `scripts/validate-timetable.mjs` prüft die Datei vorab und
+  zeigt beim Re-Import, welche IDs entfallen (und damit welche
+  Eintragungen verloren gingen). Der komplette Ablauf liegt als Skill
+  unter `.claude/skills/lineup-import/`.

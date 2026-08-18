@@ -1,0 +1,217 @@
+{
+  "festival": "Summer Breeze Open Air 2026",
+  "edition": "12.–15.08.2026, Dinkelsbühl (Warm-up ab Di 11.08.)",
+  "source": "Offizielles Runningorder-PDF (Runningorder2026A4), Stand Juli 2026",
+  "comment": "Quelle fürs Import-Skript scripts/import-summerbreeze.mjs. Slots sind [start, ende, band]; Zeiten wie im PDF (nach Mitternacht als 00:xx/01:xx – der Import rechnet das auf den Festivaltag um). Bühnen-Schlüssel: main, tstage, toolrebel, circus.",
+  "days": [
+    {
+      "date": "2026-08-11",
+      "slots": {
+        "circus": [
+          ["17:00", "17:45", "Ghetto Justice"],
+          ["18:15", "19:00", "Die Habenichtse"],
+          ["19:30", "20:15", "Motorjesus"],
+          ["20:45", "21:45", "Hackneyed"],
+          ["22:15", "01:30", "Morecore Party"]
+        ]
+      }
+    },
+    {
+      "date": "2026-08-12",
+      "slots": {
+        "main": [
+          ["16:10", "17:10", "Excrementory Grindfuckers"],
+          ["17:40", "18:40", "Betontod"],
+          ["19:10", "20:30", "Airbourne"],
+          ["21:05", "21:15", "Announcement Bands 2027"],
+          ["21:15", "22:45", "In Flames"],
+          ["23:25", "00:35", "Hatebreed"],
+          ["01:00", "02:00", "Alcest"]
+        ],
+        "tstage": [
+          ["15:00", "16:00", "Blasmusik Illenschwang"],
+          ["16:50", "17:35", "Neckbreakker"],
+          ["18:25", "19:10", "The Narrator"],
+          ["20:00", "20:45", "Green Lung"],
+          ["21:35", "22:35", "Paradise Lost"],
+          ["23:25", "00:25", "Eivør"],
+          ["01:15", "02:15", "Miracle Of Sound"]
+        ],
+        "toolrebel": [
+          ["16:05", "16:45", "Persecutor"],
+          ["17:40", "18:20", "King Nugget Gang"],
+          ["19:15", "19:55", "Inhuman Nature"],
+          ["20:50", "21:30", "Urne"],
+          ["22:40", "23:20", "Castle Rat"],
+          ["00:30", "01:10", "Cân Bardd"],
+          ["02:20", "03:00", "802"]
+        ],
+        "circus": [
+          ["18:15", "18:45", "Born Hanged"],
+          ["19:10", "19:50", "Dethroned"],
+          ["20:20", "21:00", "Backstabbed"],
+          ["21:30", "22:10", "Ochmoneks"],
+          ["22:40", "23:20", "Waves Like Walls"],
+          ["23:50", "00:30", "Thormesis"],
+          ["01:00", "02:00", "Partyschnaps Disco"]
+        ]
+      }
+    },
+    {
+      "date": "2026-08-13",
+      "slots": {
+        "main": [
+          ["12:00", "12:40", "Our Promise"],
+          ["12:55", "13:35", "From Fall To Spring"],
+          ["13:50", "14:35", "Alien Ant Farm"],
+          ["15:00", "15:45", "Northlane"],
+          ["16:10", "17:10", "Kim Dracula"],
+          ["17:40", "18:40", "Imminence"],
+          ["19:10", "20:30", "Saxon"],
+          ["21:15", "22:45", "Eisbrecher"],
+          ["23:25", "00:35", "Amorphis"],
+          ["01:00", "02:00", "dArtagnan"]
+        ],
+        "tstage": [
+          ["11:30", "12:15", "Fulci"],
+          ["12:55", "13:40", "Massive Wagons"],
+          ["14:20", "15:05", "Grand Magus"],
+          ["15:45", "16:30", "Deserted Fear"],
+          ["17:10", "17:55", "Trollfest"],
+          ["18:35", "19:35", "Surprise Show"],
+          ["20:30", "21:30", "Fit For An Autopsy"],
+          ["22:25", "23:25", "Mushroomhead"],
+          ["00:20", "01:20", "Blackbraid"],
+          ["02:15", "03:00", "Saor"]
+        ],
+        "toolrebel": [
+          ["12:20", "12:50", "Fireborn"],
+          ["13:45", "14:15", "Broken By The Scream"],
+          ["15:10", "15:40", "Stam1na"],
+          ["16:35", "17:05", "Rectal Smegma"],
+          ["18:00", "18:30", "Filth"],
+          ["19:40", "20:25", "Mittel Alta"],
+          ["21:35", "22:20", "Cryptopsy"],
+          ["23:30", "00:15", "Groza"],
+          ["01:25", "02:10", "Hindarfjäll"]
+        ],
+        "circus": [
+          ["09:30", "10:15", "Metalza – Metal Workout"],
+          ["10:30", "11:30", "Metal Yoga"],
+          ["12:00", "13:00", "Into The Voidcast (Podcast)"],
+          ["14:00", "15:00", "Harsh Vocals mit Britta Görtz"],
+          ["15:30", "16:15", "KLLSIGNL"],
+          ["16:45", "17:30", "Serpents"],
+          ["18:00", "18:45", "I Am Your God"],
+          ["19:15", "20:00", "Aesthetic Perfection"],
+          ["20:30", "21:15", "Warfield"],
+          ["21:45", "22:45", "Katerfahrt"],
+          ["23:15", "01:30", "Alternative 90ies Disco"]
+        ]
+      }
+    },
+    {
+      "date": "2026-08-14",
+      "slots": {
+        "main": [
+          ["12:00", "12:40", "Nanowar Of Steel"],
+          ["12:55", "13:35", "Das Lumpenpack"],
+          ["13:50", "14:35", "Future Palace"],
+          ["15:00", "15:45", "Brothers Of Metal"],
+          ["16:10", "17:10", "The Butcher Sisters"],
+          ["17:40", "18:40", "The Ghost Inside"],
+          ["19:10", "20:30", "Lamb Of God"],
+          ["21:15", "22:45", "Arch Enemy"],
+          ["23:25", "00:35", "Versengold"],
+          ["01:00", "02:00", "Skindred"]
+        ],
+        "tstage": [
+          ["11:30", "12:15", "SetYøurSails"],
+          ["12:55", "13:40", "Brainstorm"],
+          ["14:20", "15:05", "Misery Index"],
+          ["15:45", "16:30", "Speed"],
+          ["17:10", "17:55", "Unprocessed"],
+          ["18:35", "19:35", "Deicide"],
+          ["20:30", "21:30", "Terror"],
+          ["22:25", "23:25", "Der Weg Einer Freiheit"],
+          ["00:20", "01:20", "Deafheaven"],
+          ["02:15", "03:00", "Wolves In The Throne Room"]
+        ],
+        "toolrebel": [
+          ["12:20", "12:50", "Zerre"],
+          ["13:45", "14:15", "Pridian"],
+          ["15:10", "15:40", "Luna Kills"],
+          ["16:35", "17:05", "Brymir"],
+          ["18:00", "18:30", "Erdling"],
+          ["19:40", "20:25", "Blood Command"],
+          ["21:35", "22:20", "Illdisposed"],
+          ["23:30", "00:15", "ten56."],
+          ["01:25", "02:10", "Bizarrekult"]
+        ],
+        "circus": [
+          ["09:30", "10:15", "Metalza – Metal Workout"],
+          ["10:30", "11:30", "Metal Yoga"],
+          ["14:00", "15:00", "Harsh Vocals mit Britta Görtz"],
+          ["15:30", "16:15", "Sun Eater"],
+          ["16:45", "17:30", "Avalanche Effect"],
+          ["18:00", "18:45", "Heaven.exe"],
+          ["19:15", "20:00", "Minus Youth"],
+          ["20:30", "21:15", "Perchta"],
+          ["21:45", "22:45", "Vulvarine"],
+          ["23:15", "01:30", "EMP Party"]
+        ]
+      }
+    },
+    {
+      "date": "2026-08-15",
+      "slots": {
+        "main": [
+          ["12:00", "12:40", "Heavysaurus"],
+          ["12:55", "13:35", "Parasite Inc."],
+          ["13:50", "14:35", "The Sons Of Huens"],
+          ["15:00", "15:45", "Kadavar"],
+          ["16:10", "17:10", "Orbit Culture"],
+          ["17:40", "18:40", "Testament"],
+          ["19:10", "20:30", "Alestorm"],
+          ["21:15", "23:15", "Helloween"],
+          ["23:55", "01:15", "Thy Art Is Murder"]
+        ],
+        "tstage": [
+          ["11:30", "12:15", "Soulbound"],
+          ["12:55", "13:40", "Sanguisugabogg"],
+          ["14:20", "15:05", "Bloodred Hourglass"],
+          ["15:45", "16:30", "Municipal Waste"],
+          ["17:10", "17:55", "Thundermother"],
+          ["18:35", "19:35", "Decapitated"],
+          ["20:30", "21:30", "Soulfly"],
+          ["22:25", "23:25", "Paleface Swiss"],
+          ["00:20", "01:20", "Soen"]
+        ],
+        "toolrebel": [
+          ["12:20", "12:50", "Inner Space"],
+          ["13:45", "14:15", "Skeleton Pit"],
+          ["15:10", "15:40", "Wucan"],
+          ["16:35", "17:05", "Haggefugg"],
+          ["18:00", "18:30", "Cabal"],
+          ["19:40", "20:25", "Manntra"],
+          ["21:35", "22:20", "200 Stab Wounds"],
+          ["23:30", "00:15", "Slomosa"],
+          ["01:25", "02:10", "MØL"]
+        ],
+        "circus": [
+          ["09:30", "10:15", "Metalza – Metal Workout"],
+          ["10:30", "11:30", "Metal Yoga"],
+          ["12:45", "13:30", "Rodscha aus Kambodscha & Tom Palme"],
+          ["14:00", "15:00", "Randale"],
+          ["15:30", "16:15", "Plume"],
+          ["16:45", "17:30", "Blacktoothed"],
+          ["18:00", "18:45", "Hopsydian"],
+          ["19:15", "20:00", "Lost In Hollywood"],
+          ["20:30", "21:15", "Phantom Corporation"],
+          ["21:45", "22:45", "Hæresis"],
+          ["23:15", "01:30", "Party.Monium Disco"]
+        ]
+      }
+    }
+  ]
+}
