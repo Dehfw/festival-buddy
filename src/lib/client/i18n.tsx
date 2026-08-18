@@ -158,6 +158,32 @@ const EN: Record<string, string> = {
   'Noch keine Band ausgewählt. Geh in den Timetable und trag dich bei deinen Bands ein – hier entsteht dann euer Crew-Plan.':
     'No bands selected yet. Open the timetable and pick your bands – your crew plan will appear here.',
   'Keine Band gefunden für „': 'No band found for “',
+  Lineup: 'Line-up',
+  '· Lineup folgt': '· line-up to be announced',
+  'A–Z': 'A–Z',
+  '🤘 Crew-Top': '🤘 Crew top',
+  '🔖 Nur meine': '🔖 Only mine',
+  '🔖 Merken': '🔖 Save',
+  '🔖 Gemerkt': '🔖 Saved',
+  Announced: 'Announced',
+  'Im Timetable': 'In the timetable',
+  'Auf Spotify reinhören': 'Listen on Spotify',
+  'Noch kein Timetable': 'No timetable yet',
+  'Spielzeit steht noch nicht fest – kommt mit dem Timetable':
+    'Set time not confirmed yet – it arrives with the timetable',
+  'Für diese Band ist kein Spotify-Profil hinterlegt.':
+    'No Spotify profile is stored for this band.',
+  'Noch niemand aus der Crew – sei die/der Erste! 🤘':
+    'Nobody from the crew yet – be the first! 🤘',
+  Spielzeit: 'Set time',
+  Spielzeiten: 'Set times',
+  'Eintragen ›': 'Sign up ›',
+  'Für dieses Festival ist noch keine Band eingetragen. Sobald die ersten announced sind, stehen sie hier.':
+    'No bands have been added for this festival yet. As soon as the first ones are announced, they will show up here.',
+  'Du hast dir noch keine Band gemerkt. Tipp auf das Lesezeichen neben einer Band.':
+    'You have not saved any bands yet. Tap the bookmark next to a band.',
+  'Für dieses Festival ist noch kein Lineup eingetragen. Sobald die ersten Bands announced sind, könnt ihr sie hier durchhören und markieren.':
+    'No line-up has been added for this festival yet. As soon as the first bands are announced, you can listen through them here and mark your favourites.',
   'Slot unbestätigt – Zeiten können sich ändern':
     'Unconfirmed slot – times may change',
   'Auf Spotify anhören': 'Listen on Spotify',
@@ -167,6 +193,7 @@ const EN: Record<string, string> = {
   '🤔 Ich bin interessiert (unverbindlich)': "🤔 I'm interested",
   'Ich bin interessiert': "I'm interested",
   'Dabei (': 'Going (',
+  'Will die Crew sehen (': 'The crew wants to see (',
   'Interessiert (': 'Interested (',
   Fertig: 'Done',
   'Vergangene Bands ausblenden': 'Hide past bands',
@@ -690,6 +717,12 @@ function translated(value: string): string {
   if (pending) return spaced(`OFFLINE · ${pending[1]} pending`);
   const older = key.match(/^(\d+) ältere Mitteilungen anzeigen$/);
   if (older) return spaced(`Show ${older[1]} older notifications`);
+  const saveBand = key.match(/^(.+) merken$/);
+  if (saveBand) return spaced(`Save ${saveBand[1]}`);
+  const unsaveBand = key.match(/^(.+) nicht mehr merken$/);
+  if (unsaveBand) return spaced(`Stop saving ${unsaveBand[1]}`);
+  const announcedBands = key.match(/^· (\d+) Bands announced$/);
+  if (announcedBands) return spaced(`· ${announcedBands[1]} bands announced`);
   const interested = key.match(/^(\d+) interessiert$/);
   if (interested) return spaced(`${interested[1]} interested`);
   const since = key.match(/^seit (.+)$/);

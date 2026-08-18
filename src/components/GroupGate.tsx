@@ -29,6 +29,15 @@ const FESTIVAL_LOGOS: Record<string, { src: string; alt: string }> = {
 };
 
 /**
+ * Zusatz zur Edition, solange kein Timetable da ist: Sind schon Bands
+ * announced, ist das Festival kein leeres Versprechen mehr – die Crew
+ * kann sofort durchhören und markieren.
+ */
+function festivalHint(bandCount: number): string {
+  return bandCount > 0 ? ` · ${bandCount} Bands announced` : ' · Lineup folgt';
+}
+
+/**
  * Zweites Gate nach dem Passkey-Login: Gruppe gründen (mit Festival-
  * Auswahl) oder per Einladungscode beitreten. Als Vollbild für Neue
  * ohne Gruppe – oder als Overlay ("+ weitere Gruppe") mit onClose.
@@ -215,7 +224,7 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
                 </span>
                 <span className="block text-[11px] text-ash">
                   {lockedFestival.edition}
-                  {!lockedFestival.hasLineup && ' · Lineup folgt'}
+                  {!lockedFestival.hasLineup && festivalHint(lockedFestival.bandCount)}
                 </span>
               </span>
               <span aria-hidden className="text-lg text-blood">
@@ -258,7 +267,7 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
                   </span>
                   <span className="block text-[11px] text-ash">
                     {f.edition}
-                    {!f.hasLineup && ' · Lineup folgt'}
+                    {!f.hasLineup && festivalHint(f.bandCount)}
                   </span>
                 </button>
               ))}

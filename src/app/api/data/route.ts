@@ -54,6 +54,7 @@ export async function GET(req: Request) {
     timetable,
     users: state.users,
     selections: state.selections,
+    bandInterests: state.bandInterests,
     positions: state.positions,
     blueprints,
     group: state.group,

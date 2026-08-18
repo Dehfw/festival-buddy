@@ -55,17 +55,29 @@ export type Mutation =
       slotId: string;
       x: number | null;
       y: number | null;
+    }
+  | {
+      op: 'interest';
+      /** Eindeutige Mutation-ID; fehlt nur bei Alt-Einträgen früherer Versionen */
+      id?: string;
+      group: string;
+      userId: string;
+      /** Band-Slug statt Slot-ID: gemerkt wird schon ohne Timetable */
+      slug: string;
+      interested: boolean;
     };
 
 /** Queue-Einträge älterer App-Versionen */
 type LegacyMutation = {
-  op: 'selection' | 'position';
+  op: 'selection' | 'position' | 'interest';
   id?: string;
   userId: string;
-  slotId: string;
+  slotId?: string;
+  slug?: string;
   group?: string;
   attending?: boolean;
   status?: SelectionStatus | null;
+  interested?: boolean;
   x?: number | null;
   y?: number | null;
 };
@@ -73,6 +85,7 @@ type LegacyMutation = {
 const ENDPOINTS: Record<Mutation['op'], string> = {
   selection: '/api/selection',
   position: '/api/position',
+  interest: '/api/interest',
 };
 
 function safeParse<T>(raw: string | null): T | null {
@@ -88,6 +101,11 @@ export function loadCachedData(groupId: string): DataPayload | null {
   const data = safeParse<DataPayload>(localStorage.getItem(DATA_KEY_PREFIX + groupId));
   // Snapshot ohne group-Block (sollte es unter v2 nicht geben) verwerfen
   if (!data || !data.group) return null;
+  // Snapshot einer älteren App-Version kennt den Band-Pool noch nicht.
+  // Er kommt mit dem nächsten Poll; bis dahin ist die Lineup-Ansicht leer
+  // statt kaputt.
+  if (!Array.isArray(data.bandInterests)) data.bandInterests = [];
+  if (data.timetable && !Array.isArray(data.timetable.bands)) data.timetable.bands = [];
   return data;
 }
 
@@ -194,25 +212,40 @@ export function savePendingFestival(festivalId: string | null) {
 function parseQueue(raw: string | null): Mutation[] {
   const queue = safeParse<LegacyMutation[]>(raw) ?? [];
   return queue
-    .filter((m) => m.op === 'selection' || m.op === 'position')
+    .filter(
+      (m) =>
+        (m.op === 'interest' && typeof m.slug === 'string') ||
+        ((m.op === 'selection' || m.op === 'position') && typeof m.slotId === 'string')
+    )
     .map((m): Mutation => {
       const group = typeof m.group === 'string' ? m.group : '';
       // Alt-Einträge ohne ID bleiben ohne ID (werden über ihre Feldwerte
       // identifiziert) – eine bei jedem Parse neu erfundene ID wäre nicht
       // stabil und würde die Bestätigung anhand der ID unmöglich machen.
       const id = typeof m.id === 'string' && m.id ? m.id : undefined;
+      if (m.op === 'interest') {
+        return {
+          op: 'interest',
+          id,
+          group,
+          userId: m.userId,
+          slug: m.slug as string,
+          interested: m.interested !== false,
+        };
+      }
+      const slotId = m.slotId as string;
       if (m.op === 'selection') {
         // Alt-Einträge (attending: boolean) auf status umschreiben
         const status =
           m.status !== undefined ? m.status : m.attending ? 'going' : null;
-        return { op: 'selection', id, group, userId: m.userId, slotId: m.slotId, status: status ?? null };
+        return { op: 'selection', id, group, userId: m.userId, slotId, status: status ?? null };
       }
       return {
         op: 'position',
         id,
         group,
         userId: m.userId,
-        slotId: m.slotId,
+        slotId,
         x: m.x ?? null,
         y: m.y ?? null,
       };
@@ -291,6 +324,7 @@ export function applyMutation(data: DataPayload, m: Mutation): DataPayload {
     ...data,
     users: [...data.users],
     selections: [...data.selections],
+    bandInterests: [...(data.bandInterests ?? [])],
     positions: [...data.positions],
   };
   switch (m.op) {
@@ -304,6 +338,13 @@ export function applyMutation(data: DataPayload, m: Mutation): DataPayload {
         next.positions = next.positions.filter(
           (p) => !(p.userId === m.userId && p.slotId === m.slotId)
         );
+      break;
+    }
+    case 'interest': {
+      next.bandInterests = next.bandInterests.filter(
+        (b) => !(b.userId === m.userId && b.slug === m.slug)
+      );
+      if (m.interested) next.bandInterests.push({ userId: m.userId, slug: m.slug });
       break;
     }
     case 'position': {
@@ -330,6 +371,8 @@ function payloadFor(m: Mutation): unknown {
       return { slotId: m.slotId, status: m.status, ...(m.group ? { group: m.group } : {}) };
     case 'position':
       return { slotId: m.slotId, x: m.x, y: m.y, ...(m.group ? { group: m.group } : {}) };
+    case 'interest':
+      return { slug: m.slug, interested: m.interested, ...(m.group ? { group: m.group } : {}) };
   }
 }
 
@@ -480,9 +523,13 @@ async function withFlushLock(fn: () => Promise<number>): Promise<number> {
  */
 function isSameMutation(a: Mutation, b: Mutation): boolean {
   if (a.id !== undefined || b.id !== undefined) return a.id === b.id;
-  if (a.group !== b.group || a.userId !== b.userId || a.slotId !== b.slotId) return false;
-  if (a.op === 'selection' && b.op === 'selection') return a.status === b.status;
-  if (a.op === 'position' && b.op === 'position') return a.x === b.x && a.y === b.y;
+  if (a.op !== b.op || a.group !== b.group || a.userId !== b.userId) return false;
+  if (a.op === 'selection' && b.op === 'selection')
+    return a.slotId === b.slotId && a.status === b.status;
+  if (a.op === 'position' && b.op === 'position')
+    return a.slotId === b.slotId && a.x === b.x && a.y === b.y;
+  if (a.op === 'interest' && b.op === 'interest')
+    return a.slug === b.slug && a.interested === b.interested;
   return false;
 }
 

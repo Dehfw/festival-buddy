@@ -9,8 +9,11 @@
  *
  * Zeigt die Datei auf eine Running-Order-Textdatei, werden die gefundenen
  * IDs als "| spotify=..." an die Bandzeilen gehängt – dann bleiben sie
- * beim nächsten `build-timetable.mjs` erhalten. Zeigt sie auf ein
- * Timetable-JSON, wird direkt dort ergänzt.
+ * beim nächsten `build-timetable.mjs` erhalten. Das gilt für Slot-Zeilen
+ * mit Spielzeit genauso wie für die reinen Bandnamen im
+ * [announced]-Block; gerade die brauchen die IDs am dringendsten, weil
+ * dort das Reinhören die einzige Funktion ist. Zeigt sie auf ein
+ * Timetable-JSON, wird direkt dort ergänzt (Slots und `bands`).
  *
  * Zugangsdaten gibt es kostenlos unter developer.spotify.com (App
  * anlegen, Client ID + Secret kopieren).
@@ -71,6 +74,26 @@ const source = await readFile(filePath, 'utf8');
 
 /** Bandzeile im Textformat: "14:45-15:30 Palebloom | spotify=…" */
 const SLOT_LINE = /^(\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2})\s+(.+)$/;
+/** Kopfzeilen – im [announced]-Block dürfen sie nicht als Band gelten */
+const HEADER_LINE = /^(festival|edition|dataVersion|stage|day)\s*:/i;
+
+/**
+ * Eine Bandzeile aus der Textdatei. Im Timetable steht davor die
+ * Spielzeit, im [announced]-Block nur der Name – announced Bands haben
+ * ja noch keine. Beide brauchen dieselbe Spotify-Suche.
+ */
+function parseBandLine(trimmed, inAnnounced) {
+  const slot = SLOT_LINE.exec(trimmed);
+  if (slot) return { time: slot[1], rest: slot[2] };
+  if (!inAnnounced || HEADER_LINE.test(trimmed)) return null;
+  return { time: null, rest: trimmed };
+}
+
+/** Wechselt diese Zeile in den [announced]-Block? (null = kein Abschnitt) */
+function sectionAnnounced(trimmed) {
+  if (!trimmed.startsWith('[')) return null;
+  return /^\[announced\]$/i.test(trimmed);
+}
 
 /* ------------------------------------------------------------------ */
 /* Namen normalisieren                                                 */
@@ -212,14 +235,26 @@ if (isJson) {
     bands.add(slot.band);
     if (slot.spotifyArtistId && !known.has(slot.band)) known.set(slot.band, slot.spotifyArtistId);
   }
+  for (const band of timetable.bands ?? []) {
+    if (typeof band?.name !== 'string') continue;
+    bands.add(band.name);
+    if (band.spotifyArtistId && !known.has(band.name)) known.set(band.name, band.spotifyArtistId);
+  }
 } else {
+  let inAnnounced = false;
   for (const line of source.split(/\r?\n/)) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('[')) continue;
-    const match = SLOT_LINE.exec(trimmed);
-    if (!match) continue;
-    const parts = match[2].split('|').map((p) => p.trim());
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const section = sectionAnnounced(trimmed);
+    if (section !== null) {
+      inAnnounced = section;
+      continue;
+    }
+    const parsed = parseBandLine(trimmed, inAnnounced);
+    if (!parsed) continue;
+    const parts = parsed.rest.split('|').map((p) => p.trim());
     const band = parts.shift();
+    if (!band) continue;
     bands.add(band);
     const existing = parts.find((p) => p.startsWith('spotify='));
     if (existing && !known.has(band)) known.set(band, existing.slice('spotify='.length));
@@ -284,24 +319,41 @@ if (isJson) {
     const { spotifyArtistId, ...rest } = slot;
     return { ...rest, spotifyArtistId: id };
   });
+  if (Array.isArray(timetable.bands)) {
+    timetable.bands = timetable.bands.map((band) => {
+      const id = typeof band?.name === 'string' ? idFor(band.name) : null;
+      if (!id || band.spotifyArtistId === id) return band;
+      patched++;
+      const { spotifyArtistId, ...rest } = band;
+      return { ...rest, spotifyArtistId: id };
+    });
+  }
   output = `${JSON.stringify(timetable, null, 2)}\n`;
 } else {
+  let inAnnounced = false;
   output = source
     .split(/\r?\n/)
     .map((line) => {
       const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('[')) return line;
-      const match = SLOT_LINE.exec(trimmed);
-      if (!match) return line;
-      const parts = match[2].split('|').map((p) => p.trim());
+      if (!trimmed || trimmed.startsWith('#')) return line;
+      const section = sectionAnnounced(trimmed);
+      if (section !== null) {
+        inAnnounced = section;
+        return line;
+      }
+      const parsed = parseBandLine(trimmed, inAnnounced);
+      if (!parsed) return line;
+      const parts = parsed.rest.split('|').map((p) => p.trim());
       const band = parts.shift();
+      if (!band) return line;
       const id = idFor(band);
       if (!id) return line;
       const options = parts.filter((p) => !p.startsWith('spotify='));
       if (parts.length !== options.length && known.get(band) === id && !force) return line;
       patched++;
       const indent = line.slice(0, line.length - line.trimStart().length);
-      return `${indent}${match[1]} ${[band, ...options, `spotify=${id}`].join(' | ')}`;
+      const prefix = parsed.time ? `${parsed.time} ` : '';
+      return `${indent}${prefix}${[band, ...options, `spotify=${id}`].join(' | ')}`;
     })
     .join('\n');
 }

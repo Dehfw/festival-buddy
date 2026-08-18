@@ -73,6 +73,8 @@ interface AppState {
   setActiveGroup: (groupId: string) => void;
   /** null = austragen, sonst neuen Status setzen */
   setSelection: (slotId: string, status: SelectionStatus | null) => void;
+  /** Band aus der Lineup-Ansicht merken/vergessen (Slug, kein Slot) */
+  setBandInterest: (slug: string, interested: boolean) => void;
   setPosition: (slotId: string, x: number | null, y: number | null) => void;
   refresh: () => Promise<void>;
 }
@@ -483,6 +485,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [user, applyLocal, syncPending]
   );
 
+  const setBandInterest = useCallback(
+    (slug: string, interested: boolean) => {
+      if (!user || !activeRef.current) return;
+      const m: Mutation = {
+        op: 'interest',
+        group: activeRef.current,
+        userId: user.id,
+        slug,
+        interested,
+      };
+      applyLocal(m);
+      void sendOrEnqueue(m).then((sent) => {
+        if (!sent) setOnline(navigator.onLine ?? false);
+        syncPending();
+      });
+    },
+    [user, applyLocal, syncPending]
+  );
+
   const setPosition = useCallback(
     (slotId: string, x: number | null, y: number | null) => {
       if (!user || !activeRef.current) return;
@@ -522,6 +543,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         adoptGroup,
         setActiveGroup,
         setSelection,
+        setBandInterest,
         setPosition,
         refresh,
       }}
