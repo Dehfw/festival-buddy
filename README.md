@@ -52,6 +52,14 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
   (`@simplewebauthn`, discoverable Credentials). Passkeys syncen über
   iCloud-Schlüsselbund bzw. Google Passwortmanager; für ein fremdes Gerät
   gibt es beim Login den QR-Code-Flow.
+- **Lineup-Ansicht** – für die Zeit vor der Running Order: Sobald ein
+  Festival seine ersten Bands announced, stehen sie als Liste in der App.
+  Durchhören per Spotify-Link, per Lesezeichen merken, und an jeder Band
+  sieht man, wer aus der Crew sie auch sehen will – Monate vor dem
+  Festival. Ohne Timetable ist das der einzige Tab; steht er, bleibt die
+  Liste als A–Z-Register über alle Bands und zeigt ihre Spielzeiten.
+  Gemerkt wird am Band-Slug, nicht an einer Slot-ID – die Merkungen
+  überleben den späteren Timetable-Import.
 - **Timetable-Grid** – alle 8 Bühnen nebeneinander (X-Achse), Zeit auf der
   Y-Achse, Tabs für die vier Festivaltage. In den Band-Slots zeigen bunte
   Kreise mit Initialen, wer hingeht. Band antippen → eintragen.
@@ -63,7 +71,7 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
   Eintragung.
 - **Bühnen-Karten mit POIs** – Toiletten 🚻, Wasser 💧, Merch 🛍️,
   Erste Hilfe ⛑️ und Eingänge 🚪 auf jedem Blueprint, für alle sichtbar.
-- **Veranstalter-Bereich** (`/veranstalter`) – Veranstalter pflegen den
+- **Veranstalter-Bereich** (`/veranstalter/bereich`) – Veranstalter pflegen den
   Timetable (Tage, Bühnen, Slots), die Festival-Metadaten und die
   Bühnenpläne inkl. POIs **ihres** Festivals selbst. Zugang per
   Einladungscode vom Betreiber (`npm run organizer -- generate <id>`),
@@ -128,15 +136,17 @@ eine andere Domain um, sind bestehende Passkeys dort nicht mehr nutzbar.
 
 Ein Passwort-Admin existiert nicht mehr – Festival-Daten pflegen
 **Veranstalter** direkt in der App, strikt beschränkt auf ihr(e)
-zugewiesene(n) Festival(s):
+zugewiesene(n) Festival(s). Die öffentliche Seite dazu liegt unter
+`/veranstalter` und erklärt Interessenten, was der Bereich kann; das
+Werkzeug selbst eine Ebene tiefer:
 
-- URL: `/veranstalter` (Veranstalter sehen zusätzlich den 🎪-Tab in der
+- URL: `/veranstalter/bereich` (Veranstalter sehen zusätzlich den 🎪-Tab in der
   unteren Navigation). Bearbeitbar: Timetable (Tage, Bühnen, Slots),
   Festival-Name/Edition und die Bühnenpläne inkl. POIs.
 - Zugang: der Betreiber erzeugt per CLI einen **einmaligen
   Einladungscode** und schickt ihn dem Veranstalter; der löst ihn –
   eingeloggt mit seinem normalen Passkey-Konto – unter
-  `/veranstalter?code=…` ein.
+  `/veranstalter/bereich?code=…` ein.
 
 ```bash
 DATABASE_URL=... npm run organizer -- generate woa2026   # Code erzeugen
@@ -167,7 +177,7 @@ DATABASE_URL=... npm run import:db -- --festival sb2026 pfad/sb.json
 ```
 
 `scripts/import-festival.mjs` nimmt jede Datei im App-Timetable-Format
-(`{ festival, edition, dataVersion, days, stages, slots }`). Für Summer
+(`{ festival, edition, dataVersion, days, stages, slots, bands }`). Für Summer
 Breeze ist der Clashfinder-Export die realistischste Quelle – die
 Parse-Logik des Scrapers lässt sich mit eigener Bühnen-Tabelle
 wiederverwenden. Slot-IDs (`tag-buehne-bandslug`) müssen über Re-Importe
@@ -199,8 +209,35 @@ bisherigen Stand: welche Slots neu, verschoben oder **entfallen** sind.
 Entfallene IDs nehmen die Eintragungen und Positionsmarker der Crews mit
 – deshalb vor jedem Update dort hinschauen.
 
+### Bands announcen, bevor der Timetable steht
+
+Festivals geben ihre ersten Bands Monate vor der Running Order bekannt.
+Dafür kennt die Textdatei einen `[announced]`-Abschnitt – eine Band pro
+Zeile, ohne Uhrzeit:
+
+```
+[announced]
+Amon Amarth | spotify=6vg9BW5gHSjidGbypXQku2
+Sabaton
+Heaven Shall Burn
+```
+
+Daraus entsteht das Feld `bands` der Importdatei, das in der App die
+Lineup-Ansicht füllt. `npm run lineup` behandelt diese Zeilen wie
+Slot-Zeilen: Die Spotify-Suche trägt ihre IDs nach, der Validator prüft
+sie mit. Kommt später die Running Order dazu, wandern die Bands in
+`[tag/buehne]`-Abschnitte – der Slug bleibt derselbe, also bleiben auch
+die Merkungen der Besucher erhalten. Nur die **Schreibweise** darf sich
+dabei nicht ändern; `npm run lineup:check` meldet Bands, die aus dem
+Pool verschwinden.
+
+Bands, die nur im Timetable stehen, ergänzt die App beim Lesen von
+selbst – der `[announced]`-Block ist also kein Pflichtteil, sondern nur
+für Bands ohne Slot nötig.
+
 `npm run lineup:spotify` füllt die `spotifyArtistId`, an der im
-Band-Sheet der „Auf Spotify anhören"-Button hängt. Ohne sie fehlt der
+Band-Sheet und in der Lineup-Ansicht der „Auf Spotify anhören"-Button
+hängt. Ohne sie fehlt der
 Button; von Hand gepflegte Lineups starten immer bei null (der
 Wacken-Export bringt seine IDs mit). Das Script nimmt nur exakte
 Namenstreffer aus der Spotify-Suche und meldet mehrdeutige und nicht
@@ -285,7 +322,7 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 
 | Route                                | Zweck                                        |
 | ------------------------------------ | -------------------------------------------- |
-| `GET  /api/data?group=…`             | Datenstand der Gruppe (Timetable des Gruppen-Festivals, Mitglieder, Auswahlen, Positionen, Blueprints); nur für Mitglieder |
+| `GET  /api/data?group=…`             | Datenstand der Gruppe (Timetable + Band-Pool des Gruppen-Festivals, Mitglieder, Auswahlen, gemerkte Bands, Positionen, Blueprints); nur für Mitglieder |
 | `POST /api/webauthn/register/options`| Passkey-Registrierung starten (`{ name }`)   |
 | `POST /api/webauthn/register/verify` | Registrierung prüfen, Nutzer + Session       |
 | `POST /api/webauthn/login/options`   | Passkey-Login starten (discoverable)         |
@@ -303,6 +340,7 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | `DELETE /api/groups/[id]/members/[userId]` | Owner/Admins: Mitglied entfernen (Owner nie) |
 | `PATCH /api/groups/[id]/members/[userId]` | Owner/Admins: Rolle setzen (`{ role: 'admin' \| 'member' }`) |
 | `POST /api/selection`                | Band-Teilnahme setzen/entfernen (Session, `{ group, slotId, status }`) |
+| `POST /api/interest`                 | Band aus dem Lineup merken/vergessen (Session, `{ group, slug, interested }`) |
 | `POST /api/position`                 | ✕-Position setzen/löschen (Session, `{ group, slotId, x, y }`) |
 | `GET  /api/organizer/me`             | Meine Veranstalter-Festivals                 |
 | `POST /api/organizer/redeem`         | Veranstalter-Code einlösen (`{ code }`, rate-limited) |

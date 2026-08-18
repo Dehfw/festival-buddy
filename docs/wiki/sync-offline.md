@@ -48,7 +48,8 @@ Antwortcodes steuern den Zustand:
 
 ## Optimistische Mutationen & Offline-Queue
 
-Es gibt genau zwei Mutationen: `selection` und `position`. Beide
+Es gibt drei Mutationen: `selection`, `interest` (Band aus der
+Lineup-Ansicht merken) und `position`. Alle
 laufen durch `sendOrEnqueue()`:
 
 1. Mutation kommt **immer zuerst in die Warteschlange** (localStorage,
@@ -119,7 +120,7 @@ Die App ist als PWA installierbar (Manifest +
 einer Version gestempelt und unter `/sw.js` ausgeliefert
 (`src/app/sw.js/route.ts`):
 
-- **Precache** der App-Shell (u. a. `/` und `/veranstalter`),
+- **Precache** der App-Shell (u. a. `/` und `/veranstalter/bereich`),
 - **network-first mit Cache-Fallback** für Daten,
 - **stale-while-revalidate** für Assets.
 

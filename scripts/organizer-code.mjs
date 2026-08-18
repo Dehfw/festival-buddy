@@ -1,7 +1,7 @@
 /**
  * Betreiber-CLI für Veranstalter-Zugänge: erzeugt/verwaltet die
  * Einladungscodes, mit denen sich ein Passkey-Nutzer in der App
- * (/veranstalter) zum Veranstalter eines Festivals macht. Es gibt bewusst
+ * (/veranstalter/bereich) zum Veranstalter eines Festivals macht. Es gibt bewusst
  * kein Web-Interface dafür – wie beim Festival-Import läuft alles über
  * die Datenbank-URL.
  *
@@ -101,7 +101,7 @@ try {
     console.log('');
     console.log(`  ${formatInviteCode(code)}`);
     console.log('');
-    console.log(`  Einlösen in der App unter /veranstalter?code=${formatInviteCode(code)}`);
+    console.log(`  Einlösen in der App unter /veranstalter/bereich?code=${formatInviteCode(code)}`);
     console.log('  (Der Veranstalter braucht dafür ein normales Passkey-Konto.)');
   } else if (command === 'list') {
     const festivalId = args[0];

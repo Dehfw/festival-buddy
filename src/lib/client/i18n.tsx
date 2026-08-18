@@ -29,7 +29,7 @@ const PAGE_METADATA: Record<
       description: 'The timetable planner for your festival crew.',
     },
   },
-  '/fuer-veranstalter': {
+  '/veranstalter': {
     de: {
       title: 'Festival Buddy für Veranstalter – Timetable, Bühnenpläne & Mitteilungen | DEFƎKT',
       description: 'Festival Buddy für Veranstalter und ihre Festivalteams.',
@@ -420,8 +420,6 @@ const EN: Record<string, string> = {
   'Publikum.': 'audience.',
   Selbst: 'Self',
   Verwaltet: 'Managed',
-  'Festival Buddy ist der Timetable-Planer, mit dem Crews ihren Festivalbesuch planen. Als Veranstalter pflegst du Timetable, Bühnenpläne und Mitteilungen deines Festivals selbst – jede Änderung landet in Sekunden bei allen. 🤘':
-    'Festival Buddy is the timetable planner crews use to organise their festival. As an organiser, you manage your festival timetable, stage maps and notifications yourself – every update reaches everyone within seconds. 🤘',
   'Zugang anfragen': 'Request access',
   'Ich habe schon einen Code': 'I already have a code',
   'So planen deine Besucher – aus dem Timetable, den du pflegst.':
@@ -430,6 +428,13 @@ const EN: Record<string, string> = {
   'dein Festival': 'your festival',
   'Kein PDF-Update, kein Aushang am Bauzaun. Ein Ort für Timetable, Pläne und Ansagen.':
     'No PDF updates and no notices on the fence. One place for timetables, maps and announcements.',
+  'Lineup schon im Winter': 'Line-up ready in winter',
+  'Du musst nicht auf die Running Order warten. Sobald deine ersten Bands announced sind, kommen sie ins Lineup – dein Publikum hört rein und markiert, wen es sehen will. Die Spielzeiten reichst du später nach.':
+    'No need to wait for the running order. As soon as your first bands are announced they go into the line-up – your audience listens through them and marks who they want to see. Set times follow later.',
+  'Erst das Lineup, später Tage, Bühnen, Slots und Bühnenpläne. Deine Besucher planen ab der ersten announcten Band mit – und sehen jede Änderung sofort.':
+    'The line-up first, days, stages, slots and stage maps later. Your visitors start planning with the very first announced band – and see every change instantly.',
+  'Festival Buddy ist der Timetable-Planer, mit dem Crews ihren Festivalbesuch planen. Als Veranstalter pflegst du Timetable, Bühnenpläne und Mitteilungen deines Festivals selbst – und dein Publikum ist schon dabei, bevor die Running Order steht. 🤘':
+    'Festival Buddy is the timetable planner crews use for their festival. As an organiser you maintain your timetable, stage maps and notifications yourself – and your audience is on board before the running order even exists. 🤘',
   'Timetable im Griff': 'Your timetable under control',
   'Tage, Bühnen und Slots legst du direkt in der App an und änderst sie jederzeit. Jede Änderung ist in Sekunden bei allen Besuchern – ohne neues PDF, ohne App-Update.':
     'Create and update days, stages and slots directly in the app. Every change reaches all visitors within seconds – without a new PDF or app update.',
@@ -938,7 +943,7 @@ export function LanguageSwitch({ placement = 'floating' }: { placement?: 'floati
   const pathname = usePathname();
   const isPublicPage =
     pathname === '/' ||
-    pathname === '/fuer-veranstalter' ||
+    pathname === '/veranstalter' ||
     pathname === '/passwort-reset' ||
     pathname.startsWith('/join/');
 

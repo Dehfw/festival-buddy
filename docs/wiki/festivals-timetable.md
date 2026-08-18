@@ -1,7 +1,8 @@
 # Festivals & Timetable
 
 Die Timetables liegen **pro Festival in der Datenbank** (Tabelle
-`festivals`, Spalte `timetable` als JSONB mit `days`/`stages`/`slots`).
+`festivals`, Spalte `timetable` als JSONB mit
+`days`/`stages`/`slots`/`bands`).
 `data/timetable.json` dient nur noch als Seed für Wacken beim
 allerersten Schemalauf – danach ist die DB die Wahrheit, und ein
 Lineup-Update braucht **keinen Redeploy** (Import-Kommandos: siehe
@@ -24,6 +25,34 @@ Edits nie – erst echtes Löschen entfernt die daran hängenden
 Teilnahmen/Positionen (in derselben Transaktion, mit Warn-Dialog im
 Editor).
 
+## Der Band-Pool: Lineup vor dem Timetable
+
+Festivals announcen ihre ersten Bands Monate vor der Running Order.
+Deshalb gibt es neben den Slots eine zweite Liste im selben JSONB-Block:
+`bands` – Einträge aus `slug`, `name` und optional `spotifyArtistId`.
+Sie füllt die **Lineup-Ansicht** in der App, in der man Bands durchhören
+und sich merken kann, lange bevor es einen Timetable gibt.
+
+Der `slug` ist derselbe, den `slugify()` ans Ende jeder Slot-ID setzt
+(`bandSlug()` in `src/lib/types.ts`, von `db.ts` und den Import-Scripts
+gemeinsam benutzt). Das ist Absicht und die zweite wichtige Vertragsregel
+neben den Slot-IDs:
+
+- Merkungen liegen in `band_interests (user_id, festival_id, band_slug)`
+  und hängen damit **nicht** am Timetable. Sie überleben den Import der
+  Running Order, bei dem alle Slot-IDs überhaupt erst entstehen.
+- Über den gemeinsamen Slug findet die Lineup-Ansicht später die Slots
+  ihrer Bands (`slotsForBand()`), zeigt die Spielzeiten an und führt ins
+  normale Band-Sheet, wo die verbindliche Zusage passiert.
+- Ändert sich die **Schreibweise** einer Band, ändert sich ihr Slug –
+  dann ist die Merkung weg. `validate-timetable.mjs` warnt beim
+  Vergleich mit dem Live-Stand, welche Bands aus dem Pool verschwinden.
+
+`getTimetable()` mischt beim Lesen jede Band, die nur im Timetable steht,
+in den Pool (`mergeBands`). So taucht auch ein Slot, den ein
+Veranstalter frisch im Editor angelegt hat, sofort in der Lineup-Ansicht
+auf – und alte Importe ohne `bands`-Feld funktionieren unverändert.
+
 ## Zeiten nach Mitternacht
 
 Sets nach Mitternacht zählen zum Vortag und werden mit Stunden ≥ 24
@@ -41,10 +70,16 @@ gepollt, das JSONB muss nicht jedes Mal von der Platte. Welchen
 Timetable ein Client bekommt, entscheidet seine aktive Gruppe: Der
 Payload enthält immer den Timetable **des Gruppen-Festivals**.
 
-Festivals ohne importiertes Lineup (`slots: []`, z. B. Summer Breeze
-vor dem Import) sind trotzdem gründbar – die App zeigt „Lineup folgt",
-der Import füllt später. `GET /api/festivals` liefert dafür das Flag
-`hasLineup`.
+Festivals ohne importierten Timetable (`slots: []`) sind trotzdem
+gründbar. Was die App dann zeigt, hängt am Band-Pool:
+
+- `bands` gefüllt → die **Lineup-Ansicht** ist der einzige Tab; Grid und
+  „Unsere Bands" wären ohne Slots leer.
+- `bands` leer → wie bisher „Lineup folgt".
+
+`GET /api/festivals` liefert dafür `hasLineup` (gibt es Slots?) und
+`bandCount` (wie viele Bands stehen im Pool?). Bei der Gruppengründung
+steht damit „· 30 Bands announced" statt „· Lineup folgt".
 
 ## Woher kommen die Daten?
 
@@ -53,6 +88,9 @@ der Import füllt später. `GET /api/festivals` liefert dafür das Flag
 - **Fallback:** Scraper (`npm run scrape`) mit mehreren Strategien
   (JSON-LD, eingebettete JSON-Blobs, referenzierte API-URLs, zuletzt
   der Clashfinder-Export).
+- **Nur announcte Bands:** ein `[announced]`-Abschnitt in der
+  Running-Order-Textdatei, eine Band pro Zeile. `npm run lineup` sucht
+  auch für diese Zeilen die Spotify-IDs und schreibt sie in `bands`.
 - **Andere Festivals:** jede Datei im App-Timetable-Format über
   `scripts/import-festival.mjs`. Ohne Export wird die Running Order als
   Textdatei unter `lineups/` gepflegt und mit
