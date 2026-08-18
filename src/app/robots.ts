@@ -12,6 +12,9 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     rules: {
       userAgent: '*',
       allow: '/',
+      // '/gruppe' ist der alte Pfad der Gruppen-Seite und leitet auf
+      // '/app/gruppe' um – auch ein Redirect in die App gehört nicht in
+      // den Index.
       disallow: ['/app', '/gruppe', '/api/', '/join/'],
     },
     sitemap: `${await resolveSiteUrl()}/sitemap.xml`,

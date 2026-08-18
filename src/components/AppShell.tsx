@@ -86,7 +86,7 @@ export function AppShell() {
           <DefektLogo />
           {/* Aktive Gruppe: Tap öffnet die Gruppen-Seite */}
           <Link
-            href="/gruppe"
+            href="/app/gruppe"
             className="flex min-w-0 items-center gap-1.5 rounded-full border border-rivet bg-steel-2 py-0.5 pl-0.5 pr-2.5"
             title={`${data.group.name} · ${data.group.festivalName}`}
           >
@@ -115,7 +115,7 @@ export function AppShell() {
           {/* Mitteilungen (Veranstalter-Durchsagen & App-News) */}
           <AnnouncementsBell />
           {/* Profilbild öffnet die Gruppen-Seite (Abmelden lebt dort) */}
-          <Link href="/gruppe" title={`${user.name} – Gruppe & Konto`}>
+          <Link href="/app/gruppe" title={`${user.name} – Gruppe & Konto`}>
             <Avatar user={user} size={30} ring />
           </Link>
         </div>

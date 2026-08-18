@@ -21,7 +21,9 @@ sitzt unter `/app/veranstalter`, weil es zur eingeloggten App gehört
 (wie `/app` selbst); damit ist es über die bestehende `/app`-Regel
 automatisch aus `robots.txt` heraus, ohne dass die öffentliche Seite
 darunter leidet. Der alte Pfad `/fuer-veranstalter` leitet dauerhaft
-(301) auf `/veranstalter` um (`redirects` in `next.config.mjs`).
+(308) auf `/veranstalter` um (`redirects` in `next.config.mjs`; Next.js
+antwortet bei `permanent: true` mit 308, nicht 301 – für Bookmarks und
+Suchmaschinen gleichwertig).
 
 ## Zugang & Zuweisung
 

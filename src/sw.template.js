@@ -8,7 +8,8 @@
  * erkennt den neuen SW und die App kann einen Update-Hinweis anzeigen.
  *
  * Strategie:
- *  - Landing ('/'), App-Shell ('/app'), Gruppe, Admin, Manifest & Icons
+ *  - Landing ('/'), App-Shell ('/app') samt Gruppen- und
+ *    Veranstalter-Seite, Manifest & Icons
  *    werden beim Install vorge-cached.
  *  - GET /api/data: Netz zuerst (kurzer Timeout), Fallback auf Cache.
  *    Jede erfolgreiche Antwort aktualisiert den Cache -> die App funktioniert
@@ -68,7 +69,7 @@ function clearDataCaches() {
 const PRECACHE = [
   '/',
   '/app',
-  '/gruppe',
+  '/app/gruppe',
   '/app/veranstalter',
   '/manifest.webmanifest',
   '/icons/icon-192.png',

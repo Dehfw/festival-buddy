@@ -2,7 +2,7 @@
 
 Gruppen sind die Mandanten der App: Jede Gruppe gehört zu **genau einem
 Festival** und sieht nur ihre eigenen Mitglieder samt deren Teilnahmen
-und Positionen. Verwaltet wird alles auf `/gruppe`; die API-Routen
+und Positionen. Verwaltet wird alles auf `/app/gruppe`; die API-Routen
 liegen unter `src/app/api/groups/`, die Datenschicht in
 `src/lib/db.ts`.
 

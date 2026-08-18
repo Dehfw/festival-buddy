@@ -44,7 +44,7 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
   verkleinert, in der DB gespeichert), Mitglieder entfernen, Admins
   ernennen/entfernen und die Feuerrahmen-Schwelle 🔥 einstellen (0 = aus).
   Der Owner selbst kann weder entfernt noch degradiert werden. Verwaltet
-  wird alles auf der Gruppen-Seite `/gruppe` (Tap aufs Profilbild oder den
+  wird alles auf der Gruppen-Seite `/app/gruppe` (Tap aufs Profilbild oder den
   Gruppen-Chip im Header); dort wechselt man auch zwischen mehreren
   Gruppen.
 - **Passkey-Login mit Autodiscovery** – kein Passwort: einmal registrieren,
