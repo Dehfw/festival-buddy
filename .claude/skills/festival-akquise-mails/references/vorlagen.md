@@ -4,6 +4,13 @@ Stilvorlagen, keine Formulare. Der **Bezugssatz** (im Beispiel kursiv
 markiert) und die Auswahl der Nutzenpunkte werden für jedes Festival neu
 geschrieben – der Rest darf stehen bleiben. Platzhalter in `[…]`.
 
+Für die Erstmail gibt es zwei Fassungen, eine je Aufhänger (siehe
+SKILL.md): **1a** für Festivals mit mehreren Bühnen und parallelem
+Programm, **1b** für eine Bühne – oder wenn du die Bühnenanzahl nicht
+sicher weißt. Die formale Fassung (2) und die englische (6) gibt es nur
+einmal; dort tauschst du Bezugssatz und Nutzenpunkte nach demselben
+Muster.
+
 Signatur immer vollständig:
 
 ```
@@ -17,20 +24,21 @@ moin@festivalbuddy.app
 
 ---
 
-## 1. Erstmail an ein kleines bis mittleres Festival (Standardfall)
+## 1a. Erstmail, Bühnen-Aufhänger (mehrere Bühnen, paralleles Programm)
 
 **Betreff:** Timetable-App fürs [Festival] – kostenlos, falls interessant
 
 ```
 Hallo [Festival]-Crew,
 
-ich hab euer Lineup fürs [Termin] gesehen – *drei Bühnen und die
-Running Order bisher nur als Plakat-PDF, oder?*
+ich hab euer Lineup fürs [Termin] gesehen – *bei [Anzahl] Bühnen
+parallel muss man sich ja jedes Jahr aufs Neue entscheiden, und die
+Running Order gibt's bisher nur als Plakat-PDF, oder?*
 
 Ich baue Festival Buddy: eine kleine Web-App, in der Crews ihren
-Festivalbesuch zusammen planen – wer geht zu welcher Band, wo trifft man
-sich, Bühnenpläne mit WC/Wasser/Merch. Läuft auch offline, wenn auf dem
-Gelände nichts mehr geht.
+Festivalbesuch zusammen planen – alle Bühnen nebeneinander im Timetable,
+wer aus der Truppe zu welcher Band geht, und wo man sich im Publikum
+wiederfindet. Läuft auch offline, wenn auf dem Gelände nichts mehr geht.
 
 Für euch als Veranstalter wäre interessant:
 
@@ -38,6 +46,7 @@ Für euch als Veranstalter wäre interessant:
   PDF.
 - Ihr könnt Mitteilungen rausschicken (Band fällt aus, Unwetter),
   auf Wunsch als Push aufs Handy.
+- Zu jeder Bühne ein Plan mit WC, Wasser, Merch und Sanitätern.
 - Besucherdaten seht ihr nie: nur anonyme Zahlen, keine Namen.
 
 Das Ganze ist kostenlos, ich mach das nicht kommerziell. Ihr müsstet
@@ -46,6 +55,44 @@ auch nichts tippen – ich lege euer Festival mitsamt Lineup an.
 Soll ich euch das mit eurem Lineup aufsetzen und den Link schicken?
 Wenn das nichts für euch ist, sag einfach kurz Bescheid – dann hörst du
 nichts mehr von mir.
+
+[Signatur]
+```
+
+---
+
+## 1b. Erstmail, Timetable-Aufhänger (eine Bühne, oder Bühnenzahl unklar)
+
+Kein Wort über Bühnen und Overlaps – hier gibt es keine. Die App ist
+schlicht die App für den Timetable.
+
+**Betreff:** Eure Running Order als App – kostenlos, falls interessant
+
+```
+Hallo [Festival]-Crew,
+
+*ich hab gesehen, dass eure Running Order fürs [Termin] steht – bisher
+als Plakat und über Insta, richtig?*
+
+Ich baue Festival Buddy: eine kleine Web-App, in der euer Timetable
+steckt. Die Leute haben die Spielzeiten in der Tasche statt als
+verpixeltes Foto, kriegen einen Hinweis, bevor ihre Band anfängt, und
+verabreden sich darin mit ihrer Crew, statt in fünf WhatsApp-Gruppen.
+Läuft auch offline, wenn auf dem Gelände nichts mehr geht.
+
+Für euch als Veranstalter wäre interessant:
+
+- Verschiebt sich was oder fällt eine Band aus, ist die Änderung in
+  Sekunden bei allen – ohne neues PDF und ohne Post, den die Hälfte
+  nicht sieht.
+- Ihr könnt Mitteilungen rausschicken, auf Wunsch als Push aufs Handy.
+- Besucherdaten seht ihr nie: nur anonyme Zahlen, keine Namen.
+
+Das Ganze ist kostenlos, ich mach das nicht kommerziell. Ihr müsstet
+auch nichts tippen – ich lege euer Festival mitsamt Running Order an.
+
+Soll ich euch das aufsetzen und den Link schicken? Wenn das nichts für
+euch ist, sag einfach kurz Bescheid – dann hörst du nichts mehr von mir.
 
 [Signatur]
 ```

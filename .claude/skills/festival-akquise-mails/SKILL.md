@@ -100,8 +100,9 @@ dir die Angaben fehlen und du sie nicht nachsehen kannst, frag den
 Nutzer, statt zu raten:
 
 1. **Wer und wann** – Festivalname, Termin, Ort, Ausgabe („zum 15. Mal").
-2. **Größe und Bühnen** – ein Zwei-Bühnen-Wiesenfestival braucht eine
-   andere Mail als ein Ding mit 20.000 Leuten.
+2. **Größe und Bühnenanzahl** – die wichtigste Angabe, denn sie
+   entscheidet über den Aufhänger (siehe nächster Abschnitt). Läuft das
+   Programm parallel auf mehreren Bühnen oder nacheinander auf einer?
 3. **Wie das Programm heute kommuniziert wird** – PDF-Plakat? Bild auf
    Instagram? Clashfinder? Eigene App? Das ist dein bester Aufhänger,
    weil es der konkrete Schmerz ist (Änderungen erreichen niemanden).
@@ -110,6 +111,48 @@ Nutzer, statt zu raten:
    Booking-Adressen nur, wenn nichts anderes ausgewiesen ist.
 5. **Ton der eigenen Außendarstellung** – duzt das Festival auf seiner
    Seite, duzt du auch.
+
+## Der Aufhänger: Bühnen oder schlicht der Timetable
+
+Bevor du den ersten Satz schreibst, entscheide dich für **einen** von zwei
+Aufhängern. Er hängt an der Bühnenanzahl, und die falsche Wahl macht die
+Mail schlechter als gar keine Mail – wer einem Ein-Bühnen-Festival vom
+Bühnen-Wirrwarr erzählt, hat die Website erkennbar nicht angesehen.
+
+**Ab etwa drei Bühnen bzw. bei parallelem Programm: der Bühnen-Aufhänger.**
+Hier ist der Schmerz echt und benennbar – Overlaps. Die Crew will zu
+verschiedenen Bands, verliert sich und weiß nicht, wer wo steht. Darauf
+zielt die App direkt:
+
+- alle Bühnen nebeneinander in einem Grid, Zeit auf der Y-Achse, statt
+  eines Plakats, das man drehen und zoomen muss,
+- man sieht in jedem Slot, wer aus der eigenen Crew dabei ist,
+- Positionsmarker auf dem Bühnenplan („hier stehe ich") und POIs für
+  WC, Wasser, Merch, Sanitäter.
+
+Nenn die Bühnenanzahl konkret („eure vier Bühnen"), aber **nur wenn du
+sie geprüft hast**. Eine falsche Zahl kostet genauso viel wie ein falsch
+geschriebener Festivalname.
+
+**Bei einer oder zwei Bühnen: der schlichte Timetable-Aufhänger.** Hier
+gibt es keine Clashes, also erfinde keine. Das Argument ist dann einfach,
+dass es eine App für den Timetable ist:
+
+- die Running Order steckt aktuell in der Tasche, offline, ohne
+  PDF-Gezoome,
+- Änderungen und Ausfälle erreichen alle sofort statt über einen
+  Instagram-Post, den die Hälfte nicht sieht,
+- Erinnerung, bevor die eigene Band anfängt,
+- die Crew verabredet sich darin, statt in vier WhatsApp-Gruppen.
+
+**Im Zweifel die schlichte Variante.** Sie stimmt immer und behauptet
+nichts über ein Festival, das du nicht kennst. Ist die Bühnenanzahl
+nicht herauszufinden und der Nutzer weiß es auch nicht, schreib die
+Timetable-Fassung statt zu raten.
+
+Das gilt für den Bezugssatz **und** für die Nutzenpunkte darunter: Beide
+kommen aus demselben Aufhänger, sonst zerfällt die Mail in zwei Hälften,
+die sich nicht kennen.
 
 ## Aufbau der Erstmail
 
@@ -120,8 +163,8 @@ Nutzer, statt zu raten:
    umgesehen hast.
 4. **Ein Satz, was Festival Buddy ist**, aus Besuchersicht.
 5. **Zwei bis drei Punkte, was die Orga davon hat** – kurze Zeilen oder
-   Spiegelstriche, kein Feature-Katalog. Wähl aus, was zu diesem
-   Festival passt.
+   Spiegelstriche, kein Feature-Katalog. Genommen aus dem Aufhänger, für
+   den du dich oben entschieden hast.
 6. **Das Angebot**: kostenlos, wir legen das Festival an und tippen das
    Lineup ab, ihr müsst nichts tun.
 7. **Eine Frage** als Abschluss („Soll ich euch das mal mit eurem Lineup
@@ -181,6 +224,8 @@ wenn jemand zugesagt hat, sonst ist er im Zweifel verbrannt.
 - Festivalname, Termin und Ansprechpartner überall richtig geschrieben?
   (Der falsche Festivalname ist der teuerste Tippfehler dieser Mail.)
 - Steht ein Satz drin, der nur auf dieses Festival passt?
+- Passt der Aufhänger zur Bühnenanzahl – und stimmt die Zahl, falls du
+  eine nennst?
 - Unter 160 Wörtern?
 - Genau eine Frage am Schluss?
 - Keine Zahl und keine Referenz, die du nicht belegen kannst?
