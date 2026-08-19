@@ -153,6 +153,12 @@ DATABASE_URL=... npm run organizer -- remove woa2026 u-… # Zugang entziehen (s
   Band-Auswahlen und Positionsmarker der Crews mitgelöscht – der Editor
   warnt vorher mit Anzahl.
 
+Neue Festivals kommen über die öffentliche Seite `/fuer-veranstalter`
+(Kontakt: `moin@festivalbuddy.app`) oder weil wir sie ansprechen. Für
+diese Anschreiben – Erstmail, Nachfassen, Rückfragen, Zusagen – ist der
+Ablauf samt Vorlagen als Skill hinterlegt:
+`.claude/skills/festival-akquise-mails/`.
+
 ## Timetable-Daten
 
 Die Timetables liegen **pro Festival in der Datenbank** (Tabelle
