@@ -116,7 +116,7 @@ Veranstalter-Editor dieselben IDs treffen.
 
 **Zur Spotify-Suche.** Ohne `spotifyArtistId` fehlt der „Auf Spotify
 anhören"-Button – der Normalfall, sobald ein Lineup von Hand gepflegt
-wird. Bei announcten Bands wiegt das schwerer als beim fertigen
+wird. Bei angekündigten Bands wiegt das schwerer als beim fertigen
 Timetable: Reinhören ist dort die einzige Funktion, die die Band
 überhaupt hat. Die Zugangsdaten (`SPOTIFY_CLIENT_ID`,
 `SPOTIFY_CLIENT_SECRET`) kommen aus `.env.local`; fehlen sie, wird der

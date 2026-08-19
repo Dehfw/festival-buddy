@@ -88,7 +88,7 @@ steht damit „· 30 Bands announced" statt „· Lineup folgt".
 - **Fallback:** Scraper (`npm run scrape`) mit mehreren Strategien
   (JSON-LD, eingebettete JSON-Blobs, referenzierte API-URLs, zuletzt
   der Clashfinder-Export).
-- **Nur announcte Bands:** ein `[announced]`-Abschnitt in der
+- **Nur angekündigte Bands:** ein `[announced]`-Abschnitt in der
   Running-Order-Textdatei, eine Band pro Zeile. `npm run lineup` sucht
   auch für diese Zeilen die Spotify-IDs und schreibt sie in `bands`.
 - **Andere Festivals:** jede Datei im App-Timetable-Format über

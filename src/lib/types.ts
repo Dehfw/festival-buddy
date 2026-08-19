@@ -51,7 +51,7 @@ export interface Timetable {
   stages: Stage[];
   slots: Slot[];
   /**
-   * Alle Bands des Festivals für die Lineup-Ansicht: die announcten und
+   * Alle Bands des Festivals für die Lineup-Ansicht: die angekündigten und
    * (sobald es sie gibt) die aus dem Timetable. Leer = kein Lineup
    * gepflegt, die App zeigt dann weiter „Lineup folgt".
    */

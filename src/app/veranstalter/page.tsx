@@ -128,7 +128,7 @@ const STEPS: { n: string; title: string; body: string }[] = [
   {
     n: '03',
     title: 'Loslegen',
-    body: 'Erst das Lineup, später Tage, Bühnen, Slots und Bühnenpläne. Deine Besucher planen ab der ersten announcten Band mit – und sehen jede Änderung sofort.',
+    body: 'Erst das Lineup, später Tage, Bühnen, Slots und Bühnenpläne. Deine Besucher planen ab der ersten angekündigten Band mit – und sehen jede Änderung sofort.',
   },
 ];
 

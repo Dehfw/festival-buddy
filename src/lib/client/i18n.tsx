@@ -431,7 +431,7 @@ const EN: Record<string, string> = {
   'Lineup schon im Winter': 'Line-up ready in winter',
   'Du musst nicht auf die Running Order warten. Sobald deine ersten Bands announced sind, kommen sie ins Lineup – dein Publikum hört rein und markiert, wen es sehen will. Die Spielzeiten reichst du später nach.':
     'No need to wait for the running order. As soon as your first bands are announced they go into the line-up – your audience listens through them and marks who they want to see. Set times follow later.',
-  'Erst das Lineup, später Tage, Bühnen, Slots und Bühnenpläne. Deine Besucher planen ab der ersten announcten Band mit – und sehen jede Änderung sofort.':
+  'Erst das Lineup, später Tage, Bühnen, Slots und Bühnenpläne. Deine Besucher planen ab der ersten angekündigten Band mit – und sehen jede Änderung sofort.':
     'The line-up first, days, stages, slots and stage maps later. Your visitors start planning with the very first announced band – and see every change instantly.',
   'Festival Buddy ist der Timetable-Planer, mit dem Crews ihren Festivalbesuch planen. Als Veranstalter pflegst du Timetable, Bühnenpläne und Mitteilungen deines Festivals selbst – und dein Publikum ist schon dabei, bevor die Running Order steht. 🤘':
     'Festival Buddy is the timetable planner crews use for their festival. As an organiser you maintain your timetable, stage maps and notifications yourself – and your audience is on board before the running order even exists. 🤘',

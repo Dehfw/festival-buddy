@@ -159,7 +159,7 @@ Bindestriche.
 Slot-ID. Das ist die Klammer zwischen beiden Listen: Über ihn findet die
 App zu einer gemerkten Band ihre Spielzeiten, und deshalb überlebt eine
 Merkung den Timetable-Import. `bands` enthält alle Bands des Festivals,
-die announcten wie die aus dem Timetable; `build-timetable.mjs` führt
+die angekündigten wie die aus dem Timetable; `build-timetable.mjs` führt
 beides zusammen.
 
 ## Wiederkehrende Fälle

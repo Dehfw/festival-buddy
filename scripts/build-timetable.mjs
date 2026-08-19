@@ -198,7 +198,7 @@ if (days.length === 0) fail('keine "day:"-Zeile gefunden');
 if (rawSlots.length === 0 && stages.length === 0) {
   console.log(
     announced.length > 0
-      ? `→ Keine Bühnen/Slots – ${announced.length} announcte Bands ohne Timetable (Lineup-Ansicht)`
+      ? `→ Keine Bühnen/Slots – ${announced.length} angekündigte Bands ohne Timetable (Lineup-Ansicht)`
       : '→ Keine Bühnen/Slots – es entsteht ein Gerüst ("Lineup folgt")'
   );
 }
@@ -244,7 +244,7 @@ const slots = rawSlots.map((s) => {
 });
 
 /**
- * Der Band-Pool der Lineup-Ansicht: erst die announcten Bands, dann jede
+ * Der Band-Pool der Lineup-Ansicht: erst die angekündigten Bands, dann jede
  * Band aus dem Timetable, die noch nicht dabei ist. Beide Quellen stehen
  * in der Datei, damit sie ohne die App lesbar bleibt; die App mischt beim
  * Lesen noch einmal (mergeBands in src/lib/db.ts), falls im

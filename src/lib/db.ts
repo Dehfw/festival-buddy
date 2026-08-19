@@ -2072,7 +2072,7 @@ interface TimetableBody {
   slots: Slot[];
   /**
    * Der gepflegte Band-Pool. Der Editor fasst ihn nicht an, muss ihn aber
-   * durchreichen – ein Slot-Edit darf die announcten Bands nicht löschen.
+   * durchreichen – ein Slot-Edit darf die angekündigten Bands nicht löschen.
    */
   bands?: FestivalBand[];
 }
