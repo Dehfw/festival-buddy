@@ -1,0 +1,280 @@
+{
+  "festival": "Wacken Open Air 2027",
+  "edition": "04.–07.08.2027 · Wacken",
+  "dataVersion": "2026-08-20 (50 angekündigte Bands laut offiziellem W:O:A-Export)",
+  "days": [
+    {
+      "id": "wed",
+      "label": "Mi",
+      "longLabel": "Mittwoch",
+      "date": "2027-08-04"
+    },
+    {
+      "id": "thu",
+      "label": "Do",
+      "longLabel": "Donnerstag",
+      "date": "2027-08-05"
+    },
+    {
+      "id": "fri",
+      "label": "Fr",
+      "longLabel": "Freitag",
+      "date": "2027-08-06"
+    },
+    {
+      "id": "sat",
+      "label": "Sa",
+      "longLabel": "Samstag",
+      "date": "2027-08-07"
+    }
+  ],
+  "stages": [],
+  "slots": [],
+  "bands": [
+    {
+      "slug": "avatar",
+      "name": "Avatar",
+      "spotifyArtistId": "4jpaXieuls7LVzG1uma5Rs"
+    },
+    {
+      "slug": "beast-in-black",
+      "name": "Beast In Black",
+      "spotifyArtistId": "0rEuaTPLMhlViNCJrg3NEH"
+    },
+    {
+      "slug": "belphegor",
+      "name": "Belphegor",
+      "spotifyArtistId": "1uPIYn2IU0IuPWSZ58kzyM"
+    },
+    {
+      "slug": "between-two-worlds",
+      "name": "Between Two Worlds"
+    },
+    {
+      "slug": "blue-medusa",
+      "name": "Blue Medusa",
+      "spotifyArtistId": "4BMOQ1GSXhTvuv6a05wk7z"
+    },
+    {
+      "slug": "carnifex",
+      "name": "Carnifex",
+      "spotifyArtistId": "4nqY8hkQNkHaDq4fdVxdYr"
+    },
+    {
+      "slug": "cavalera-conspiracy",
+      "name": "Cavalera Conspiracy",
+      "spotifyArtistId": "7F1K4WlMshx23V2TTz4KwV"
+    },
+    {
+      "slug": "children-of-bodom",
+      "name": "Children Of Bodom",
+      "spotifyArtistId": "1xUhNgw4eJDZfvumIpcz1B"
+    },
+    {
+      "slug": "creeper",
+      "name": "Creeper",
+      "spotifyArtistId": "0nV7SiEIVtPLTSJ6NwWDGj"
+    },
+    {
+      "slug": "crypta",
+      "name": "Crypta",
+      "spotifyArtistId": "0w1xNkvjKVskWP7GvbiwRB"
+    },
+    {
+      "slug": "dark-tranquility",
+      "name": "Dark Tranquility",
+      "spotifyArtistId": "5EHvXKnNz78jkAVgTQLQ5O"
+    },
+    {
+      "slug": "dethklok",
+      "name": "Dethklok",
+      "spotifyArtistId": "7u12AuhJ5AaJIgZAZe0US8"
+    },
+    {
+      "slug": "dragonforce",
+      "name": "DragonForce",
+      "spotifyArtistId": "2pH3wEn4eYlMMIIQyKPbVR"
+    },
+    {
+      "slug": "edguy",
+      "name": "Edguy",
+      "spotifyArtistId": "3AGFqPP3gt5rMSvhR87Xxu"
+    },
+    {
+      "slug": "electric-callboy",
+      "name": "Electric Callboy",
+      "spotifyArtistId": "1WNoKxsp715jez1Td4vthc"
+    },
+    {
+      "slug": "feuerschwanz",
+      "name": "Feuerschwanz",
+      "spotifyArtistId": "2Ct54gNxKnYLnXk9HhviMI"
+    },
+    {
+      "slug": "five-finger-death-punch",
+      "name": "Five Finger Death Punch",
+      "spotifyArtistId": "5t28BP42x2axFnqOOMg3CM"
+    },
+    {
+      "slug": "gaerea",
+      "name": "Gaerea",
+      "spotifyArtistId": "1wXoI3Ajpv4WwQ3LmcrSBw"
+    },
+    {
+      "slug": "halestorm",
+      "name": "Halestorm",
+      "spotifyArtistId": "6om12Ev5ppgoMy3OYSoech"
+    },
+    {
+      "slug": "hammerfall",
+      "name": "Hammerfall",
+      "spotifyArtistId": "2o18h28enlHxj887tATc58"
+    },
+    {
+      "slug": "heaven-shall-burn",
+      "name": "Heaven Shall Burn",
+      "spotifyArtistId": "4sy5qWfwUwpGYBnCKnwfcW"
+    },
+    {
+      "slug": "heavens-gate",
+      "name": "Heavens Gate",
+      "spotifyArtistId": "4bJlNp8kcrWMSIM4NObk2D"
+    },
+    {
+      "slug": "helloween",
+      "name": "Helloween",
+      "spotifyArtistId": "4pQN0GB0fNEEOfQCaWotsY"
+    },
+    {
+      "slug": "hiraes",
+      "name": "Hiraes"
+    },
+    {
+      "slug": "imminence",
+      "name": "Imminence",
+      "spotifyArtistId": "7rqJQQxuUOCk052MK5kLsH"
+    },
+    {
+      "slug": "jinjer",
+      "name": "Jinjer",
+      "spotifyArtistId": "7o6cOczXTB8ioTAAJTbESf"
+    },
+    {
+      "slug": "john-5",
+      "name": "John 5",
+      "spotifyArtistId": "7mAqCk75DUBWgcC0sqhzwX"
+    },
+    {
+      "slug": "john-bush",
+      "name": "John Bush"
+    },
+    {
+      "slug": "kanonenfieber",
+      "name": "Kanonenfieber",
+      "spotifyArtistId": "5VI8SBEX7uSvoHsdI5xNVJ"
+    },
+    {
+      "slug": "knocked-loose",
+      "name": "Knocked Loose",
+      "spotifyArtistId": "4qrHkx5cgWIslciLXUMrYw"
+    },
+    {
+      "slug": "make-them-suffer",
+      "name": "Make Them Suffer",
+      "spotifyArtistId": "0FZcPgWI3BsFQl4rOAGSHT"
+    },
+    {
+      "slug": "malevolence",
+      "name": "Malevolence"
+    },
+    {
+      "slug": "metal-church",
+      "name": "Metal Church",
+      "spotifyArtistId": "0exvkfkATkqWOJgugTjJhP"
+    },
+    {
+      "slug": "mittel-alta",
+      "name": "Mittel Alta",
+      "spotifyArtistId": "2QjjVXLHTBPbpM18ftwvYV"
+    },
+    {
+      "slug": "napalm-death",
+      "name": "Napalm Death",
+      "spotifyArtistId": "3UqRgrDIQ208yNGiWKRMNt"
+    },
+    {
+      "slug": "norther",
+      "name": "Norther",
+      "spotifyArtistId": "7FYqu76teK16FSlw4ZYFhW"
+    },
+    {
+      "slug": "overkill",
+      "name": "Overkill",
+      "spotifyArtistId": "0NmYchKQ8JIR9QHYJA0FRe"
+    },
+    {
+      "slug": "primordial",
+      "name": "Primordial",
+      "spotifyArtistId": "0BZr6WHaejNA63uhZZZZek"
+    },
+    {
+      "slug": "seven-blood",
+      "name": "Seven Blood",
+      "spotifyArtistId": "0WYN4z4Co3AceuxwU6mFLr"
+    },
+    {
+      "slug": "shadow-of-intent",
+      "name": "Shadow Of Intent",
+      "spotifyArtistId": "76xrrejizyQpKukBIhnf3D"
+    },
+    {
+      "slug": "sylosis",
+      "name": "Sylosis",
+      "spotifyArtistId": "2RiGIRDi4GoJpDbjDnPVJl"
+    },
+    {
+      "slug": "tailgunner",
+      "name": "Tailgunner",
+      "spotifyArtistId": "6Wl6VXLasmiON3BDiha6e1"
+    },
+    {
+      "slug": "the-browning",
+      "name": "The Browning",
+      "spotifyArtistId": "4DSNcg40nf6T3eNAObq1Lo"
+    },
+    {
+      "slug": "the-narrator",
+      "name": "The Narrator",
+      "spotifyArtistId": "7d1ZGbsel9lq6hwvWhPFgk"
+    },
+    {
+      "slug": "the-new-roses",
+      "name": "The New Roses",
+      "spotifyArtistId": "2ghTzEV6dCWpF9BDF9Kp3y"
+    },
+    {
+      "slug": "towards-the-sinister",
+      "name": "Towards The Sinister"
+    },
+    {
+      "slug": "tyketto",
+      "name": "Tyketto",
+      "spotifyArtistId": "0Yf2kOVTtWIw0lJsAkfE5s"
+    },
+    {
+      "slug": "u-d-o",
+      "name": "U.D.O.",
+      "spotifyArtistId": "2aWjaq32aRQo58dw0w8NM6"
+    },
+    {
+      "slug": "victorius",
+      "name": "Victorius",
+      "spotifyArtistId": "2INeE2VBbawRQNI6ezc4lN"
+    },
+    {
+      "slug": "witch-club-satan",
+      "name": "Witch Club Satan",
+      "spotifyArtistId": "395rqoVSDgQIF7fzRfZIoy"
+    }
+  ]
+}
