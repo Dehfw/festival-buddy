@@ -38,8 +38,9 @@ type Sort = 'az' | 'crew';
  * wen sie sehen will. Die Merkungen hängen am Band-Slug und überstehen
  * damit den späteren Timetable-Import.
  *
- * Steht der Timetable schon, bleibt die Liste als A–Z-Register über alle
- * Bands nutzbar und zeigt zu jeder ihre Spielzeiten.
+ * Sie ist nur zu sehen, solange es keinen Timetable gibt – sobald die
+ * Running Order steht, planen alle über Grid und "Unsere Bands", und der
+ * Lineup-Tab verschwindet (siehe AppShell).
  */
 export function LineupView({ onBandTap }: { onBandTap: (band: FestivalBand) => void }) {
   const { data, user, setBandInterest } = useApp();
@@ -246,8 +247,9 @@ function LineupRow({
   onToggle: () => void;
 }) {
   const { data } = useApp();
-  // Sobald der Timetable steht, zeigt die Zeile die Spielzeit mit an –
-  // dieselbe Liste dient dann als A–Z-Register über alle Bands.
+  // Die Spielzeit-Zeile bleibt als Datenfall erhalten, greift aber nur,
+  // wenn eine Band schon Slots hat – im Lineup ist das derzeit nie der
+  // Fall, weil die Ansicht mit dem Timetable verschwindet.
   const first = slots[0];
   const day = first ? data?.timetable.days.find((d) => d.id === first.dayId) : undefined;
   const stage = first ? data?.timetable.stages.find((s) => s.id === first.stageId) : undefined;

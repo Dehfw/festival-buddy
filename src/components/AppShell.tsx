@@ -65,17 +65,17 @@ export function AppShell() {
 
   if (!data || !user) return null;
 
-  // Vor der Running Order gibt es nur das Lineup: Der Timetable wäre leer
-  // und "Unsere Bands" hängt an Eintragungen auf Slots, die es noch nicht
-  // gibt. Umgekehrt bleibt das Lineup auch mit Timetable sichtbar – als
-  // A–Z-Register über alle Bands.
+  // Das Lineup ist die Ansicht *vor* der Running Order: Der Timetable wäre
+  // leer und "Unsere Bands" hängt an Eintragungen auf Slots, die es noch
+  // nicht gibt. Sobald die Spielzeiten da sind, planen alle über den
+  // Timetable – dann verschwindet der Lineup-Tab wieder.
   const hasTimetable = data.timetable.slots.length > 0;
-  const hasLineup = data.timetable.bands.length > 0;
-  const activeTab: Tab = !hasTimetable
-    ? 'lineup'
-    : tab === 'lineup' && !hasLineup
+  const hasBands = data.timetable.bands.length > 0;
+  const activeTab: Tab = hasTimetable
+    ? tab === 'lineup'
       ? 'timetable'
-      : tab;
+      : tab
+    : 'lineup';
 
   return (
     <div className="app-shell flex flex-col">
@@ -150,7 +150,7 @@ export function AppShell() {
         )}
         {activeTab === 'list' && <ListView onSlotTap={setActiveSlot} />}
         {activeTab === 'lineup' &&
-          (hasLineup ? (
+          (hasBands ? (
             <LineupView onBandTap={setActiveBand} />
           ) : (
             <div className="flex h-full flex-col items-center justify-center px-8 text-center">
@@ -166,7 +166,8 @@ export function AppShell() {
 
       {/* Bottom-Navigation */}
       <nav className="flex border-t border-rivet bg-steel pb-[max(0.4rem,env(safe-area-inset-bottom))]">
-        {hasTimetable && (
+        {/* Entweder Timetable-Betrieb oder Lineup – nie beides. */}
+        {hasTimetable ? (
           <>
             <TabButton
               active={activeTab === 'timetable'}
@@ -181,13 +182,14 @@ export function AppShell() {
               label="Unsere Bands"
             />
           </>
+        ) : (
+          <TabButton
+            active={activeTab === 'lineup'}
+            onClick={() => setTab('lineup')}
+            icon="📋"
+            label="Lineup"
+          />
         )}
-        <TabButton
-          active={activeTab === 'lineup'}
-          onClick={() => setTab('lineup')}
-          icon="📋"
-          label="Lineup"
-        />
         {/* Nur für Veranstalter sichtbar (organizerFestivals aus /api/me) */}
         {organizerFestivals > 0 && (
           <Link

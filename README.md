@@ -56,10 +56,10 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
   Festival seine ersten Bands announced, stehen sie als Liste in der App.
   Durchhören per Spotify-Link, per Lesezeichen merken, und an jeder Band
   sieht man, wer aus der Crew sie auch sehen will – Monate vor dem
-  Festival. Ohne Timetable ist das der einzige Tab; steht er, bleibt die
-  Liste als A–Z-Register über alle Bands und zeigt ihre Spielzeiten.
-  Gemerkt wird am Band-Slug, nicht an einer Slot-ID – die Merkungen
-  überleben den späteren Timetable-Import.
+  Festival. Solange es keinen Timetable gibt, ist das der einzige Tab;
+  sobald die Running Order steht, übernehmen Grid und „Unsere Bands" und
+  der Lineup-Tab verschwindet wieder. Gemerkt wird am Band-Slug, nicht an
+  einer Slot-ID – die Merkungen überleben den späteren Timetable-Import.
 - **Timetable-Grid** – alle 8 Bühnen nebeneinander (X-Achse), Zeit auf der
   Y-Achse, Tabs für die vier Festivaltage. In den Band-Slots zeigen bunte
   Kreise mit Initialen, wer hingeht. Band antippen → eintragen.
