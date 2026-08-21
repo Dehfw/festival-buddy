@@ -1,0 +1,91 @@
+# Angekündigte Bands Summer Breeze Open Air 2027 – Quelle für data/sb2027.json.
+# Erste Ankündigungswelle zum 30. Jubiläum (Stand 21.08.2026), noch ohne
+# Running Order. Bühnen und Spielzeiten fehlen deshalb bewusst: Das
+# Ergebnis ist eine reine Lineup-Ansicht (durchhören, merken,
+# Crew-Interessen). Sobald die Running Order da ist, wandern die Bands in
+# [tag/buehne]-Abschnitte – die Slugs und damit die Merkungen bleiben.
+# Bauen:  npm run lineup -- lineups/sb2027.txt --festival sb2027
+
+festival: Summer Breeze Open Air 2027
+edition: 18.–21.08.2027 · Dinkelsbühl · 30. Jubiläum
+dataVersion: 2026-08-21 (61 Bands der ersten Ankündigungswelle)
+
+day: wed | 2027-08-18
+day: thu | 2027-08-19
+day: fri | 2027-08-20
+day: sat | 2027-08-21
+
+# Reihenfolge wie in der Ankündigung (Plakatreihenfolge, Headliner zuerst) –
+# die nächste Welle wird unten angehängt, der Diff zeigt dann genau die
+# neuen Bands. Für die App ist die Reihenfolge egal, die Bandliste im JSON
+# wird alphabetisch sortiert.
+# Schreibweisen bewusst in normaler Groß-/Kleinschreibung statt der
+# Versalien der Ankündigung – aus dem Namen entsteht der Slug, und der ist
+# der Anker für gemerkte Bands. Er darf sich bei späteren Importen nicht
+# ändern, deshalb hier nichts mehr "korrigieren".
+# Spotify-IDs fehlen noch: ohne SPOTIFY_CLIENT_ID/-SECRET in .env.local
+# überspringt npm run lineup den Schritt. Nachtragen per
+# npm run lineup:spotify -- lineups/sb2027.txt, sobald die Zugangsdaten da
+# sind (oder einzeln von Hand per "| spotify=<ID>").
+[announced]
+Summer Breeze Legends & Orchestra
+Electric Callboy
+Edguy
+Saltatio Mortis
+Children Of Bodom
+Hammerfall
+Halestorm
+Wind Rose
+Lord Of The Lost
+Eluveitie
+H-Blockx
+Swiss + Die Andern
+Clawfinger
+Kataklysm
+Mono Inc.
+Warkings
+Dark Funeral
+Gloryhammer
+Finntroll
+Atreyu
+Shadow Of Intent
+Emil Bulls
+Equilibrium
+John Bush Celebrating The Songs Of Anthrax 1993 – 2003
+The Browning
+Gaerea
+Long Distance Calling
+Make Them Suffer
+Mittel Alta
+Any Given Day
+Gutalax
+Insomnium
+Combichrist
+Peeling Flesh
+Anaal Nathrakh
+Fleshgod Apocalypse
+Primal Fear
+Nasty
+Burning Witches
+Kupfergold
+End Of Green
+Wolfheart
+Legion Of The Damned
+Ellende
+Angelus Apatrida
+Abbie Falls
+Samurai Pizza Cats
+Necrotted
+Left To Suffer
+Evil Invaders
+Hiraes
+Lavina
+Asenblut
+Accvsed
+Spitting Glass
+Ahab
+Sunborn
+The Night Eternal
+Defiance HC
+Regarde Les Hommes Tomber
+Capacopter

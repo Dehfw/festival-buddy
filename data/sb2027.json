@@ -1,0 +1,279 @@
+{
+  "festival": "Summer Breeze Open Air 2027",
+  "edition": "18.–21.08.2027 · Dinkelsbühl · 30. Jubiläum",
+  "dataVersion": "2026-08-21 (61 Bands der ersten Ankündigungswelle)",
+  "days": [
+    {
+      "id": "wed",
+      "label": "Mi",
+      "longLabel": "Mittwoch",
+      "date": "2027-08-18"
+    },
+    {
+      "id": "thu",
+      "label": "Do",
+      "longLabel": "Donnerstag",
+      "date": "2027-08-19"
+    },
+    {
+      "id": "fri",
+      "label": "Fr",
+      "longLabel": "Freitag",
+      "date": "2027-08-20"
+    },
+    {
+      "id": "sat",
+      "label": "Sa",
+      "longLabel": "Samstag",
+      "date": "2027-08-21"
+    }
+  ],
+  "stages": [],
+  "slots": [],
+  "bands": [
+    {
+      "slug": "abbie-falls",
+      "name": "Abbie Falls"
+    },
+    {
+      "slug": "accvsed",
+      "name": "Accvsed"
+    },
+    {
+      "slug": "ahab",
+      "name": "Ahab"
+    },
+    {
+      "slug": "anaal-nathrakh",
+      "name": "Anaal Nathrakh"
+    },
+    {
+      "slug": "angelus-apatrida",
+      "name": "Angelus Apatrida"
+    },
+    {
+      "slug": "any-given-day",
+      "name": "Any Given Day"
+    },
+    {
+      "slug": "asenblut",
+      "name": "Asenblut"
+    },
+    {
+      "slug": "atreyu",
+      "name": "Atreyu"
+    },
+    {
+      "slug": "burning-witches",
+      "name": "Burning Witches"
+    },
+    {
+      "slug": "capacopter",
+      "name": "Capacopter"
+    },
+    {
+      "slug": "children-of-bodom",
+      "name": "Children Of Bodom"
+    },
+    {
+      "slug": "clawfinger",
+      "name": "Clawfinger"
+    },
+    {
+      "slug": "combichrist",
+      "name": "Combichrist"
+    },
+    {
+      "slug": "dark-funeral",
+      "name": "Dark Funeral"
+    },
+    {
+      "slug": "defiance-hc",
+      "name": "Defiance HC"
+    },
+    {
+      "slug": "edguy",
+      "name": "Edguy"
+    },
+    {
+      "slug": "electric-callboy",
+      "name": "Electric Callboy"
+    },
+    {
+      "slug": "ellende",
+      "name": "Ellende"
+    },
+    {
+      "slug": "eluveitie",
+      "name": "Eluveitie"
+    },
+    {
+      "slug": "emil-bulls",
+      "name": "Emil Bulls"
+    },
+    {
+      "slug": "end-of-green",
+      "name": "End Of Green"
+    },
+    {
+      "slug": "equilibrium",
+      "name": "Equilibrium"
+    },
+    {
+      "slug": "evil-invaders",
+      "name": "Evil Invaders"
+    },
+    {
+      "slug": "finntroll",
+      "name": "Finntroll"
+    },
+    {
+      "slug": "fleshgod-apocalypse",
+      "name": "Fleshgod Apocalypse"
+    },
+    {
+      "slug": "gaerea",
+      "name": "Gaerea"
+    },
+    {
+      "slug": "gloryhammer",
+      "name": "Gloryhammer"
+    },
+    {
+      "slug": "gutalax",
+      "name": "Gutalax"
+    },
+    {
+      "slug": "h-blockx",
+      "name": "H-Blockx"
+    },
+    {
+      "slug": "halestorm",
+      "name": "Halestorm"
+    },
+    {
+      "slug": "hammerfall",
+      "name": "Hammerfall"
+    },
+    {
+      "slug": "hiraes",
+      "name": "Hiraes"
+    },
+    {
+      "slug": "insomnium",
+      "name": "Insomnium"
+    },
+    {
+      "slug": "john-bush-celebrating-the-songs-of-anthrax-1993-2003",
+      "name": "John Bush Celebrating The Songs Of Anthrax 1993 – 2003"
+    },
+    {
+      "slug": "kataklysm",
+      "name": "Kataklysm"
+    },
+    {
+      "slug": "kupfergold",
+      "name": "Kupfergold"
+    },
+    {
+      "slug": "lavina",
+      "name": "Lavina"
+    },
+    {
+      "slug": "left-to-suffer",
+      "name": "Left To Suffer"
+    },
+    {
+      "slug": "legion-of-the-damned",
+      "name": "Legion Of The Damned"
+    },
+    {
+      "slug": "long-distance-calling",
+      "name": "Long Distance Calling"
+    },
+    {
+      "slug": "lord-of-the-lost",
+      "name": "Lord Of The Lost"
+    },
+    {
+      "slug": "make-them-suffer",
+      "name": "Make Them Suffer"
+    },
+    {
+      "slug": "mittel-alta",
+      "name": "Mittel Alta"
+    },
+    {
+      "slug": "mono-inc",
+      "name": "Mono Inc."
+    },
+    {
+      "slug": "nasty",
+      "name": "Nasty"
+    },
+    {
+      "slug": "necrotted",
+      "name": "Necrotted"
+    },
+    {
+      "slug": "peeling-flesh",
+      "name": "Peeling Flesh"
+    },
+    {
+      "slug": "primal-fear",
+      "name": "Primal Fear"
+    },
+    {
+      "slug": "regarde-les-hommes-tomber",
+      "name": "Regarde Les Hommes Tomber"
+    },
+    {
+      "slug": "saltatio-mortis",
+      "name": "Saltatio Mortis"
+    },
+    {
+      "slug": "samurai-pizza-cats",
+      "name": "Samurai Pizza Cats"
+    },
+    {
+      "slug": "shadow-of-intent",
+      "name": "Shadow Of Intent"
+    },
+    {
+      "slug": "spitting-glass",
+      "name": "Spitting Glass"
+    },
+    {
+      "slug": "summer-breeze-legends-orchestra",
+      "name": "Summer Breeze Legends & Orchestra"
+    },
+    {
+      "slug": "sunborn",
+      "name": "Sunborn"
+    },
+    {
+      "slug": "swiss-die-andern",
+      "name": "Swiss + Die Andern"
+    },
+    {
+      "slug": "the-browning",
+      "name": "The Browning"
+    },
+    {
+      "slug": "the-night-eternal",
+      "name": "The Night Eternal"
+    },
+    {
+      "slug": "warkings",
+      "name": "Warkings"
+    },
+    {
+      "slug": "wind-rose",
+      "name": "Wind Rose"
+    },
+    {
+      "slug": "wolfheart",
+      "name": "Wolfheart"
+    }
+  ]
+}
