@@ -233,21 +233,6 @@ export function bandInterestUsers(
   return out;
 }
 
-/**
- * Slots dieser Band – leer, solange nur das Lineup steht. Mehrere Slots
- * kommen vor (zweites Set, Aftershow), sortiert bleibt es nach Tag.
- */
-export function slotsForBand(timetable: Timetable, slug: string): Slot[] {
-  const order = new Map(timetable.days.map((d, i) => [d.id, i]));
-  return timetable.slots
-    .filter((s) => bandSlug(s.band) === slug)
-    .sort(
-      (a, b) =>
-        (order.get(a.dayId) ?? 0) - (order.get(b.dayId) ?? 0) ||
-        toMinutes(a.start) - toMinutes(b.start)
-    );
-}
-
 /** Teilnehmer eines Slots, getrennt nach fester Zusage und Interesse */
 export function splitAttendees(
   users: User[],

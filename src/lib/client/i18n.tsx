@@ -166,7 +166,6 @@ const EN: Record<string, string> = {
   '🔖 Merken': '🔖 Save',
   '🔖 Gemerkt': '🔖 Saved',
   Announced: 'Announced',
-  'Im Timetable': 'In the timetable',
   'Auf Spotify reinhören': 'Listen on Spotify',
   'Noch kein Timetable': 'No timetable yet',
   'Spielzeit steht noch nicht fest – kommt mit dem Timetable':
@@ -175,9 +174,6 @@ const EN: Record<string, string> = {
     'No Spotify profile is stored for this band.',
   'Noch niemand aus der Crew – sei die/der Erste! 🤘':
     'Nobody from the crew yet – be the first! 🤘',
-  Spielzeit: 'Set time',
-  Spielzeiten: 'Set times',
-  'Eintragen ›': 'Sign up ›',
   'Für dieses Festival ist noch keine Band eingetragen. Sobald die ersten announced sind, stehen sie hier.':
     'No bands have been added for this festival yet. As soon as the first ones are announced, they will show up here.',
   'Du hast dir noch keine Band gemerkt. Tipp auf das Lesezeichen neben einer Band.':

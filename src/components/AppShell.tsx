@@ -205,14 +205,7 @@ export function AppShell() {
       </nav>
 
       {activeBand && !activeSlot && (
-        <BandPreviewSheet
-          band={activeBand}
-          onClose={() => setActiveBand(null)}
-          onSlotTap={(slot) => {
-            setActiveBand(null);
-            setActiveSlot(slot);
-          }}
-        />
+        <BandPreviewSheet band={activeBand} onClose={() => setActiveBand(null)} />
       )}
       {activeSlot && (
         <BandSheet slot={activeSlot} onClose={() => setActiveSlot(null)} />

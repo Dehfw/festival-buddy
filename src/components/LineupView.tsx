@@ -2,14 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useApp } from '@/lib/client/store';
-import {
-  bandSlug,
-  formatTime,
-  toMinutes,
-  type FestivalBand,
-  type Slot,
-  type User,
-} from '@/lib/types';
+import { type FestivalBand, type User } from '@/lib/types';
 import { AvatarStack } from './Avatars';
 
 /** Lesezeichen: gefüllt = gemerkt, Umriss = noch nicht */
@@ -51,11 +44,10 @@ export function LineupView({ onBandTap }: { onBandTap: (band: FestivalBand) => v
   const bands = data?.timetable.bands ?? [];
   const interests = data?.bandInterests ?? [];
   const users = data?.users;
-  const timetable = data?.timetable;
 
-  // Beide Zuordnungen einmal pro Datenstand aufbauen, nicht pro Band: Bei
-  // einem großen Festival (200 Bands, 233 Slots) liefe sonst bei jedem
-  // Tastendruck im Suchfeld eine Schleife über alles.
+  // Die Zuordnung einmal pro Datenstand aufbauen, nicht pro Band: Bei einem
+  // großen Festival (200 Bands) liefe sonst bei jedem Tastendruck im
+  // Suchfeld eine Schleife über alle Merkungen.
   const fansBySlug = useMemo(() => {
     const byId = new Map((users ?? []).map((u) => [u.id, u]));
     const map = new Map<string, User[]>();
@@ -68,26 +60,6 @@ export function LineupView({ onBandTap }: { onBandTap: (band: FestivalBand) => v
     }
     return map;
   }, [users, interests]);
-
-  const slotsBySlug = useMemo(() => {
-    const map = new Map<string, Slot[]>();
-    if (!timetable) return map;
-    const dayOrder = new Map(timetable.days.map((d, i) => [d.id, i]));
-    for (const slot of timetable.slots) {
-      const slug = bandSlug(slot.band);
-      const list = map.get(slug);
-      if (list) list.push(slot);
-      else map.set(slug, [slot]);
-    }
-    for (const list of map.values()) {
-      list.sort(
-        (a, b) =>
-          (dayOrder.get(a.dayId) ?? 0) - (dayOrder.get(b.dayId) ?? 0) ||
-          toMinutes(a.start) - toMinutes(b.start)
-      );
-    }
-    return map;
-  }, [timetable]);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -188,7 +160,6 @@ export function LineupView({ onBandTap }: { onBandTap: (band: FestivalBand) => v
                   key={band.slug}
                   band={band}
                   fans={fans}
-                  slots={slotsBySlug.get(band.slug) ?? EMPTY_SLOTS}
                   mine={mine}
                   onOpen={() => onBandTap(band)}
                   onToggle={() => setBandInterest(band.slug, !mine)}
@@ -227,33 +198,19 @@ function Chip({
   );
 }
 
-/** Stabile leere Liste – spart eine neue Referenz pro Render */
-const EMPTY_SLOTS: Slot[] = [];
-
 function LineupRow({
   band,
   fans,
-  slots,
   mine,
   onOpen,
   onToggle,
 }: {
   band: FestivalBand;
   fans: User[];
-  /** Spielzeiten dieser Band; leer, solange nur das Lineup steht */
-  slots: Slot[];
   mine: boolean;
   onOpen: () => void;
   onToggle: () => void;
 }) {
-  const { data } = useApp();
-  // Die Spielzeit-Zeile bleibt als Datenfall erhalten, greift aber nur,
-  // wenn eine Band schon Slots hat – im Lineup ist das derzeit nie der
-  // Fall, weil die Ansicht mit dem Timetable verschwindet.
-  const first = slots[0];
-  const day = first ? data?.timetable.days.find((d) => d.id === first.dayId) : undefined;
-  const stage = first ? data?.timetable.stages.find((s) => s.id === first.stageId) : undefined;
-
   return (
     <li
       className={`flex items-center gap-2 rounded-xl border ${
@@ -268,13 +225,7 @@ function LineupRow({
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-bold">{band.name}</div>
           <div className="truncate text-[11px] text-ash">
-            {first && day && stage
-              ? `${day.label} · ${formatTime(first.start)} · ${stage.name}${
-                  slots.length > 1 ? ` (+${slots.length - 1})` : ''
-                }`
-              : band.spotifyArtistId
-                ? 'Auf Spotify reinhören'
-                : 'Noch kein Timetable'}
+            {band.spotifyArtistId ? 'Auf Spotify reinhören' : 'Noch kein Timetable'}
           </div>
         </div>
         {fans.length > 0 && (

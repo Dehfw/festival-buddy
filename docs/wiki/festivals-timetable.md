@@ -41,9 +41,9 @@ neben den Slot-IDs:
 - Merkungen liegen in `band_interests (user_id, festival_id, band_slug)`
   und hängen damit **nicht** am Timetable. Sie überleben den Import der
   Running Order, bei dem alle Slot-IDs überhaupt erst entstehen.
-- Über den gemeinsamen Slug findet die Lineup-Ansicht später die Slots
-  ihrer Bands (`slotsForBand()`), zeigt die Spielzeiten an und führt ins
-  normale Band-Sheet, wo die verbindliche Zusage passiert.
+- Die Merkung bleibt also erhalten, auch wenn die Lineup-Ansicht selbst
+  mit dem Timetable-Import verschwindet: Ab da planen alle über Grid und
+  „Unsere Bands", wo die verbindliche Zusage am Slot passiert.
 - Ändert sich die **Schreibweise** einer Band, ändert sich ihr Slug –
   dann ist die Merkung weg. `validate-timetable.mjs` warnt beim
   Vergleich mit dem Live-Stand, welche Bands aus dem Pool verschwinden.
@@ -76,6 +76,10 @@ gründbar. Was die App dann zeigt, hängt am Band-Pool:
 - `bands` gefüllt → die **Lineup-Ansicht** ist der einzige Tab; Grid und
   „Unsere Bands" wären ohne Slots leer.
 - `bands` leer → wie bisher „Lineup folgt".
+
+Umgekehrt gilt genauso: Sobald Slots da sind, ist das Lineup weg. Beide
+Zustände schließen sich aus (`AppShell`), damit es nicht zwei Wege zu
+denselben Bands gibt.
 
 `GET /api/festivals` liefert dafür `hasLineup` (gibt es Slots?) und
 `bandCount` (wie viele Bands stehen im Pool?). Bei der Gruppengründung

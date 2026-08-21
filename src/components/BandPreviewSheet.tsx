@@ -5,30 +5,23 @@ import { useApp } from '@/lib/client/store';
 import { useModalDialog } from '@/lib/client/useModalDialog';
 import { useSheetDrag } from '@/lib/client/useSheetDrag';
 import { useSheetHistory } from '@/lib/client/useSheetHistory';
-import {
-  bandInterestUsers,
-  formatTime,
-  slotsForBand,
-  type FestivalBand,
-  type Slot,
-} from '@/lib/types';
+import { bandInterestUsers, type FestivalBand } from '@/lib/types';
 import { Avatar } from './Avatars';
 import { SpotifyLink } from './SpotifyLink';
 
 /**
  * Bottom-Sheet einer Band aus der Lineup-Ansicht: reinhören, merken und
  * sehen, wer aus der Crew sie auch sehen will – alles schon ohne
- * Timetable. Steht die Running Order, führt das Sheet zusätzlich zu den
- * Slots der Band, wo dann die verbindliche Zusage passiert.
+ * Timetable. Spielzeiten kann es hier nicht geben: Die Lineup-Ansicht ist
+ * genau die Zeit davor, mit der Running Order verschwindet sie. Die
+ * verbindliche Zusage passiert dann im Band-Sheet am Slot.
  */
 export function BandPreviewSheet({
   band,
   onClose,
-  onSlotTap,
 }: {
   band: FestivalBand;
   onClose: () => void;
-  onSlotTap: (slot: Slot) => void;
 }) {
   const { data, user, setBandInterest } = useApp();
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -56,10 +49,6 @@ export function BandPreviewSheet({
     () => bandInterestUsers(data?.users ?? [], data?.bandInterests ?? [], band.slug),
     [data?.users, data?.bandInterests, band.slug]
   );
-  const slots = useMemo(
-    () => (data ? slotsForBand(data.timetable, band.slug) : []),
-    [data, band.slug]
-  );
 
   if (!data) return null;
 
@@ -79,7 +68,7 @@ export function BandPreviewSheet({
 
         <div className="mb-1 flex items-center gap-2">
           <span className="rounded bg-rivet px-2 py-0.5 text-xs font-black uppercase tracking-wider text-bone">
-            {slots.length > 0 ? 'Im Timetable' : 'Announced'}
+            Announced
           </span>
           <button
             type="button"
@@ -98,11 +87,9 @@ export function BandPreviewSheet({
         >
           {band.name}
         </h2>
-        {slots.length === 0 && (
-          <p className="mt-1 text-[11px] text-ash/70">
-            Spielzeit steht noch nicht fest – kommt mit dem Timetable
-          </p>
-        )}
+        <p className="mt-1 text-[11px] text-ash/70">
+          Spielzeit steht noch nicht fest – kommt mit dem Timetable
+        </p>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <SpotifyLink artistId={band.spotifyArtistId} />
@@ -144,43 +131,6 @@ export function BandPreviewSheet({
             </ul>
           )}
         </div>
-
-        {slots.length > 0 && (
-          <div className="mt-5">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-ash">
-              {slots.length === 1 ? 'Spielzeit' : 'Spielzeiten'}
-            </div>
-            <ul className="space-y-2">
-              {slots.map((slot) => {
-                const day = data.timetable.days.find((d) => d.id === slot.dayId);
-                const stage = data.timetable.stages.find((s) => s.id === slot.stageId);
-                return (
-                  <li key={slot.id}>
-                    <button
-                      type="button"
-                      onClick={() => onSlotTap(slot)}
-                      className="flex w-full items-center gap-3 rounded-xl border border-rivet bg-steel-2 px-3 py-2.5 text-left transition active:scale-[0.99]"
-                    >
-                      <span
-                        className="rounded px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-black"
-                        style={{ backgroundColor: stage?.color ?? '#666' }}
-                      >
-                        {stage?.short ?? '?'}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-sm">
-                        {day?.longLabel ?? slot.dayId} · {formatTime(slot.start)}–
-                        {formatTime(slot.end)} Uhr
-                      </span>
-                      <span className="shrink-0 text-xs font-bold text-blood">
-                        Eintragen ›
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
       </div>
     </div>
   );
