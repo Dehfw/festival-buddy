@@ -29,7 +29,7 @@ const PAGE_METADATA: Record<
       description: 'The timetable planner for your festival crew.',
     },
   },
-  '/fuer-veranstalter': {
+  '/veranstalter': {
     de: {
       title: 'Festival Buddy für Veranstalter – Timetable, Bühnenpläne & Mitteilungen | DEFƎKT',
       description: 'Festival Buddy für Veranstalter und ihre Festivalteams.',
@@ -158,6 +158,28 @@ const EN: Record<string, string> = {
   'Noch keine Band ausgewählt. Geh in den Timetable und trag dich bei deinen Bands ein – hier entsteht dann euer Crew-Plan.':
     'No bands selected yet. Open the timetable and pick your bands – your crew plan will appear here.',
   'Keine Band gefunden für „': 'No band found for “',
+  Lineup: 'Line-up',
+  '· Lineup folgt': '· line-up to be announced',
+  'A–Z': 'A–Z',
+  '🤘 Crew-Top': '🤘 Crew top',
+  '🔖 Nur meine': '🔖 Only mine',
+  '🔖 Merken': '🔖 Save',
+  '🔖 Gemerkt': '🔖 Saved',
+  Announced: 'Announced',
+  'Auf Spotify reinhören': 'Listen on Spotify',
+  'Noch kein Timetable': 'No timetable yet',
+  'Spielzeit steht noch nicht fest – kommt mit dem Timetable':
+    'Set time not confirmed yet – it arrives with the timetable',
+  'Für diese Band ist kein Spotify-Profil hinterlegt.':
+    'No Spotify profile is stored for this band.',
+  'Noch niemand aus der Crew – sei die/der Erste! 🤘':
+    'Nobody from the crew yet – be the first! 🤘',
+  'Für dieses Festival ist noch keine Band eingetragen. Sobald die ersten announced sind, stehen sie hier.':
+    'No bands have been added for this festival yet. As soon as the first ones are announced, they will show up here.',
+  'Du hast dir noch keine Band gemerkt. Tipp auf das Lesezeichen neben einer Band.':
+    'You have not saved any bands yet. Tap the bookmark next to a band.',
+  'Für dieses Festival ist noch kein Lineup eingetragen. Sobald die ersten Bands announced sind, könnt ihr sie hier durchhören und markieren.':
+    'No line-up has been added for this festival yet. As soon as the first bands are announced, you can listen through them here and mark your favourites.',
   'Slot unbestätigt – Zeiten können sich ändern':
     'Unconfirmed slot – times may change',
   'Auf Spotify anhören': 'Listen on Spotify',
@@ -167,6 +189,7 @@ const EN: Record<string, string> = {
   '🤔 Ich bin interessiert (unverbindlich)': "🤔 I'm interested",
   'Ich bin interessiert': "I'm interested",
   'Dabei (': 'Going (',
+  'Will die Crew sehen (': 'The crew wants to see (',
   'Interessiert (': 'Interested (',
   Fertig: 'Done',
   'Vergangene Bands ausblenden': 'Hide past bands',
@@ -393,8 +416,6 @@ const EN: Record<string, string> = {
   'Publikum.': 'audience.',
   Selbst: 'Self',
   Verwaltet: 'Managed',
-  'Festival Buddy ist der Timetable-Planer, mit dem Crews ihren Festivalbesuch planen. Als Veranstalter pflegst du Timetable, Bühnenpläne und Mitteilungen deines Festivals selbst – jede Änderung landet in Sekunden bei allen. 🤘':
-    'Festival Buddy is the timetable planner crews use to organise their festival. As an organiser, you manage your festival timetable, stage maps and notifications yourself – every update reaches everyone within seconds. 🤘',
   'Zugang anfragen': 'Request access',
   'Ich habe schon einen Code': 'I already have a code',
   'So planen deine Besucher – aus dem Timetable, den du pflegst.':
@@ -403,6 +424,13 @@ const EN: Record<string, string> = {
   'dein Festival': 'your festival',
   'Kein PDF-Update, kein Aushang am Bauzaun. Ein Ort für Timetable, Pläne und Ansagen.':
     'No PDF updates and no notices on the fence. One place for timetables, maps and announcements.',
+  'Lineup schon im Winter': 'Line-up ready in winter',
+  'Du musst nicht auf die Running Order warten. Sobald deine ersten Bands announced sind, kommen sie ins Lineup – dein Publikum hört rein und markiert, wen es sehen will. Die Spielzeiten reichst du später nach.':
+    'No need to wait for the running order. As soon as your first bands are announced they go into the line-up – your audience listens through them and marks who they want to see. Set times follow later.',
+  'Erst das Lineup, später Tage, Bühnen, Slots und Bühnenpläne. Deine Besucher planen ab der ersten angekündigten Band mit – und sehen jede Änderung sofort.':
+    'The line-up first, days, stages, slots and stage maps later. Your visitors start planning with the very first announced band – and see every change instantly.',
+  'Festival Buddy ist der Timetable-Planer, mit dem Crews ihren Festivalbesuch planen. Als Veranstalter pflegst du Timetable, Bühnenpläne und Mitteilungen deines Festivals selbst – und dein Publikum ist schon dabei, bevor die Running Order steht. 🤘':
+    'Festival Buddy is the timetable planner crews use for their festival. As an organiser you maintain your timetable, stage maps and notifications yourself – and your audience is on board before the running order even exists. 🤘',
   'Timetable im Griff': 'Your timetable under control',
   'Tage, Bühnen und Slots legst du direkt in der App an und änderst sie jederzeit. Jede Änderung ist in Sekunden bei allen Besuchern – ohne neues PDF, ohne App-Update.':
     'Create and update days, stages and slots directly in the app. Every change reaches all visitors within seconds – without a new PDF or app update.',
@@ -690,6 +718,12 @@ function translated(value: string): string {
   if (pending) return spaced(`OFFLINE · ${pending[1]} pending`);
   const older = key.match(/^(\d+) ältere Mitteilungen anzeigen$/);
   if (older) return spaced(`Show ${older[1]} older notifications`);
+  const saveBand = key.match(/^(.+) merken$/);
+  if (saveBand) return spaced(`Save ${saveBand[1]}`);
+  const unsaveBand = key.match(/^(.+) nicht mehr merken$/);
+  if (unsaveBand) return spaced(`Stop saving ${unsaveBand[1]}`);
+  const announcedBands = key.match(/^· (\d+) Bands announced$/);
+  if (announcedBands) return spaced(`· ${announcedBands[1]} bands announced`);
   const interested = key.match(/^(\d+) interessiert$/);
   if (interested) return spaced(`${interested[1]} interested`);
   const since = key.match(/^seit (.+)$/);
@@ -905,7 +939,7 @@ export function LanguageSwitch({ placement = 'floating' }: { placement?: 'floati
   const pathname = usePathname();
   const isPublicPage =
     pathname === '/' ||
-    pathname === '/fuer-veranstalter' ||
+    pathname === '/veranstalter' ||
     pathname === '/passwort-reset' ||
     pathname.startsWith('/join/');
 

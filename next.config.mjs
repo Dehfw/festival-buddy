@@ -113,6 +113,28 @@ const nextConfig = {
     // Steht dem /sw.js-Route-Handler beim Build zur Verfügung.
     SW_VERSION,
   },
+  /**
+   * Die öffentliche Veranstalter-Seite lag früher unter
+   * /fuer-veranstalter und ist auf /veranstalter umgezogen (die kürzere
+   * URL gehört auf den Flyer). Der Redirect hält alte Links und die
+   * Suchmaschinen-Historie am Leben; das Werkzeug selbst liegt seither
+   * unter /app/veranstalter, wo die eingeloggte App lebt – genau wie die
+   * Gruppen-Seite unter /app/gruppe.
+   */
+  redirects: async () => [
+    {
+      source: '/fuer-veranstalter',
+      destination: '/veranstalter',
+      permanent: true,
+    },
+    // Die Gruppen-Seite ist zur App gezogen; auf sie zeigen Bookmarks aus
+    // der Zeit davor (Tap aufs Profilbild im Header).
+    {
+      source: '/gruppe',
+      destination: '/app/gruppe',
+      permanent: true,
+    },
+  ],
   headers: async () => [
     {
       // Alle Routen inklusive API, /sw.js und Fehlerantworten.

@@ -101,6 +101,12 @@ for (const key of ['days', 'stages', 'slots']) {
 if (errors.length > 0) report();
 
 const { days, stages, slots } = timetable;
+// bands ist optional: Dateien von vor der Lineup-Ansicht haben es nicht,
+// die App leitet den Pool dann aus den Slots ab.
+const bands = timetable.bands ?? [];
+if (timetable.bands !== undefined && !Array.isArray(timetable.bands)) {
+  err('Feld "bands" ist kein Array');
+}
 
 /* ---------- Tage ---------- */
 
@@ -136,7 +142,13 @@ if (sortedDates.join() !== [...sortedDates].sort().join()) {
 
 /* ---------- Bühnen ---------- */
 
-if (stages.length === 0) warn('Keine Bühnen – das Festival ist damit gründbar, zeigt aber "Lineup folgt"');
+if (stages.length === 0) {
+  warn(
+    (timetable.bands ?? []).length > 0
+      ? 'Keine Bühnen – die App zeigt dann die Lineup-Ansicht (Bands zum Reinhören und Merken), aber noch keinen Timetable'
+      : 'Keine Bühnen und keine Bands – das Festival ist zwar gründbar, zeigt aber nur "Lineup folgt"'
+  );
+}
 if (stages.length > MAX_STAGES) err(`${stages.length} Bühnen, erlaubt sind höchstens ${MAX_STAGES}`);
 
 const stageIds = new Set();
@@ -228,6 +240,50 @@ for (const [key, list] of perStageDay) {
   }
 }
 
+/* ---------- Bands (Lineup-Ansicht) ---------- */
+
+const MAX_BANDS = 2000;
+if (bands.length > MAX_BANDS) err(`${bands.length} Bands, erlaubt sind höchstens ${MAX_BANDS}`);
+
+const bandSlugs = new Set();
+for (const [i, b] of bands.entries()) {
+  const at = `bands[${i}]${b?.slug ? ` (${b.slug})` : ''}`;
+  if (typeof b?.name !== 'string' || b.name.length < 1 || b.name.length > 80) {
+    err(`${at}: "name" muss 1–80 Zeichen haben`);
+    continue;
+  }
+  if (typeof b?.slug !== 'string' || !b.slug) {
+    err(`${at}: "slug" fehlt`);
+    continue;
+  }
+  if (bandSlugs.has(b.slug)) {
+    err(`${at}: Slug doppelt – zwei Bands mit demselben Namen?`);
+  }
+  bandSlugs.add(b.slug);
+  // Der Slug ist die Klammer zwischen Merkung und Slot: Er MUSS aus dem
+  // Namen entstehen, sonst findet die App die Spielzeiten der Band nicht
+  // und gemerkte Bands tauchen doppelt auf.
+  if (b.slug !== slugify(b.name)) {
+    err(`${at}: Slug passt nicht zum Namen (erwartet "${slugify(b.name)}")`);
+  }
+  if (b.spotifyArtistId !== undefined && !/^[A-Za-z0-9]{1,40}$/.test(b.spotifyArtistId)) {
+    err(`${at}: "spotifyArtistId" muss 1–40 Buchstaben/Ziffern sein`);
+  }
+}
+
+// Slots ohne Eintrag im Pool sind kein Fehler (die App mischt sie beim
+// Lesen dazu), aber ein Zeichen dafür, dass die Datei von Hand entstanden
+// ist – dann fehlt dort meist auch die Spotify-ID.
+const slotBandsMissing = new Set(
+  slots.filter((s) => typeof s?.band === 'string' && !bandSlugs.has(slugify(s.band))).map((s) => s.band)
+);
+if (bands.length > 0 && slotBandsMissing.size > 0) {
+  warn(
+    `${slotBandsMissing.size} Bands stehen im Timetable, aber nicht in "bands" – die App ergänzt sie beim Lesen. ` +
+      'Sauberer ist es, die Datei mit build-timetable.mjs zu bauen.'
+  );
+}
+
 /* ---------- Vergleich mit dem bisherigen Stand ---------- */
 
 let previous = null;
@@ -267,12 +323,27 @@ if (previous?.slots) {
   }
 }
 
+if (previous && Array.isArray(previous.bands) && previous.bands.length > 0) {
+  const goneBands = previous.bands.filter((b) => b?.slug && !bandSlugs.has(b.slug));
+  if (goneBands.length > 0) {
+    warn(
+      `${goneBands.length} Bands verschwinden aus dem Lineup – wer sie gemerkt hatte, findet sie nicht mehr. ` +
+        'Bei einer abgesagten Band ist das richtig; sonst prüfen, ob nur die Schreibweise abweicht.'
+    );
+    for (const b of goneBands.slice(0, 20)) console.log(`    − ${b.slug} (${b.name})`);
+    if (goneBands.length > 20) console.log(`    … und ${goneBands.length - 20} weitere`);
+  }
+}
+
 report();
 
 /* ---------- Ausgabe ---------- */
 
 function report() {
-  console.log(`\n${path.relative(process.cwd(), filePath)}: ${slots?.length ?? 0} Slots auf ${stages?.length ?? 0} Bühnen und ${days?.length ?? 0} Tagen`);
+  console.log(
+    `\n${path.relative(process.cwd(), filePath)}: ${slots?.length ?? 0} Slots auf ${stages?.length ?? 0} Bühnen und ${days?.length ?? 0} Tagen` +
+      (bands?.length ? `, ${bands.length} Bands im Lineup` : '')
+  );
   for (const w of warnings) console.log(`  ⚠ ${w}`);
   for (const e of errors) console.log(`  ✗ ${e}`);
   if (errors.length === 0 && warnings.length === 0) console.log('  ✓ alles in Ordnung');

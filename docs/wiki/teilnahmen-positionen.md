@@ -4,6 +4,12 @@ Das Herz der App: Wer geht zu welcher Band – und wo steht ihr im
 Publikum? Serverseitig: `setSelection`/`setPosition` in
 `src/lib/db.ts`, Routen `POST /api/selection` und `POST /api/position`.
 
+Die unverbindliche Vorstufe dazu sind die **gemerkten Bands** aus der
+Lineup-Ansicht: `setBandInterest` und `POST /api/interest`, gespeichert
+als `(user_id, festival_id, band_slug)`. Sie funktionieren schon ohne
+Timetable und hängen deshalb am Band-Slug statt an einer Slot-ID –
+Hintergrund in [Festivals & Timetable](festivals-timetable.md).
+
 ## Teilnahmen (Selections)
 
 Eine Teilnahme ist `(user_id, festival_id, slot_id)` mit Status:

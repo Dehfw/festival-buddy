@@ -1,0 +1,83 @@
+# Angekündigte Bands Wacken Open Air 2027 – Quelle für data/woa2027.json.
+# Übernommen aus dem offiziellen W:O:A-Bandexport (Stand 20.08.2026,
+# festival.runningOrderActive = false, also noch keine Running Order).
+# Bühnen und Spielzeiten fehlen deshalb bewusst: Das Ergebnis ist eine
+# reine Lineup-Ansicht (durchhören, merken, Crew-Interessen).
+# Sobald die Running Order da ist, wandern die Bands in
+# [tag/buehne]-Abschnitte – die Slugs und damit die Merkungen bleiben.
+# Bauen:  npm run lineup -- lineups/woa2027.txt --festival woa2027
+
+festival: Wacken Open Air 2027
+edition: 04.–07.08.2027 · Wacken
+dataVersion: 2026-08-20 (50 angekündigte Bands laut offiziellem W:O:A-Export)
+
+day: wed | 2027-08-04
+day: thu | 2027-08-05
+day: fri | 2027-08-06
+day: sat | 2027-08-07
+
+# Schreibweisen exakt wie im offiziellen Export – auch dort, wo sie von
+# der Eigenschreibweise der Band abweichen ("Dark Tranquility" statt
+# "Dark Tranquillity", "Heavens Gate" statt "Heaven's Gate"). Der spätere
+# Running-Order-Import zieht aus derselben Quelle; eine "Korrektur" hier
+# würde beim nächsten Import einen neuen Slug erzeugen und die gemerkten
+# Bands verlieren.
+# Fünf Bands haben im Export kein spotifyartist-Feld und bleiben hier
+# ohne ID (kein Spotify-Button im Band-Sheet): Between Two Worlds,
+# Hiraes, John Bush, Malevolence, Towards The Sinister. Bei Malevolence
+# steht eine Spotify-förmige ID (7KFv5Cni7kseXWHJnnejXk) im falschen
+# Feld externalMediaSource, wo sonst YouTube-Links stehen – ungeprüft,
+# deshalb nicht übernommen. Nachtragen entweder von Hand per
+# "| spotify=<ID>" oder per npm run lineup:spotify, sobald
+# SPOTIFY_CLIENT_ID/-SECRET in .env.local stehen.
+[announced]
+Avatar | spotify=4jpaXieuls7LVzG1uma5Rs
+Beast In Black | spotify=0rEuaTPLMhlViNCJrg3NEH
+Belphegor | spotify=1uPIYn2IU0IuPWSZ58kzyM
+Between Two Worlds
+Blue Medusa | spotify=4BMOQ1GSXhTvuv6a05wk7z
+Carnifex | spotify=4nqY8hkQNkHaDq4fdVxdYr
+Cavalera Conspiracy | spotify=7F1K4WlMshx23V2TTz4KwV
+Children Of Bodom | spotify=1xUhNgw4eJDZfvumIpcz1B
+Creeper | spotify=0nV7SiEIVtPLTSJ6NwWDGj
+Crypta | spotify=0w1xNkvjKVskWP7GvbiwRB
+Dark Tranquility | spotify=5EHvXKnNz78jkAVgTQLQ5O
+Dethklok | spotify=7u12AuhJ5AaJIgZAZe0US8
+DragonForce | spotify=2pH3wEn4eYlMMIIQyKPbVR
+Edguy | spotify=3AGFqPP3gt5rMSvhR87Xxu
+Electric Callboy | spotify=1WNoKxsp715jez1Td4vthc
+Feuerschwanz | spotify=2Ct54gNxKnYLnXk9HhviMI
+Five Finger Death Punch | spotify=5t28BP42x2axFnqOOMg3CM
+Gaerea | spotify=1wXoI3Ajpv4WwQ3LmcrSBw
+Halestorm | spotify=6om12Ev5ppgoMy3OYSoech
+Hammerfall | spotify=2o18h28enlHxj887tATc58
+Heaven Shall Burn | spotify=4sy5qWfwUwpGYBnCKnwfcW
+Heavens Gate | spotify=4bJlNp8kcrWMSIM4NObk2D
+Helloween | spotify=4pQN0GB0fNEEOfQCaWotsY
+Hiraes
+Imminence | spotify=7rqJQQxuUOCk052MK5kLsH
+Jinjer | spotify=7o6cOczXTB8ioTAAJTbESf
+John 5 | spotify=7mAqCk75DUBWgcC0sqhzwX
+John Bush
+Kanonenfieber | spotify=5VI8SBEX7uSvoHsdI5xNVJ
+Knocked Loose | spotify=4qrHkx5cgWIslciLXUMrYw
+Make Them Suffer | spotify=0FZcPgWI3BsFQl4rOAGSHT
+Malevolence
+Metal Church | spotify=0exvkfkATkqWOJgugTjJhP
+Mittel Alta | spotify=2QjjVXLHTBPbpM18ftwvYV
+Napalm Death | spotify=3UqRgrDIQ208yNGiWKRMNt
+Norther | spotify=7FYqu76teK16FSlw4ZYFhW
+Overkill | spotify=0NmYchKQ8JIR9QHYJA0FRe
+Primordial | spotify=0BZr6WHaejNA63uhZZZZek
+Seven Blood | spotify=0WYN4z4Co3AceuxwU6mFLr
+Shadow Of Intent | spotify=76xrrejizyQpKukBIhnf3D
+Sylosis | spotify=2RiGIRDi4GoJpDbjDnPVJl
+Tailgunner | spotify=6Wl6VXLasmiON3BDiha6e1
+The Browning | spotify=4DSNcg40nf6T3eNAObq1Lo
+The Narrator | spotify=7d1ZGbsel9lq6hwvWhPFgk
+The New Roses | spotify=2ghTzEV6dCWpF9BDF9Kp3y
+Towards The Sinister
+Tyketto | spotify=0Yf2kOVTtWIw0lJsAkfE5s
+U.D.O. | spotify=2aWjaq32aRQo58dw0w8NM6
+Victorius | spotify=2INeE2VBbawRQNI6ezc4lN
+Witch Club Satan | spotify=395rqoVSDgQIF7fzRfZIoy

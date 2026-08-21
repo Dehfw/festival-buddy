@@ -97,6 +97,9 @@ try {
         days: timetable.days,
         stages: timetable.stages,
         slots: timetable.slots,
+        // Band-Pool der Lineup-Ansicht; fehlt er (Datei von vor dem
+        // Feature), leitet die App ihn aus den Slots ab.
+        bands: timetable.bands ?? [],
       }),
     ]
   );
@@ -107,6 +110,9 @@ try {
     `✓ ${festival}: ${timetable.slots.length} Slots auf ${timetable.stages.length} Bühnen ` +
       `und ${timetable.days.length} Tagen importiert (${timetable.dataVersion ?? 'ohne Version'})`
   );
+  if (timetable.bands?.length) {
+    console.log(`  ${timetable.bands.length} Bands stehen in der Lineup-Ansicht`);
+  }
 } finally {
   await client.end();
 }

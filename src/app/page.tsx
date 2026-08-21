@@ -298,7 +298,7 @@ export default async function LandingPage() {
       </section>
 
       {/* Veranstalter-Teaser: schmaler Querverweis, der Crew-Funnel bleibt
-          unangetastet – die volle Pitch-Seite lebt unter /fuer-veranstalter */}
+          unangetastet – die volle Pitch-Seite lebt unter /veranstalter */}
       <section className="border-t border-rivet/40">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-5 px-6 py-10 text-center sm:flex-row sm:text-left">
           <div>
@@ -311,7 +311,7 @@ export default async function LandingPage() {
             </p>
           </div>
           <Link
-            href="/fuer-veranstalter"
+            href="/veranstalter"
             className="shrink-0 rounded-xl border border-rivet bg-steel px-6 py-3 text-sm font-semibold uppercase tracking-wider text-bone transition active:scale-[0.98]"
           >
             Für Veranstalter
@@ -328,7 +328,7 @@ export default async function LandingPage() {
           </p>
           <p className="flex items-center justify-center gap-3 font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">
             <Link
-              href="/fuer-veranstalter"
+              href="/veranstalter"
               className="underline underline-offset-2 hover:text-ash"
             >
               Für Veranstalter

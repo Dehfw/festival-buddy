@@ -6,7 +6,9 @@ import timetableJson from '../../data/timetable.json';
 import type {
   Announcement,
   AnnouncementWithAuthor,
+  BandInterest,
   Blueprint,
+  FestivalBand,
   FestivalDay,
   FestivalGroupStats,
   FestivalSummary,
@@ -23,7 +25,7 @@ import type {
   Timetable,
   User,
 } from './types';
-import { FESTIVAL_TZ, isValidTime, toMinutes } from './types';
+import { bandSlug, FESTIVAL_TZ, isValidTime, toMinutes } from './types';
 
 /**
  * Datenschicht: Festivals (inkl. Timetable), Gruppen, Nutzer, Band-
@@ -116,16 +118,16 @@ function getPool(): Pool {
  * `festivals` längst – fehlt aber z. B. `organizer_invites`, muss der
  * idempotente Schema-Block unten einmal laufen und sie nachziehen.
  * Beim Anlegen neuer Tabellen hier IMMER auf die neueste umstellen!
- * Aktuell sind das ZWEI Tabellen, weil Push- und Passwort-Feature
- * parallel entstanden sind – eine Bestands-DB kann die eine ohne die
- * andere haben, erst beide zusammen heißen "alles da".
+ * Die zuletzt hinzugekommene ist `band_interests`; fehlt sie, läuft der
+ * idempotente Block unten und zieht auch alles Ältere nach, was einer
+ * Bestands-DB noch fehlt (z. B. push_reminders_sent oder
+ * password_credentials aus den parallel entstandenen Features).
  */
 async function schemaAlreadyExists(client: PoolClient): Promise<boolean> {
-  const res = await client.query<{ a: string | null; b: string | null }>(
-    "SELECT to_regclass('public.push_reminders_sent') AS a, to_regclass('public.password_credentials') AS b"
+  const res = await client.query<{ a: string | null }>(
+    "SELECT to_regclass('public.band_interests') AS a"
   );
-  const row = res.rows[0];
-  return row?.a != null && row?.b != null;
+  return res.rows[0]?.a != null;
 }
 
 async function createSchema(): Promise<void> {
@@ -215,6 +217,18 @@ async function createSchema(): Promise<void> {
       ALTER TABLE positions ADD COLUMN IF NOT EXISTS festival_id TEXT NOT NULL DEFAULT '${LEGACY_FESTIVAL_ID}';
       -- Passkeys: ein Nutzer wird über seine WebAuthn-Credentials
       -- identifiziert, der Name ist nur noch Anzeigename.
+      -- Gemerkte Bands ("die will ich sehen") aus der Lineup-Ansicht.
+      -- Hängt am Band-Slug statt an einer Slot-ID: Die entstehen erst mit
+      -- dem Timetable, die Merkung soll den Import aber überleben.
+      CREATE TABLE IF NOT EXISTS band_interests (
+        user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        festival_id TEXT NOT NULL,
+        band_slug   TEXT NOT NULL,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (user_id, festival_id, band_slug)
+      );
+      CREATE INDEX IF NOT EXISTS band_interests_festival_idx
+        ON band_interests (festival_id, band_slug);
       CREATE TABLE IF NOT EXISTS webauthn_credentials (
         id         TEXT PRIMARY KEY,
         user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -477,7 +491,12 @@ interface FestivalRow {
   name: string;
   edition: string;
   data_version: string;
-  timetable: { days: Timetable['days']; stages: Timetable['stages']; slots: Timetable['slots'] };
+  timetable: {
+    days: Timetable['days'];
+    stages: Timetable['stages'];
+    slots: Timetable['slots'];
+    bands?: Timetable['bands'];
+  };
   updated_at: Date;
 }
 
@@ -485,6 +504,36 @@ interface FestivalRow {
 // gepollt, das JSONB muss nicht jedes Mal von der DB kommen.
 const timetableCache = new Map<string, { at: number; value: Timetable }>();
 const TIMETABLE_CACHE_MS = 15_000;
+
+/**
+ * Der Band-Pool der Lineup-Ansicht: die gepflegte Liste plus jede Band,
+ * die nur im Timetable steht. Beide Quellen brauchen wir, weil sie zu
+ * verschiedenen Zeiten entstehen – erst wird announced (Liste), später
+ * kommt die Running Order (Slots), und der Veranstalter-Editor legt
+ * neue Slots an, ohne die Liste anzufassen. Gemeinsamer Nenner ist der
+ * Slug; die gepflegte Liste gewinnt, weil dort die geprüfte
+ * Spotify-Zuordnung steht.
+ */
+function mergeBands(bands: FestivalBand[], slots: Slot[]): FestivalBand[] {
+  const merged = new Map<string, FestivalBand>();
+  for (const b of bands) {
+    if (typeof b?.slug === 'string' && typeof b?.name === 'string') merged.set(b.slug, b);
+  }
+  for (const slot of slots) {
+    const slug = bandSlug(slot.band);
+    const existing = merged.get(slug);
+    if (!existing) {
+      merged.set(slug, {
+        slug,
+        name: slot.band,
+        ...(slot.spotifyArtistId ? { spotifyArtistId: slot.spotifyArtistId } : {}),
+      });
+    } else if (!existing.spotifyArtistId && slot.spotifyArtistId) {
+      merged.set(slug, { ...existing, spotifyArtistId: slot.spotifyArtistId });
+    }
+  }
+  return [...merged.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+}
 
 export async function getTimetable(festivalId: string): Promise<Timetable | null> {
   const hit = timetableCache.get(festivalId);
@@ -495,13 +544,15 @@ export async function getTimetable(festivalId: string): Promise<Timetable | null
   );
   const row = res.rows[0];
   if (!row) return null;
+  const slots = row.timetable.slots ?? [];
   const timetable: Timetable = {
     festival: row.name,
     edition: row.edition,
     dataVersion: row.data_version,
     days: row.timetable.days ?? [],
     stages: row.timetable.stages ?? [],
-    slots: row.timetable.slots ?? [],
+    slots,
+    bands: mergeBands(row.timetable.bands ?? [], slots),
   };
   timetableCache.set(festivalId, { at: Date.now(), value: timetable });
   return timetable;
@@ -540,11 +591,31 @@ function festivalTodayISO(): string {
 const LAST_DAY_SQL = `(SELECT max(day->>'date')
                          FROM jsonb_array_elements(timetable->'days') day)`;
 
+/**
+ * Bands im Pool. `bands` fehlt in Timetables, die vor der Lineup-Ansicht
+ * importiert wurden – dann zählt ersatzweise, wie viele verschiedene
+ * Bands im Timetable stehen (genau die mischt getTimetable dazu).
+ */
+const bandCountSql = (column = 'timetable') => `COALESCE(
+    jsonb_array_length(${column}->'bands'),
+    (SELECT count(DISTINCT slot->>'band')
+       FROM jsonb_array_elements(${column}->'slots') slot),
+    0)`;
+
+interface FestivalSummaryRow {
+  id: string;
+  name: string;
+  edition: string;
+  has_lineup: boolean;
+  band_count: number | string | null;
+}
+
 /** Alle Festivals, auch vergangene (Reminder-Cron braucht den Vollbestand). */
 export async function getFestivals(): Promise<FestivalSummary[]> {
-  const res = await query<{ id: string; name: string; edition: string; has_lineup: boolean }>(
+  const res = await query<FestivalSummaryRow>(
     `SELECT id, name, edition,
-            jsonb_array_length(timetable->'slots') > 0 AS has_lineup
+            jsonb_array_length(timetable->'slots') > 0 AS has_lineup,
+            ${bandCountSql()} AS band_count
        FROM festivals ORDER BY id`
   );
   return res.rows.map((r) => ({
@@ -552,6 +623,7 @@ export async function getFestivals(): Promise<FestivalSummary[]> {
     name: r.name,
     edition: r.edition,
     hasLineup: r.has_lineup,
+    bandCount: Number(r.band_count ?? 0),
   }));
 }
 
@@ -561,9 +633,10 @@ export async function getFestivals(): Promise<FestivalSummary[]> {
  * ("Lineup folgt") bleiben wählbar.
  */
 export async function getSelectableFestivals(): Promise<FestivalSummary[]> {
-  const res = await query<{ id: string; name: string; edition: string; has_lineup: boolean }>(
+  const res = await query<FestivalSummaryRow>(
     `SELECT id, name, edition,
-            jsonb_array_length(timetable->'slots') > 0 AS has_lineup
+            jsonb_array_length(timetable->'slots') > 0 AS has_lineup,
+            ${bandCountSql()} AS band_count
        FROM festivals
       WHERE COALESCE(${LAST_DAY_SQL}, '9999-12-31') >= $1
       ORDER BY id`,
@@ -574,6 +647,7 @@ export async function getSelectableFestivals(): Promise<FestivalSummary[]> {
     name: r.name,
     edition: r.edition,
     hasLineup: r.has_lineup,
+    bandCount: Number(r.band_count ?? 0),
   }));
 }
 
@@ -950,6 +1024,7 @@ export async function getGroupImage(
 export interface DbState {
   users: User[];
   selections: Selection[];
+  bandInterests: BandInterest[];
   positions: Position[];
   blueprints: Record<string, Blueprint>;
   group: GroupInfo;
@@ -987,7 +1062,7 @@ export async function getState(groupId: string, userId: string): Promise<DbState
   const g = groupRes.rows[0];
   if (!g) return null;
 
-  const [members, selections, positions, blueprints, rev] = await Promise.all([
+  const [members, selections, interests, positions, blueprints, rev] = await Promise.all([
     pool.query<{ id: string; name: string; color: string; created_at: Date; role: string }>(
       `SELECT u.id, u.name, u.color, u.created_at, m.role
          FROM group_members m JOIN users u ON u.id = m.user_id
@@ -999,6 +1074,13 @@ export async function getState(groupId: string, userId: string): Promise<DbState
          FROM selections s
          JOIN group_members m ON m.user_id = s.user_id AND m.group_id = $1
         WHERE s.festival_id = $2`,
+      [groupId, g.festival_id]
+    ),
+    pool.query<{ user_id: string; band_slug: string }>(
+      `SELECT b.user_id, b.band_slug
+         FROM band_interests b
+         JOIN group_members m ON m.user_id = b.user_id AND m.group_id = $1
+        WHERE b.festival_id = $2`,
       [groupId, g.festival_id]
     ),
     pool.query<{ user_id: string; slot_id: string; x: number; y: number; updated_at: Date }>(
@@ -1029,6 +1111,10 @@ export async function getState(groupId: string, userId: string): Promise<DbState
       userId: r.user_id,
       slotId: r.slot_id,
       status: r.status === 'interested' ? 'interested' : 'going',
+    })),
+    bandInterests: interests.rows.map((r) => ({
+      userId: r.user_id,
+      slug: r.band_slug,
     })),
     positions: positions.rows.map((r) => ({
       userId: r.user_id,
@@ -1456,6 +1542,40 @@ export async function setSelection(
   }
 }
 
+/**
+ * Band merken bzw. Merkung entfernen. Anders als eine Selection hängt sie
+ * am Band-Slug und damit nicht am Timetable – gemerkt werden kann, sobald
+ * eine Band announced ist. Rückgabe false, wenn der Nutzer nicht existiert.
+ */
+export async function setBandInterest(
+  userId: string,
+  festivalId: string,
+  slug: string,
+  interested: boolean
+): Promise<boolean> {
+  await ensureSchema();
+  try {
+    if (interested) {
+      await query(
+        `INSERT INTO band_interests (user_id, festival_id, band_slug) VALUES ($1, $2, $3)
+         ON CONFLICT (user_id, festival_id, band_slug) DO NOTHING`,
+        [userId, festivalId, slug]
+      );
+    } else {
+      await query(
+        'DELETE FROM band_interests WHERE user_id = $1 AND festival_id = $2 AND band_slug = $3',
+        [userId, festivalId, slug]
+      );
+    }
+  } catch (err) {
+    // Unbekannter Nutzer (FK) – wie bei setSelection kein harter Fehler
+    if ((err as { code?: string }).code === '23503') return false;
+    throw err;
+  }
+  await bumpRev();
+  return true;
+}
+
 export type PositionResult = 'ok' | 'not-attending';
 
 /** Position setzen (nur wenn bei der Band eingetragen) oder entfernen. */
@@ -1520,9 +1640,10 @@ export async function isFestivalOrganizer(
 
 /** Festivals, die dieser Nutzer als Veranstalter pflegen darf */
 export async function getOrganizerFestivals(userId: string): Promise<FestivalSummary[]> {
-  const res = await query<{ id: string; name: string; edition: string; has_lineup: boolean }>(
+  const res = await query<FestivalSummaryRow>(
     `SELECT f.id, f.name, f.edition,
-            jsonb_array_length(f.timetable->'slots') > 0 AS has_lineup
+            jsonb_array_length(f.timetable->'slots') > 0 AS has_lineup,
+            ${bandCountSql('f.timetable')} AS band_count
        FROM festival_organizers o JOIN festivals f ON f.id = o.festival_id
       WHERE o.user_id = $1 ORDER BY f.id`,
     [userId]
@@ -1532,6 +1653,7 @@ export async function getOrganizerFestivals(userId: string): Promise<FestivalSum
     name: r.name,
     edition: r.edition,
     hasLineup: r.has_lineup,
+    bandCount: Number(r.band_count ?? 0),
   }));
 }
 
@@ -1578,16 +1700,23 @@ export async function redeemOrganizerInvite(
        ON CONFLICT DO NOTHING`,
       [festivalId, userId]
     );
-    const fest = await client.query<{ id: string; name: string; edition: string; has_lineup: boolean }>(
+    const fest = await client.query<FestivalSummaryRow>(
       `SELECT id, name, edition,
-              jsonb_array_length(timetable->'slots') > 0 AS has_lineup
+              jsonb_array_length(timetable->'slots') > 0 AS has_lineup,
+              ${bandCountSql()} AS band_count
          FROM festivals WHERE id = $1`,
       [festivalId]
     );
     await client.query('COMMIT');
     const f = fest.rows[0];
     return f
-      ? { id: f.id, name: f.name, edition: f.edition, hasLineup: f.has_lineup }
+      ? {
+          id: f.id,
+          name: f.name,
+          edition: f.edition,
+          hasLineup: f.has_lineup,
+          bandCount: Number(f.band_count ?? 0),
+        }
       : null;
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
@@ -1917,21 +2046,11 @@ const MAX_SLOTS = 2000;
 /**
  * IDs im dokumentierten Schema tag-buehne-bandslug: Umlaute ausschreiben,
  * alles andere zu '-' – einmal vergeben, nie wieder geändert (Auswahlen
- * und Positionen hängen an der Slot-ID).
+ * und Positionen hängen an der Slot-ID). Dieselbe Funktion bildet den
+ * Slug einer FestivalBand; die beiden dürfen nie auseinanderlaufen,
+ * sonst findet die Lineup-Ansicht die Slots ihrer Bands nicht mehr.
  */
-function slugify(input: string): string {
-  const slug = input
-    .toLowerCase()
-    .replace(/ä/g, 'ae')
-    .replace(/ö/g, 'oe')
-    .replace(/ü/g, 'ue')
-    .replace(/ß/g, 'ss')
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return slug || 'x';
-}
+const slugify = bandSlug;
 
 function uniqueId(base: string, taken: Set<string>): string {
   if (!taken.has(base)) return base;
@@ -1951,6 +2070,11 @@ interface TimetableBody {
   days: FestivalDay[];
   stages: Stage[];
   slots: Slot[];
+  /**
+   * Der gepflegte Band-Pool. Der Editor fasst ihn nicht an, muss ihn aber
+   * durchreichen – ein Slot-Edit darf die angekündigten Bands nicht löschen.
+   */
+  bands?: FestivalBand[];
 }
 
 type TimetableEditError = { error: string; status?: number };
@@ -1992,6 +2116,7 @@ async function mutateTimetable(
       days: row.timetable.days ?? [],
       stages: row.timetable.stages ?? [],
       slots: row.timetable.slots ?? [],
+      ...(row.timetable.bands ? { bands: row.timetable.bands } : {}),
     };
     const applied = fn(current);
     if ('error' in applied) {
@@ -2041,6 +2166,7 @@ async function mutateTimetable(
       days: applied.days,
       stages: applied.stages,
       slots: applied.slots,
+      bands: mergeBands(applied.bands ?? [], applied.slots),
     };
     // Write-through: dieselbe Instanz sieht den neuen Stand sofort; andere
     // Instanzen konvergieren über die Cache-TTL + den Rev-Poll.

@@ -25,6 +25,24 @@ export interface Slot {
   spotifyArtistId?: string;
 }
 
+/**
+ * Angekündigte Band aus dem Lineup-Pool eines Festivals – alles, was
+ * announced ist, mit oder ohne Timetable-Slot. Damit lässt sich ein
+ * Festival schon im Winter anlegen, wenn die Running Order noch fehlt.
+ *
+ * Der `slug` ist die stabile Kennung und entsteht mit demselben
+ * slugify-Algorithmus wie der letzte Teil einer Slot-ID
+ * (`tag-buehne-bandslug`). Merkungen hängen deshalb am Slug und nicht an
+ * einer Slot-ID: Sie überleben den späteren Timetable-Import, bei dem
+ * alle Slot-IDs erst entstehen.
+ */
+export interface FestivalBand {
+  slug: string;
+  name: string;
+  /** Spotify-Artist-ID – dieselbe Bedeutung wie bei Slot */
+  spotifyArtistId?: string;
+}
+
 export interface Timetable {
   festival: string;
   edition: string;
@@ -32,6 +50,12 @@ export interface Timetable {
   days: FestivalDay[];
   stages: Stage[];
   slots: Slot[];
+  /**
+   * Alle Bands des Festivals für die Lineup-Ansicht: die angekündigten und
+   * (sobald es sie gibt) die aus dem Timetable. Leer = kein Lineup
+   * gepflegt, die App zeigt dann weiter „Lineup folgt".
+   */
+  bands: FestivalBand[];
 }
 
 export interface User {
@@ -48,6 +72,18 @@ export interface Selection {
   userId: string;
   slotId: string;
   status: SelectionStatus;
+}
+
+/**
+ * „Die will ich sehen" auf einer Band aus dem Lineup-Pool – die
+ * unverbindliche Vorstufe zur Teilnahme, schon ohne Timetable setzbar.
+ * Gilt pro Nutzer und Festival (wie Selection); die Gruppe entscheidet
+ * nur, wessen Merkungen man sieht.
+ */
+export interface BandInterest {
+  userId: string;
+  /** FestivalBand.slug */
+  slug: string;
 }
 
 /**
@@ -95,8 +131,14 @@ export interface FestivalSummary {
   id: string;
   name: string;
   edition: string;
-  /** false = Lineup noch nicht importiert ("Lineup folgt") */
+  /** false = Timetable noch nicht importiert ("Lineup folgt") */
   hasLineup: boolean;
+  /**
+   * Bands im Lineup-Pool. Ohne Timetable (hasLineup: false) ist das der
+   * Unterschied zwischen „hier gibt es noch gar nichts" und „30 Bands
+   * sind announced, hör schon mal rein".
+   */
+  bandCount: number;
 }
 
 /** Meine Mitgliedschaften (GET /api/me bzw. /api/groups/mine) */
@@ -152,6 +194,43 @@ export function normalizeInviteCode(raw: string): string {
 /** Anzeigeformat XXXX-XXXX */
 export function formatInviteCode(code: string): string {
   return code.length === 8 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
+}
+
+/**
+ * Stabile Kennung eines Bandnamens: Umlaute ausschreiben, Akzente
+ * entfernen, alles Übrige zu '-'. Genau diese Abbildung erzeugt den
+ * letzten Teil einer Slot-ID (`tag-buehne-bandslug`) und den Slug einer
+ * FestivalBand – deshalb findet die Lineup-Ansicht zu jeder Band ihre
+ * Slots, sobald der Timetable da ist, und gemerkte Bands bleiben über
+ * den Import hinweg dieselben.
+ */
+export function bandSlug(name: string): string {
+  const slug = String(name)
+    .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'x';
+}
+
+/** Wer aus der Gruppe hat diese Band gemerkt? */
+export function bandInterestUsers(
+  users: User[],
+  interests: BandInterest[],
+  slug: string
+): User[] {
+  const out: User[] = [];
+  for (const i of interests) {
+    if (i.slug !== slug) continue;
+    const u = users.find((x) => x.id === i.userId);
+    if (u) out.push(u);
+  }
+  return out;
 }
 
 /** Teilnehmer eines Slots, getrennt nach fester Zusage und Interesse */
@@ -277,6 +356,8 @@ export interface DataPayload {
   positions: Position[];
   blueprints: Record<string, Blueprint>;
   group: GroupInfo;
+  /** Gemerkte Bands der Gruppenmitglieder (Lineup-Ansicht) */
+  bandInterests: BandInterest[];
   /** Neueste Mitteilungen (Festival + app-weit), absteigend nach Datum */
   announcements: Announcement[];
   rev: number;

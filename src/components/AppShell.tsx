@@ -3,18 +3,20 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/lib/client/store';
-import type { Slot } from '@/lib/types';
+import type { FestivalBand, Slot } from '@/lib/types';
 import { AnnouncementsBell } from './AnnouncementsSheet';
 import { Avatar } from './Avatars';
+import { BandPreviewSheet } from './BandPreviewSheet';
 import { BandSheet } from './BandSheet';
 import { DefektLogo } from './DefektLogo';
 import { GroupAvatar } from './GroupAvatar';
 import { InstallPrompt } from './InstallPrompt';
+import { LineupView } from './LineupView';
 import { ListView } from './ListView';
 import { PushPrompt } from './PushPrompt';
 import { TimetableView } from './TimetableView';
 
-type Tab = 'timetable' | 'list';
+type Tab = 'timetable' | 'list' | 'lineup';
 
 /**
  * Datum des aktuellen FESTIVALtags: ein Festivaltag läuft bis 08:00 früh –
@@ -30,6 +32,7 @@ export function AppShell() {
   const [tab, setTab] = useState<Tab>('timetable');
   const [dayId, setDayId] = useState('');
   const [activeSlot, setActiveSlot] = useState<Slot | null>(null);
+  const [activeBand, setActiveBand] = useState<FestivalBand | null>(null);
   const dataRef = useRef(data);
   dataRef.current = data;
 
@@ -62,6 +65,18 @@ export function AppShell() {
 
   if (!data || !user) return null;
 
+  // Das Lineup ist die Ansicht *vor* der Running Order: Der Timetable wäre
+  // leer und "Unsere Bands" hängt an Eintragungen auf Slots, die es noch
+  // nicht gibt. Sobald die Spielzeiten da sind, planen alle über den
+  // Timetable – dann verschwindet der Lineup-Tab wieder.
+  const hasTimetable = data.timetable.slots.length > 0;
+  const hasBands = data.timetable.bands.length > 0;
+  const activeTab: Tab = hasTimetable
+    ? tab === 'lineup'
+      ? 'timetable'
+      : tab
+    : 'lineup';
+
   return (
     <div className="app-shell flex flex-col">
       {/* Header */}
@@ -71,7 +86,7 @@ export function AppShell() {
           <DefektLogo />
           {/* Aktive Gruppe: Tap öffnet die Gruppen-Seite */}
           <Link
-            href="/gruppe"
+            href="/app/gruppe"
             className="flex min-w-0 items-center gap-1.5 rounded-full border border-rivet bg-steel-2 py-0.5 pl-0.5 pr-2.5"
             title={`${data.group.name} · ${data.group.festivalName}`}
           >
@@ -100,14 +115,14 @@ export function AppShell() {
           {/* Mitteilungen (Veranstalter-Durchsagen & App-News) */}
           <AnnouncementsBell />
           {/* Profilbild öffnet die Gruppen-Seite (Abmelden lebt dort) */}
-          <Link href="/gruppe" title={`${user.name} – Gruppe & Konto`}>
+          <Link href="/app/gruppe" title={`${user.name} – Gruppe & Konto`}>
             <Avatar user={user} size={30} ring />
           </Link>
         </div>
       </header>
 
       {/* Tages-Tabs (nur Timetable-Ansicht) */}
-      {tab === 'timetable' && (
+      {activeTab === 'timetable' && (
         <div className="flex overflow-x-auto border-b border-rivet bg-steel scrollbar-thin">
           {data.timetable.days.map((d) => (
             <button
@@ -130,30 +145,55 @@ export function AppShell() {
 
       {/* Inhalt */}
       <main className="min-h-0 flex-1">
-        {tab === 'timetable' && (
+        {activeTab === 'timetable' && (
           <TimetableView dayId={dayId} onSlotTap={setActiveSlot} />
         )}
-        {tab === 'list' && <ListView onSlotTap={setActiveSlot} />}
+        {activeTab === 'list' && <ListView onSlotTap={setActiveSlot} />}
+        {activeTab === 'lineup' &&
+          (hasBands ? (
+            <LineupView onBandTap={setActiveBand} />
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center px-8 text-center">
+              <div className="text-4xl">🗓️</div>
+              <p className="mt-3 text-sm text-ash">
+                Für dieses Festival ist noch kein Lineup eingetragen. Sobald
+                die ersten Bands announced sind, könnt ihr sie hier durchhören
+                und markieren.
+              </p>
+            </div>
+          ))}
       </main>
 
       {/* Bottom-Navigation */}
       <nav className="flex border-t border-rivet bg-steel pb-[max(0.4rem,env(safe-area-inset-bottom))]">
-        <TabButton
-          active={tab === 'timetable'}
-          onClick={() => setTab('timetable')}
-          icon="🗓️"
-          label="Timetable"
-        />
-        <TabButton
-          active={tab === 'list'}
-          onClick={() => setTab('list')}
-          icon="🤘"
-          label="Unsere Bands"
-        />
+        {/* Entweder Timetable-Betrieb oder Lineup – nie beides. */}
+        {hasTimetable ? (
+          <>
+            <TabButton
+              active={activeTab === 'timetable'}
+              onClick={() => setTab('timetable')}
+              icon="🗓️"
+              label="Timetable"
+            />
+            <TabButton
+              active={activeTab === 'list'}
+              onClick={() => setTab('list')}
+              icon="🤘"
+              label="Unsere Bands"
+            />
+          </>
+        ) : (
+          <TabButton
+            active={activeTab === 'lineup'}
+            onClick={() => setTab('lineup')}
+            icon="📋"
+            label="Lineup"
+          />
+        )}
         {/* Nur für Veranstalter sichtbar (organizerFestivals aus /api/me) */}
         {organizerFestivals > 0 && (
           <Link
-            href="/veranstalter"
+            href="/app/veranstalter"
             className="flex flex-1 flex-col items-center gap-0.5 py-2 text-ash"
           >
             <span className="text-lg leading-none">🎪</span>
@@ -164,6 +204,9 @@ export function AppShell() {
         )}
       </nav>
 
+      {activeBand && !activeSlot && (
+        <BandPreviewSheet band={activeBand} onClose={() => setActiveBand(null)} />
+      )}
       {activeSlot && (
         <BandSheet slot={activeSlot} onClose={() => setActiveSlot(null)} />
       )}

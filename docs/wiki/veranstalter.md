@@ -1,7 +1,7 @@
 # Veranstalter-Bereich
 
-`/veranstalter` ist der Bereich, in dem **Festival-Veranstalter** die
-Daten ihres Festivals pflegen: Timetable (Tage, Bühnen, Slots),
+`/app/veranstalter` ist der Bereich, in dem **Festival-Veranstalter**
+die Daten ihres Festivals pflegen: Timetable (Tage, Bühnen, Slots),
 Festival-Name/Edition sowie die Bühnenpläne (Blueprints) inkl. POIs.
 Er ersetzt das frühere passwortgeschützte Admin-Panel vollständig –
 ein `ADMIN_PASSWORD` gibt es nicht mehr.
@@ -10,10 +10,20 @@ Mit den **Gruppen-Rollen** (Owner/Admin) hat das nichts zu tun:
 Veranstalter sein ist eine Zuweisung **pro Festival**, gespeichert in
 der Tabelle `festival_organizers`.
 
-Die öffentliche Marketing-Seite `/fuer-veranstalter` erklärt den Bereich
-für Interessenten und nennt den Kontakt für neue Festivals
+Die öffentliche Marketing-Seite liegt unter `/veranstalter`: Sie erklärt
+den Bereich für Interessenten und nennt den Kontakt für neue Festivals
 (`moin@festivalbuddy.app`); verlinkt ist sie im Footer der Startseite
-und aus den Logged-out-/Kein-Zugang-Zuständen von `/veranstalter`.
+und aus den Logged-out-/Kein-Zugang-Zuständen des Bereichs.
+
+Die kurze, merkbare URL gehört auf den Flyer, nicht auf ein Werkzeug,
+das eine Handvoll Leute öffnet – deshalb diese Aufteilung. Das Werkzeug
+sitzt unter `/app/veranstalter`, weil es zur eingeloggten App gehört
+(wie `/app` selbst); damit ist es über die bestehende `/app`-Regel
+automatisch aus `robots.txt` heraus, ohne dass die öffentliche Seite
+darunter leidet. Der alte Pfad `/fuer-veranstalter` leitet dauerhaft
+(308) auf `/veranstalter` um (`redirects` in `next.config.mjs`; Next.js
+antwortet bei `permanent: true` mit 308, nicht 301 – für Bookmarks und
+Suchmaschinen gleichwertig).
 
 ## Zugang & Zuweisung
 
@@ -27,7 +37,7 @@ und aus den Logged-out-/Kein-Zugang-Zuständen von `/veranstalter`.
 
 2. Der Veranstalter meldet sich in der App ganz normal mit seinem
    **Passkey-Konto** an und löst den Code unter
-   `/veranstalter?code=XXXX-XXXX` ein (`POST /api/organizer/redeem`,
+   `/app/veranstalter?code=XXXX-XXXX` ein (`POST /api/organizer/redeem`,
    rate-limited; unbekannt/verbraucht/widerrufen geben bewusst dieselbe
    Antwort). Einlösen verbraucht den Code (`used_by`/`used_at` in
    `organizer_invites`).

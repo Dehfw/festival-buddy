@@ -1,6 +1,6 @@
 ---
 name: lineup-import
-description: Lineup bzw. Running Order eines Festivals in Festival-Buddy einspielen – Importdatei im App-Timetable-Format bauen, prüfen und in die Datenbank importieren. Nutze diesen Skill immer, wenn es um Lineups, Running Order, Timetable, Spielzeiten, Bühnen oder Festivaltage geht: neues Festival anlegen, Lineup nachtragen oder aktualisieren, Spielzeiten korrigieren, Daten von einem Plakat, einer Website, einem PDF oder Clashfinder übernehmen, eine Datei in data/ bauen oder `npm run import:db` laufen lassen. Auch dann verwenden, wenn jemand nur eine Bandliste mit Uhrzeiten schickt und sinngemäß "spiel das ein" oder "kannst du das ins Festival-Buddy übernehmen" sagt, ohne Import oder Timetable ausdrücklich zu nennen.
+description: Lineup bzw. Running Order eines Festivals in Festival-Buddy einspielen – Importdatei im App-Timetable-Format bauen, prüfen und in die Datenbank importieren. Nutze diesen Skill immer, wenn es um Lineups, Running Order, Timetable, Spielzeiten, Bühnen oder Festivaltage geht: neues Festival anlegen, Lineup nachtragen oder aktualisieren, angekündigte Bands ohne Spielzeit einpflegen, Spielzeiten korrigieren, Daten von einem Plakat, einer Website, einem PDF oder Clashfinder übernehmen, eine Datei in data/ bauen oder `npm run import:db` laufen lassen. Auch dann verwenden, wenn jemand nur eine Bandliste schickt – mit oder ohne Uhrzeiten – und sinngemäß "spiel das ein" oder "kannst du das ins Festival-Buddy übernehmen" sagt, ohne Import oder Timetable ausdrücklich zu nennen.
 ---
 
 # Lineup importieren
@@ -21,6 +21,11 @@ bekommt eine Fehlermeldung, die Band ist einfach nicht mehr angehakt.
 Deshalb sind Slot-IDs ein Vertrag: `tag-buehne-bandslug`, stabil über
 alle Re-Importe hinweg. Genau darauf zielt der Ablauf unten ab, und
 genau das prüft der Validator, bevor irgendetwas in die DB geht.
+
+Dasselbe gilt für den **Band-Slug** (`bands[].slug`, der letzte Teil
+jeder Slot-ID): Daran hängen die gemerkten Bands aus der
+Lineup-Ansicht. Eine geänderte Schreibweise ist ein neuer Slug – und
+damit sind die Merkungen weg.
 
 ## Der Ablauf
 
@@ -83,9 +88,14 @@ Zur Quelle je nach Material:
   fehlen nur noch Spotify-Suche und Prüfung, beide nehmen die JSON-Datei
   direkt: `npm run lineup:spotify -- data/timetable.json` und
   `npm run lineup:check -- data/timetable.json --festival woa2026`.
-- **Nur eine Bandliste ohne Zeiten**: dann entsteht ein Gerüst (Tage und
-  Bühnen, `slots: []`). Das ist ein legitimer Zwischenstand – die App
-  zeigt „Lineup folgt", Gruppen lassen sich trotzdem gründen.
+- **Nur eine Bandliste ohne Zeiten**: der Normalfall im Winter, wenn ein
+  Festival announced hat und die Running Order noch fehlt. Die Bands
+  gehören in einen `[announced]`-Abschnitt (nur Namen, eine pro Zeile);
+  dazu die Tage, sobald die Termine feststehen. Ergebnis ist eine Datei
+  mit `slots: []`, aber gefülltem `bands` – die App zeigt dann die
+  Lineup-Ansicht: durchhören, merken, sehen wer aus der Crew mitwill.
+  Ohne `[announced]` bliebe es ein leeres Gerüst mit „Lineup folgt",
+  also: Wenn Bands bekannt sind, gehören sie rein.
 
 ### 3. Bauen, anreichern, prüfen
 
@@ -104,9 +114,11 @@ genau die Stelle, an der Eintragungen verloren gehen. Das Script nutzt
 denselben `slugify`-Algorithmus wie `src/lib/db.ts`, damit Import und
 Veranstalter-Editor dieselben IDs treffen.
 
-**Zur Spotify-Suche.** Ohne `spotifyArtistId` fehlt im Band-Sheet der
-„Auf Spotify anhören"-Button – der Normalfall, sobald ein Lineup von
-Hand gepflegt wird. Die Zugangsdaten (`SPOTIFY_CLIENT_ID`,
+**Zur Spotify-Suche.** Ohne `spotifyArtistId` fehlt der „Auf Spotify
+anhören"-Button – der Normalfall, sobald ein Lineup von Hand gepflegt
+wird. Bei angekündigten Bands wiegt das schwerer als beim fertigen
+Timetable: Reinhören ist dort die einzige Funktion, die die Band
+überhaupt hat. Die Zugangsdaten (`SPOTIFY_CLIENT_ID`,
 `SPOTIFY_CLIENT_SECRET`) kommen aus `.env.local`; fehlen sie, wird der
 Schritt übersprungen und der Rest läuft weiter. Übernommen wird nur, was
 exakt auf den Bandnamen passt, alles andere landet im Bericht. Zwei
@@ -126,6 +138,9 @@ Dinge daraus gehören angesehen:
 **Zur Prüfung.** Fehler (`✗`) brechen die Strecke ab, die Datei geht
 nicht in die DB. Warnungen (`⚠`) musst du **lesen und einordnen**:
 
+- **„N Bands verschwinden aus dem Lineup"** – dieselbe Frage wie unten,
+  eine Ebene höher: abgesagt (dann korrekt) oder nur anders
+  geschrieben (dann gehen Merkungen verloren)?
 - **„N Slot-IDs verschwinden"** – die zentrale Warnung; sie erscheint
   nur beim Vergleich mit dem Live-Stand (`DATABASE_URL` gesetzt). Ist
   die Band wirklich aus dem Lineup geflogen? Dann ist das korrekt.

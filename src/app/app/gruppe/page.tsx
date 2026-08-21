@@ -50,7 +50,7 @@ function GroupPageInner() {
   const [tab, setTab] = useState<'gruppe' | 'konto'>('gruppe');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Deep-Link /gruppe?tab=konto (z. B. aus Hinweisen auf die
+  // Deep-Link /app/gruppe?tab=konto (z. B. aus Hinweisen auf die
   // Mitteilungs-Einstellungen) öffnet direkt den Konto-Tab.
   useEffect(() => {
     const fromUrl = new URLSearchParams(window.location.search).get('tab');

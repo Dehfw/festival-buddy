@@ -24,8 +24,17 @@
  *   19:00-20:00 Special Guest | unbestaetigt
  *   18:00-19:00 Neuer Bandname | id=fri-sparkasse-alter-bandname
  *
+ *   [announced]
+ *   Amon Amarth | spotify=6vg9BW5gHSjidGbypXQku2
+ *   Sabaton
+ *
  * Zeiten nach Mitternacht dürfen als 00:30 oder als 24:30 stehen – die App
  * rechnet Stunden vor 08:00 automatisch dem Vortag zu.
+ *
+ * Der Abschnitt [announced] ist für Bands, die zwar bestätigt sind, aber
+ * noch keine Spielzeit haben – der Normalfall im Winter. Sie landen im
+ * Feld `bands` der Importdatei und füllen in der App die Lineup-Ansicht,
+ * lange bevor es einen Timetable gibt.
  */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
@@ -97,6 +106,8 @@ const meta = {};
 const stages = [];
 const days = [];
 const rawSlots = [];
+/** Bands aus [announced] – announced, aber (noch) ohne Slot */
+const announced = [];
 let current = null;
 
 const lines = source.split(/\r?\n/);
@@ -106,6 +117,11 @@ for (let i = 0; i < lines.length; i++) {
   // einer Bühnenfarbe wie #f77f00 zu unterscheiden.
   const line = lines[i].trim();
   if (!line || line.startsWith('#')) continue;
+
+  if (/^\[announced\]$/i.test(line)) {
+    current = { announced: true };
+    continue;
+  }
 
   const section = /^\[([^\]/]+)\/([^\]]+)\]$/.exec(line);
   if (section) {
@@ -141,9 +157,23 @@ for (let i = 0; i < lines.length; i++) {
     continue;
   }
 
+  if (current?.announced) {
+    const parts = line.split('|').map((p) => p.trim());
+    const band = parts.shift();
+    if (!band) fail('Bandname fehlt', lineNo);
+    const entry = { band, lineNo };
+    for (const opt of parts) {
+      const [key, value] = opt.split('=').map((p) => p.trim());
+      if (key === 'spotify') entry.spotifyArtistId = value;
+      else fail(`unbekannte Option "${opt}" – im [announced]-Block gibt es nur spotify=`, lineNo);
+    }
+    announced.push(entry);
+    continue;
+  }
+
   const slot = /^(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})\s+(.+)$/.exec(line);
   if (!slot) fail(`unverständlich: "${line}"`, lineNo);
-  if (!current) fail('Slot ohne vorangehenden Abschnitt [tag/buehne]', lineNo);
+  if (!current) fail('Slot ohne vorangehenden Abschnitt [tag/buehne] oder [announced]', lineNo);
 
   const [, start, end, rest] = slot;
   const parts = rest.split('|').map((p) => p.trim());
@@ -166,7 +196,11 @@ for (const key of ['festival', 'edition']) {
 }
 if (days.length === 0) fail('keine "day:"-Zeile gefunden');
 if (rawSlots.length === 0 && stages.length === 0) {
-  console.log('→ Keine Bühnen/Slots – es entsteht ein Gerüst ("Lineup folgt")');
+  console.log(
+    announced.length > 0
+      ? `→ Keine Bühnen/Slots – ${announced.length} angekündigte Bands ohne Timetable (Lineup-Ansicht)`
+      : '→ Keine Bühnen/Slots – es entsteht ein Gerüst ("Lineup folgt")'
+  );
 }
 
 const dayIndex = new Map(days.map((d, i) => [d.id, i]));
@@ -209,6 +243,29 @@ const slots = rawSlots.map((s) => {
   };
 });
 
+/**
+ * Der Band-Pool der Lineup-Ansicht: erst die angekündigten Bands, dann jede
+ * Band aus dem Timetable, die noch nicht dabei ist. Beide Quellen stehen
+ * in der Datei, damit sie ohne die App lesbar bleibt; die App mischt beim
+ * Lesen noch einmal (mergeBands in src/lib/db.ts), falls im
+ * Veranstalter-Editor später Slots dazukommen.
+ */
+const bandsBySlug = new Map();
+for (const entry of [...announced, ...slots.map((s) => ({ band: s.band, spotifyArtistId: s.spotifyArtistId }))]) {
+  const slug = slugify(entry.band);
+  const existing = bandsBySlug.get(slug);
+  if (!existing) {
+    bandsBySlug.set(slug, {
+      slug,
+      name: entry.band,
+      ...(entry.spotifyArtistId ? { spotifyArtistId: entry.spotifyArtistId } : {}),
+    });
+  } else if (!existing.spotifyArtistId && entry.spotifyArtistId) {
+    existing.spotifyArtistId = entry.spotifyArtistId;
+  }
+}
+const bands = [...bandsBySlug.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+
 const timetable = {
   festival: meta.festival,
   edition: meta.edition,
@@ -216,6 +273,7 @@ const timetable = {
   days,
   stages,
   slots,
+  bands,
 };
 
 await mkdir(path.dirname(outPath), { recursive: true });
@@ -224,5 +282,9 @@ await writeFile(outPath, `${JSON.stringify(timetable, null, 2)}\n`, 'utf8');
 const unconfirmed = slots.filter((s) => !s.confirmed).length;
 console.log(`✓ ${path.relative(process.cwd(), outPath)}: ${slots.length} Slots auf ${stages.length} Bühnen und ${days.length} Tagen`);
 if (unconfirmed > 0) console.log(`  ${unconfirmed} davon als unbestätigt markiert`);
+const withoutSlot = bands.filter((b) => !slots.some((s) => slugify(s.band) === b.slug)).length;
+console.log(
+  `  ${bands.length} Bands im Lineup${withoutSlot > 0 ? `, davon ${withoutSlot} noch ohne Spielzeit` : ''}`
+);
 if (!process.env.LINEUP_PIPELINE)
   console.log(`→ Jetzt prüfen: node scripts/validate-timetable.mjs ${path.relative(process.cwd(), outPath)}${festival ? ` --festival ${festival}` : ''}`);
