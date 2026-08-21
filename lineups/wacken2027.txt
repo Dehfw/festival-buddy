@@ -1,0 +1,14 @@
+# Erste Announcements, Stand 18.08.2026
+festival: Wacken Open Air 2027
+edition: 28.–31.07.2027 · Wacken
+dataVersion: 2026-08-18 (erste Bandwelle)
+
+day: wed | 2027-07-28
+day: thu | 2027-07-29
+day: fri | 2027-07-30
+day: sat | 2027-07-31
+
+[announced]
+Amon Amarth
+Sabaton
+Heaven Shall Burn

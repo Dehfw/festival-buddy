@@ -33,135 +33,168 @@
   "bands": [
     {
       "slug": "abbie-falls",
-      "name": "Abbie Falls"
+      "name": "Abbie Falls",
+      "spotifyArtistId": "5nSlRGZqJVAORU3SsSD0YU"
     },
     {
       "slug": "accvsed",
-      "name": "Accvsed"
+      "name": "Accvsed",
+      "spotifyArtistId": "4GeOwEvBs2fJYEIjWrxvZS"
     },
     {
       "slug": "ahab",
-      "name": "Ahab"
+      "name": "Ahab",
+      "spotifyArtistId": "2N8XkSGgBeH1VrFHxbarbz"
     },
     {
       "slug": "anaal-nathrakh",
-      "name": "Anaal Nathrakh"
+      "name": "Anaal Nathrakh",
+      "spotifyArtistId": "7vrrJ5YlL3I8XUrh1ktGJV"
     },
     {
       "slug": "angelus-apatrida",
-      "name": "Angelus Apatrida"
+      "name": "Angelus Apatrida",
+      "spotifyArtistId": "3bnPBquC93vbHmamojAf59"
     },
     {
       "slug": "any-given-day",
-      "name": "Any Given Day"
+      "name": "Any Given Day",
+      "spotifyArtistId": "4p6RoajGbtqLSfYZpFxHyU"
     },
     {
       "slug": "asenblut",
-      "name": "Asenblut"
+      "name": "Asenblut",
+      "spotifyArtistId": "1iuwMlGW6i8UojhyL0rQZi"
     },
     {
       "slug": "atreyu",
-      "name": "Atreyu"
+      "name": "Atreyu",
+      "spotifyArtistId": "3LkSiHbjqOHCKCqBfEZOTv"
     },
     {
       "slug": "burning-witches",
-      "name": "Burning Witches"
+      "name": "Burning Witches",
+      "spotifyArtistId": "0eNuNAhL4dW2nvKbSe2mS8"
     },
     {
       "slug": "capacopter",
-      "name": "Capacopter"
+      "name": "Capacopter",
+      "spotifyArtistId": "72SRvs1RAnSZxYtkk8CTZk"
     },
     {
       "slug": "children-of-bodom",
-      "name": "Children Of Bodom"
+      "name": "Children Of Bodom",
+      "spotifyArtistId": "1xUhNgw4eJDZfvumIpcz1B"
     },
     {
       "slug": "clawfinger",
-      "name": "Clawfinger"
+      "name": "Clawfinger",
+      "spotifyArtistId": "1xE3snzm12GBK259IqEFlY"
     },
     {
       "slug": "combichrist",
-      "name": "Combichrist"
+      "name": "Combichrist",
+      "spotifyArtistId": "5556RAgwP70PnXbaUTGNbR"
     },
     {
       "slug": "dark-funeral",
-      "name": "Dark Funeral"
+      "name": "Dark Funeral",
+      "spotifyArtistId": "21ojeH5LNADIGzJKc3hIlE"
     },
     {
       "slug": "defiance-hc",
-      "name": "Defiance HC"
+      "name": "Defiance HC",
+      "spotifyArtistId": "2qEVGA1XwIL1KZ87NlWzxw"
     },
     {
       "slug": "edguy",
-      "name": "Edguy"
+      "name": "Edguy",
+      "spotifyArtistId": "3AGFqPP3gt5rMSvhR87Xxu"
     },
     {
       "slug": "electric-callboy",
-      "name": "Electric Callboy"
+      "name": "Electric Callboy",
+      "spotifyArtistId": "1WNoKxsp715jez1Td4vthc"
     },
     {
       "slug": "ellende",
-      "name": "Ellende"
+      "name": "Ellende",
+      "spotifyArtistId": "1iLdVM2KFAHUbpaC5wpMbO"
     },
     {
       "slug": "eluveitie",
-      "name": "Eluveitie"
+      "name": "Eluveitie",
+      "spotifyArtistId": "5X0N2k3qMnI8kSrGJT3kfT"
     },
     {
       "slug": "emil-bulls",
-      "name": "Emil Bulls"
+      "name": "Emil Bulls",
+      "spotifyArtistId": "1scIUjz7Jbq1mOph50OLQO"
     },
     {
       "slug": "end-of-green",
-      "name": "End Of Green"
+      "name": "End Of Green",
+      "spotifyArtistId": "2sVaW0noYw5antHR3te8lQ"
     },
     {
       "slug": "equilibrium",
-      "name": "Equilibrium"
+      "name": "Equilibrium",
+      "spotifyArtistId": "5KvkOKroKLz202ioXfGWR2"
     },
     {
       "slug": "evil-invaders",
-      "name": "Evil Invaders"
+      "name": "Evil Invaders",
+      "spotifyArtistId": "4bMhBA9z2oB9MixiL9OXCx"
     },
     {
       "slug": "finntroll",
-      "name": "Finntroll"
+      "name": "Finntroll",
+      "spotifyArtistId": "4ZgkHVHmGPXuRy8zd26ZJX"
     },
     {
       "slug": "fleshgod-apocalypse",
-      "name": "Fleshgod Apocalypse"
+      "name": "Fleshgod Apocalypse",
+      "spotifyArtistId": "5ctFffJBdJe8PZL7W7NeML"
     },
     {
       "slug": "gaerea",
-      "name": "Gaerea"
+      "name": "Gaerea",
+      "spotifyArtistId": "1wXoI3Ajpv4WwQ3LmcrSBw"
     },
     {
       "slug": "gloryhammer",
-      "name": "Gloryhammer"
+      "name": "Gloryhammer",
+      "spotifyArtistId": "7dkEByOe0oHqc54qU4hwzV"
     },
     {
       "slug": "gutalax",
-      "name": "Gutalax"
+      "name": "Gutalax",
+      "spotifyArtistId": "5CmgfDQq0YVKMP6zpjYhPR"
     },
     {
       "slug": "h-blockx",
-      "name": "H-Blockx"
+      "name": "H-Blockx",
+      "spotifyArtistId": "1V3Nl0Y3EZwqP38KHws6vB"
     },
     {
       "slug": "halestorm",
-      "name": "Halestorm"
+      "name": "Halestorm",
+      "spotifyArtistId": "6om12Ev5ppgoMy3OYSoech"
     },
     {
       "slug": "hammerfall",
-      "name": "Hammerfall"
+      "name": "Hammerfall",
+      "spotifyArtistId": "2o18h28enlHxj887tATc58"
     },
     {
       "slug": "hiraes",
-      "name": "Hiraes"
+      "name": "Hiraes",
+      "spotifyArtistId": "1Djkm24RzECe7M6KuxKZzt"
     },
     {
       "slug": "insomnium",
-      "name": "Insomnium"
+      "name": "Insomnium",
+      "spotifyArtistId": "3uIgLG971oRM5fe6v8lvQS"
     },
     {
       "slug": "john-bush-celebrating-the-songs-of-anthrax-1993-2003",
@@ -169,51 +202,63 @@
     },
     {
       "slug": "kataklysm",
-      "name": "Kataklysm"
+      "name": "Kataklysm",
+      "spotifyArtistId": "7kozeGeawfP7IEEL6dddrM"
     },
     {
       "slug": "kupfergold",
-      "name": "Kupfergold"
+      "name": "Kupfergold",
+      "spotifyArtistId": "5ziUNRAHfR28SgsINMc66V"
     },
     {
       "slug": "lavina",
-      "name": "Lavina"
+      "name": "Lavina",
+      "spotifyArtistId": "2a1W5RyJCm4GugnlqckLw3"
     },
     {
       "slug": "left-to-suffer",
-      "name": "Left To Suffer"
+      "name": "Left To Suffer",
+      "spotifyArtistId": "36d1uVy1ZuZWqfnsPxCUOk"
     },
     {
       "slug": "legion-of-the-damned",
-      "name": "Legion Of The Damned"
+      "name": "Legion Of The Damned",
+      "spotifyArtistId": "3tS2n2PiBzG8Mr8nCfLIJy"
     },
     {
       "slug": "long-distance-calling",
-      "name": "Long Distance Calling"
+      "name": "Long Distance Calling",
+      "spotifyArtistId": "3SiCxhceGZgzusCLHd4Zz6"
     },
     {
       "slug": "lord-of-the-lost",
-      "name": "Lord Of The Lost"
+      "name": "Lord Of The Lost",
+      "spotifyArtistId": "28eLrVsohdXynlnIzQ2VvI"
     },
     {
       "slug": "make-them-suffer",
-      "name": "Make Them Suffer"
+      "name": "Make Them Suffer",
+      "spotifyArtistId": "0FZcPgWI3BsFQl4rOAGSHT"
     },
     {
       "slug": "mittel-alta",
-      "name": "Mittel Alta"
+      "name": "Mittel Alta",
+      "spotifyArtistId": "2QjjVXLHTBPbpM18ftwvYV"
     },
     {
       "slug": "mono-inc",
-      "name": "Mono Inc."
+      "name": "Mono Inc.",
+      "spotifyArtistId": "1189BemPY7h2lgaH1pkzGX"
     },
     {
       "slug": "nasty",
-      "name": "Nasty"
+      "name": "Nasty",
+      "spotifyArtistId": "7GnX7pGXdWtLObs16B1mFB"
     },
     {
       "slug": "necrotted",
-      "name": "Necrotted"
+      "name": "Necrotted",
+      "spotifyArtistId": "7khBSLZWST1HqSjWpEFlXl"
     },
     {
       "slug": "peeling-flesh",
@@ -221,27 +266,33 @@
     },
     {
       "slug": "primal-fear",
-      "name": "Primal Fear"
+      "name": "Primal Fear",
+      "spotifyArtistId": "1yfiDL3YUEJlQCgb5Pun6g"
     },
     {
       "slug": "regarde-les-hommes-tomber",
-      "name": "Regarde Les Hommes Tomber"
+      "name": "Regarde Les Hommes Tomber",
+      "spotifyArtistId": "4sAFcrI2hgMwNT9Sz2XTjv"
     },
     {
       "slug": "saltatio-mortis",
-      "name": "Saltatio Mortis"
+      "name": "Saltatio Mortis",
+      "spotifyArtistId": "09Z51O0q4AwHl7FjUUlFKw"
     },
     {
       "slug": "samurai-pizza-cats",
-      "name": "Samurai Pizza Cats"
+      "name": "Samurai Pizza Cats",
+      "spotifyArtistId": "6f0FWL5v2c3a5shWKRuiwq"
     },
     {
       "slug": "shadow-of-intent",
-      "name": "Shadow Of Intent"
+      "name": "Shadow Of Intent",
+      "spotifyArtistId": "76xrrejizyQpKukBIhnf3D"
     },
     {
       "slug": "spitting-glass",
-      "name": "Spitting Glass"
+      "name": "Spitting Glass",
+      "spotifyArtistId": "0CXwaPUVaNtZyDoulC6cId"
     },
     {
       "slug": "summer-breeze-legends-orchestra",
@@ -249,7 +300,8 @@
     },
     {
       "slug": "sunborn",
-      "name": "Sunborn"
+      "name": "Sunborn",
+      "spotifyArtistId": "39bLxLnMXWV7LMinf717gS"
     },
     {
       "slug": "swiss-die-andern",
@@ -257,23 +309,28 @@
     },
     {
       "slug": "the-browning",
-      "name": "The Browning"
+      "name": "The Browning",
+      "spotifyArtistId": "4DSNcg40nf6T3eNAObq1Lo"
     },
     {
       "slug": "the-night-eternal",
-      "name": "The Night Eternal"
+      "name": "The Night Eternal",
+      "spotifyArtistId": "1psvDRjOvOPm4OthS5Fdwr"
     },
     {
       "slug": "warkings",
-      "name": "Warkings"
+      "name": "Warkings",
+      "spotifyArtistId": "7DXUeaMULtMVFmmaKFzH3E"
     },
     {
       "slug": "wind-rose",
-      "name": "Wind Rose"
+      "name": "Wind Rose",
+      "spotifyArtistId": "67ps5pbKVO7V9Fcb4lTIXz"
     },
     {
       "slug": "wolfheart",
-      "name": "Wolfheart"
+      "name": "Wolfheart",
+      "spotifyArtistId": "11EAP8MX0cfrW9lzkK424H"
     }
   ]
 }

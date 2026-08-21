@@ -29,63 +29,63 @@ day: sat | 2027-08-21
 # sind (oder einzeln von Hand per "| spotify=<ID>").
 [announced]
 Summer Breeze Legends & Orchestra
-Electric Callboy
-Edguy
-Saltatio Mortis
-Children Of Bodom
-Hammerfall
-Halestorm
-Wind Rose
-Lord Of The Lost
-Eluveitie
-H-Blockx
+Electric Callboy | spotify=1WNoKxsp715jez1Td4vthc
+Edguy | spotify=3AGFqPP3gt5rMSvhR87Xxu
+Saltatio Mortis | spotify=09Z51O0q4AwHl7FjUUlFKw
+Children Of Bodom | spotify=1xUhNgw4eJDZfvumIpcz1B
+Hammerfall | spotify=2o18h28enlHxj887tATc58
+Halestorm | spotify=6om12Ev5ppgoMy3OYSoech
+Wind Rose | spotify=67ps5pbKVO7V9Fcb4lTIXz
+Lord Of The Lost | spotify=28eLrVsohdXynlnIzQ2VvI
+Eluveitie | spotify=5X0N2k3qMnI8kSrGJT3kfT
+H-Blockx | spotify=1V3Nl0Y3EZwqP38KHws6vB
 Swiss + Die Andern
-Clawfinger
-Kataklysm
-Mono Inc.
-Warkings
-Dark Funeral
-Gloryhammer
-Finntroll
-Atreyu
-Shadow Of Intent
-Emil Bulls
-Equilibrium
+Clawfinger | spotify=1xE3snzm12GBK259IqEFlY
+Kataklysm | spotify=7kozeGeawfP7IEEL6dddrM
+Mono Inc. | spotify=1189BemPY7h2lgaH1pkzGX
+Warkings | spotify=7DXUeaMULtMVFmmaKFzH3E
+Dark Funeral | spotify=21ojeH5LNADIGzJKc3hIlE
+Gloryhammer | spotify=7dkEByOe0oHqc54qU4hwzV
+Finntroll | spotify=4ZgkHVHmGPXuRy8zd26ZJX
+Atreyu | spotify=3LkSiHbjqOHCKCqBfEZOTv
+Shadow Of Intent | spotify=76xrrejizyQpKukBIhnf3D
+Emil Bulls | spotify=1scIUjz7Jbq1mOph50OLQO
+Equilibrium | spotify=5KvkOKroKLz202ioXfGWR2
 John Bush Celebrating The Songs Of Anthrax 1993 – 2003
-The Browning
-Gaerea
-Long Distance Calling
-Make Them Suffer
-Mittel Alta
-Any Given Day
-Gutalax
-Insomnium
-Combichrist
+The Browning | spotify=4DSNcg40nf6T3eNAObq1Lo
+Gaerea | spotify=1wXoI3Ajpv4WwQ3LmcrSBw
+Long Distance Calling | spotify=3SiCxhceGZgzusCLHd4Zz6
+Make Them Suffer | spotify=0FZcPgWI3BsFQl4rOAGSHT
+Mittel Alta | spotify=2QjjVXLHTBPbpM18ftwvYV
+Any Given Day | spotify=4p6RoajGbtqLSfYZpFxHyU
+Gutalax | spotify=5CmgfDQq0YVKMP6zpjYhPR
+Insomnium | spotify=3uIgLG971oRM5fe6v8lvQS
+Combichrist | spotify=5556RAgwP70PnXbaUTGNbR
 Peeling Flesh
-Anaal Nathrakh
-Fleshgod Apocalypse
-Primal Fear
-Nasty
-Burning Witches
-Kupfergold
-End Of Green
-Wolfheart
-Legion Of The Damned
-Ellende
-Angelus Apatrida
-Abbie Falls
-Samurai Pizza Cats
-Necrotted
-Left To Suffer
-Evil Invaders
-Hiraes
-Lavina
-Asenblut
-Accvsed
-Spitting Glass
-Ahab
-Sunborn
-The Night Eternal
-Defiance HC
-Regarde Les Hommes Tomber
-Capacopter
+Anaal Nathrakh | spotify=7vrrJ5YlL3I8XUrh1ktGJV
+Fleshgod Apocalypse | spotify=5ctFffJBdJe8PZL7W7NeML
+Primal Fear | spotify=1yfiDL3YUEJlQCgb5Pun6g
+Nasty | spotify=7GnX7pGXdWtLObs16B1mFB
+Burning Witches | spotify=0eNuNAhL4dW2nvKbSe2mS8
+Kupfergold | spotify=5ziUNRAHfR28SgsINMc66V
+End Of Green | spotify=2sVaW0noYw5antHR3te8lQ
+Wolfheart | spotify=11EAP8MX0cfrW9lzkK424H
+Legion Of The Damned | spotify=3tS2n2PiBzG8Mr8nCfLIJy
+Ellende | spotify=1iLdVM2KFAHUbpaC5wpMbO
+Angelus Apatrida | spotify=3bnPBquC93vbHmamojAf59
+Abbie Falls | spotify=5nSlRGZqJVAORU3SsSD0YU
+Samurai Pizza Cats | spotify=6f0FWL5v2c3a5shWKRuiwq
+Necrotted | spotify=7khBSLZWST1HqSjWpEFlXl
+Left To Suffer | spotify=36d1uVy1ZuZWqfnsPxCUOk
+Evil Invaders | spotify=4bMhBA9z2oB9MixiL9OXCx
+Hiraes | spotify=1Djkm24RzECe7M6KuxKZzt
+Lavina | spotify=2a1W5RyJCm4GugnlqckLw3
+Asenblut | spotify=1iuwMlGW6i8UojhyL0rQZi
+Accvsed | spotify=4GeOwEvBs2fJYEIjWrxvZS
+Spitting Glass | spotify=0CXwaPUVaNtZyDoulC6cId
+Ahab | spotify=2N8XkSGgBeH1VrFHxbarbz
+Sunborn | spotify=39bLxLnMXWV7LMinf717gS
+The Night Eternal | spotify=1psvDRjOvOPm4OthS5Fdwr
+Defiance HC | spotify=2qEVGA1XwIL1KZ87NlWzxw
+Regarde Les Hommes Tomber | spotify=4sAFcrI2hgMwNT9Sz2XTjv
+Capacopter | spotify=72SRvs1RAnSZxYtkk8CTZk
