@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { DefektLogo } from '@/components/DefektLogo';
+import { BrandLockup } from '@/components/Brand';
 import { FireFrame } from '@/components/FireFrame';
 import { LandingLogin } from '@/components/LandingLogin';
 
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: '/partysan',
-    siteName: 'DEFƎKT Festival Buddy',
+    siteName: 'Festival Buddy by MerchMaster',
     locale: 'de_DE',
     title: TITLE,
     description: DESCRIPTION,
@@ -133,7 +133,7 @@ const STEPS: { n: string; title: string; body: string }[] = [
 
 export default function PartySanLandingPage() {
   return (
-    <main className="defekt-grid min-h-dvh">
+    <main className="brand-grid min-h-dvh">
       {/* Topbar mit prominentem Login (merkt das Party.San als Vorauswahl) */}
       <header className="steel-sheen sticky top-0 z-40">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 py-3 sm:px-6">
@@ -326,7 +326,7 @@ export default function PartySanLandingPage() {
       {/* Footer */}
       <footer className="border-t border-rivet/40">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-6 py-10 text-center">
-          <DefektLogo variant="mini" />
+          <BrandLockup variant="mini" />
           <p className="max-w-md text-xs leading-relaxed text-ash/70">
             Festival Buddy · Timetable-Planer für deine Party.San-Crew.
           </p>
@@ -350,7 +350,7 @@ export default function PartySanLandingPage() {
             </Link>
           </p>
           <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">
-            © 2026 DEFƎKT — Alle Rechte defekt.
+            © 2026 MerchMaster · Festival Buddy ist kostenlos und bleibt es.
           </p>
         </div>
       </footer>

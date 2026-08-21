@@ -7,7 +7,7 @@ import './globals.css';
 export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(await resolveSiteUrl()),
-    title: 'DEFƎKT Festival Buddy – Wer geht zu welcher Band?',
+    title: 'Festival Buddy by MerchMaster – Wer geht zu welcher Band?',
     description:
       'Wer geht zu welcher Band? Timetable-Planer für deine Crew – auf jedem Festival.',
     manifest: '/manifest.webmanifest',

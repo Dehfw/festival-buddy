@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
  * Öffentliche Basis-URL der App für SEO (Canonical, OpenGraph, Sitemap,
  * robots.txt) und alles, was in geteilten Links/Vorschauen sichtbar wird.
  *
- * In Produktion APP_URL setzen (z. B. https://buddy.defekt.shop), um die
+ * In Produktion APP_URL setzen (z. B. https://festivalbuddy.app), um die
  * kanonische Domain zu pinnen. Ohne die Variable wird der echte Request-Host
  * genutzt – so steht nie localhost in einer geteilten URL.
  *

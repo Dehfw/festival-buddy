@@ -15,6 +15,7 @@ import {
   type Slot,
 } from '@/lib/types';
 import { Avatar } from './Avatars';
+import { MERCHMASTER_URL } from './Brand';
 import { SpotifyLink } from './SpotifyLink';
 import { StageMap, type MapMarker } from './StageMap';
 
@@ -256,6 +257,27 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
                 </button>
               )}
             </div>
+
+            {/* Absender-Hinweis: erklärt in einer Zeile, warum die App nichts
+                kostet. Bewusst als leiser Fußtext und nicht als Banner – das
+                Band-Sheet ist die meistgeöffnete Ansicht der App. */}
+            <a
+              href={MERCHMASTER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-5 flex items-center gap-2 rounded-xl border border-rivet/50 px-3.5 py-2.5 text-[11px] leading-snug text-ash/70 transition active:scale-[0.99]"
+            >
+              <span aria-hidden className="text-base">
+                🛍️
+              </span>
+              <span>
+                Selbst in einer Band? Verkauf deinen Merch mit{' '}
+                <span data-no-i18n className="font-bold text-ash">
+                  Merch<span className="text-blood">Master</span>
+                </span>
+                .
+              </span>
+            </a>
           </>
         )}
 

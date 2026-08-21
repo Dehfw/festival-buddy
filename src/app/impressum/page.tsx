@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Impressum – DEFƎKT Festival Buddy',
+  title: 'Impressum – Festival Buddy by MerchMaster',
   description: 'Anbieterkennzeichnung gemäß § 5 DDG.',
   robots: { index: false, follow: false },
 };
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
  */
 export default function ImpressumPage() {
   return (
-    <main className="defekt-grid min-h-dvh px-6 py-12">
+    <main className="brand-grid min-h-dvh px-6 py-12">
       <div className="mx-auto w-full max-w-lg">
         <div className="flex items-center justify-between">
           <h1 className="font-metal text-3xl font-black uppercase">Impressum</h1>
@@ -72,7 +72,7 @@ export default function ImpressumPage() {
               Haftung für Inhalte
             </h2>
             <p className="mt-2 text-ash">
-              Festival Buddy ist ein nicht-kommerzielles Tool für Festival-Crews.
+              Festival Buddy ist ein kostenloses Tool für Festival-Crews und wird von MerchMaster herausgegeben.
               Für eigene Inhalte auf diesen Seiten sind wir nach den allgemeinen
               Gesetzen verantwortlich. Nutzergenerierte Inhalte (z. B. Namen,
               Gruppen, Band-Auswahl) geben die Ansicht der jeweiligen Mitglieder
@@ -96,7 +96,7 @@ export default function ImpressumPage() {
         </div>
 
         <p className="mt-12 text-center font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">
-          © 2026 DEFƎKT — Alle Rechte defekt.
+          © 2026 MerchMaster · Festival Buddy ist kostenlos und bleibt es.
         </p>
       </div>
     </main>

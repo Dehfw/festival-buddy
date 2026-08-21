@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AppScreenshot } from '@/components/AppScreenshot';
-import { DefektLogo } from '@/components/DefektLogo';
+import { BrandLockup } from '@/components/Brand';
 import { resolveSiteUrl } from '@/lib/siteUrl';
 
-const TITLE = 'Festival Buddy für Veranstalter – Timetable, Bühnenpläne & Mitteilungen | DEFƎKT';
+const TITLE = 'Festival Buddy für Veranstalter – Timetable, Bühnenpläne & Mitteilungen | MerchMaster';
 const DESCRIPTION =
   'Bring dein Festival in die App: Lineup schon vor der Running Order, Timetable, Bühnen und Bühnenpläne selbst pflegen, Mitteilungen mit Push an alle Besucher – kostenlos, ohne dass du Besucherdaten siehst.';
 
@@ -24,14 +24,14 @@ export const metadata: Metadata = {
     'Festival Push Mitteilungen',
     'Bühnenplan App',
     'Festival Buddy',
-    'DEFƎKT',
+    'MerchMaster',
   ],
   alternates: { canonical: '/veranstalter' },
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website',
     url: '/veranstalter',
-    siteName: 'DEFƎKT Festival Buddy',
+    siteName: 'Festival Buddy by MerchMaster',
     locale: 'de_DE',
     title: TITLE,
     description: DESCRIPTION,
@@ -62,7 +62,7 @@ async function jsonLd() {
     url: `${base}/veranstalter`,
     description: DESCRIPTION,
     inLanguage: 'de',
-    isPartOf: { '@type': 'WebSite', name: 'DEFƎKT Festival Buddy', url: base },
+    isPartOf: { '@type': 'WebSite', name: 'Festival Buddy by MerchMaster', url: base },
   });
 }
 
@@ -135,7 +135,7 @@ const STEPS: { n: string; title: string; body: string }[] = [
 export default async function VeranstalterPage() {
   const structuredData = await jsonLd();
   return (
-    <main className="defekt-grid min-h-dvh">
+    <main className="brand-grid min-h-dvh">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: structuredData }}
@@ -144,7 +144,7 @@ export default async function VeranstalterPage() {
       <header className="steel-sheen sticky top-0 z-40">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 py-3.5 sm:px-6">
           <Link href="/" aria-label="Zur Startseite">
-            <DefektLogo variant="mini" />
+            <BrandLockup variant="mini" align="start" />
           </Link>
           <div className="flex items-center gap-2">
             <Link
@@ -287,7 +287,7 @@ export default async function VeranstalterPage() {
       {/* CTA */}
       <section className="border-t border-rivet/40 bg-pit/60">
         <div className="mx-auto max-w-3xl px-6 py-20 text-center">
-          <DefektLogo variant="hero" />
+          <BrandLockup variant="hero" />
           <p className="mx-auto mt-6 max-w-md text-base text-ash">
             Bring dein Festival in die App – dein Publikum plant schon. Schreib
             uns, wir legen los.
@@ -307,7 +307,7 @@ export default async function VeranstalterPage() {
       {/* Footer */}
       <footer className="border-t border-rivet/40">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-6 py-10 text-center">
-          <DefektLogo variant="mini" />
+          <BrandLockup variant="mini" />
           <p className="max-w-md text-xs leading-relaxed text-ash/70">
             Festival Buddy · Timetable-Planer für die Crew – auf jedem Festival.
           </p>
@@ -331,7 +331,7 @@ export default async function VeranstalterPage() {
             </Link>
           </p>
           <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">
-            © 2026 DEFƎKT — Alle Rechte defekt.
+            © 2026 MerchMaster · Festival Buddy ist kostenlos und bleibt es.
           </p>
         </div>
       </footer>

@@ -50,8 +50,11 @@ bevor du etwas Neues behauptest.
 - **Datenschutz:** Der Veranstalter sieht **nie** Namen, Profile oder
   wer zu welcher Band geht – nur anonyme Summen (wie viele Gruppen, wie
   viele Personen). Das ist ein Verkaufsargument, kein Kleingedrucktes.
-- **Kosten:** kostenlos. Festival Buddy ist ein nicht-kommerzielles
-  Projekt von DEFƎKT (David Schiminski, `moin@festivalbuddy.app`).
+- **Kosten:** kostenlos – fürs Festival wie für die Besucher. Festival
+  Buddy kommt von **MerchMaster** (David Schiminski,
+  `moin@festivalbuddy.app`), der App, mit der Bands ihren Merch am Stand
+  verkaufen. Da verdienen wir unser Geld, nicht am Festival Buddy: kein
+  Abo, keine Provision, keine Werbung in der App, kein Datenverkauf.
 - **Aufwand für die Orga:** nahe null. Wir legen das Festival an, das
   Lineup können wir vom Plakat, von der Website oder aus dem Clashfinder
   übernehmen (siehe Skill `lineup-import`) – die Orga muss nichts

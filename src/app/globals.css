@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* DEFƎKT-Markenfarben (defekt.shop): Signal-Orange auf Tiefschwarz */
+/* Markenfarben Festival Buddy by MerchMaster: Signal-Orange auf Tiefschwarz */
 @theme {
   --color-pit: #0a0a0a;
   --color-steel: #141414;
@@ -46,14 +46,14 @@ body {
   }
 }
 
-/* Header-Schimmer, DEFƎKT-dunkel mit Orange-Linie */
+/* Header-Schimmer: Tiefschwarz mit Orange-Linie */
 .steel-sheen {
   background: linear-gradient(160deg, #1c1c1c 0%, #101010 50%, #141414 100%);
   border-bottom: 1px solid rgba(255, 90, 23, 0.18);
 }
 
-/* Feines Grid-Overlay wie auf defekt.shop */
-.defekt-grid {
+/* Feines Grid-Overlay als Markenhintergrund */
+.brand-grid {
   background-image:
     linear-gradient(rgba(244, 241, 234, 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(244, 241, 234, 0.04) 1px, transparent 1px);

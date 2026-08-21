@@ -2,19 +2,19 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Datenschutz – DEFƎKT Festival Buddy',
+  title: 'Datenschutz – Festival Buddy by MerchMaster',
   description: 'Wie der Festival Buddy mit deinen Daten umgeht.',
   robots: { index: false, follow: false },
 };
 
 /**
- * Datenschutzerklärung (DSGVO Art. 13). Privates, nicht-kommerzielles
+ * Datenschutzerklärung (DSGVO Art. 13). Kostenloses, werbefreies
  * Crew-Tool ohne Impressumspflicht – Verantwortlicher wird daher nur mit
  * E-Mail genannt, ohne Postanschrift. Statisch, kein Login nötig.
  */
 export default function DatenschutzPage() {
   return (
-    <main data-no-i18n lang="de" className="defekt-grid min-h-dvh px-6 py-12">
+    <main data-no-i18n lang="de" className="brand-grid min-h-dvh px-6 py-12">
       <div className="mx-auto w-full max-w-lg">
         <div className="flex items-center justify-between">
           <h1 className="font-metal text-3xl font-black uppercase">
@@ -31,8 +31,9 @@ export default function DatenschutzPage() {
               Verantwortlicher
             </h2>
             <p className="mt-2">
-              Festival Buddy ist ein privates, nicht-kommerzielles Tool für
-              unsere Crew. Verantwortlich im Sinne der DSGVO:
+              Festival Buddy ist ein kostenloses Tool für Festival-Crews. Es
+              gibt keine Werbung und keinen Datenverkauf. Verantwortlich im
+              Sinne der DSGVO:
             </p>
             <p className="mt-2">
               David Schiminski
@@ -145,7 +146,7 @@ export default function DatenschutzPage() {
         </div>
 
         <p className="mt-12 text-center font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">
-          © 2026 DEFƎKT — Alle Rechte defekt.
+          © 2026 MerchMaster · Festival Buddy ist kostenlos und bleibt es.
         </p>
       </div>
     </main>

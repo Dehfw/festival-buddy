@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { DefektLogo } from '@/components/DefektLogo';
+import { BrandLockup } from '@/components/Brand';
 import { resetPassword } from '@/lib/client/password';
 import { saveUser } from '@/lib/client/sync';
 
@@ -46,10 +46,10 @@ export default function PasswordResetPage() {
   };
 
   return (
-    <main className="defekt-grid flex min-h-dvh flex-col items-center justify-center px-6 py-12">
+    <main className="brand-grid flex min-h-dvh flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <DefektLogo variant="hero" />
+          <BrandLockup variant="hero" />
           <p className="mt-4 text-sm text-ash">Neues Passwort setzen</p>
         </div>
 

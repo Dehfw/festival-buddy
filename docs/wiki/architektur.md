@@ -61,7 +61,7 @@ fehlt. Beim Anlegen einer neuen Tabelle gehört er mit umgestellt.
 
 Danach wird geseedet: Wacken-Timetable aus `data/timetable.json`, Summer Breeze als
 Gerüst, Default-Blueprints – und Bestandsnutzer aus der Zeit vor dem
-Gruppen-Feature landen einmalig in der Default-Gruppe „DEFEKT"
+Gruppen-Feature landen einmalig in der Default-Gruppe „Crew"
 (`DEFAULT_GROUP_NAME`), das älteste Mitglied wird Owner.
 
 ## Verbindung

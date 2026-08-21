@@ -72,7 +72,7 @@ export function JoinGate({ code, onDone }: { code: string; onDone: () => void })
   };
 
   return (
-    <main className="defekt-grid flex min-h-dvh flex-col items-center justify-center px-6 py-12">
+    <main className="brand-grid flex min-h-dvh flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm text-center">
         <div className="mb-6 inline-flex items-center gap-2 border border-blood/20 bg-blood/5 px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-blood">
           <span className="opacity-50">//</span> Einladung

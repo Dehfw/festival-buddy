@@ -265,21 +265,25 @@ export function AppScreenshot() {
           <div className="steel-sheen flex items-center justify-between px-3 pb-2 pt-7">
             <div className="flex min-w-0 items-center gap-2">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blood shadow-[0_0_10px_#ff5a17]" />
-              <span className="font-metal text-sm uppercase leading-none tracking-[0.04em] text-bone">
-                DEF
-                <span
-                  className="inline-block text-blood"
-                  style={{ transform: 'scaleX(-1)' }}
-                >
-                  E
+              {/* Spiegelt das Lockup aus der echten Topbar (AppShell) */}
+              <span data-no-i18n className="inline-flex shrink-0 flex-col items-start gap-0.5 leading-none">
+                <span className="font-metal whitespace-nowrap text-[11px] uppercase leading-none tracking-[0.04em] text-bone">
+                  Festival <span className="text-blood">Buddy</span>
                 </span>
-                KT
+                <span className="whitespace-nowrap font-mono text-[6px] uppercase tracking-[0.24em] text-ash/70">
+                  by{' '}
+                  <span className="font-bold text-ash">
+                    Merch<span className="text-blood">Master</span>
+                  </span>
+                </span>
               </span>
-              <span className="flex items-center gap-1 rounded-full border border-rivet bg-steel-2 py-0.5 pl-0.5 pr-2">
+              <span className="flex min-w-0 items-center gap-1 rounded-full border border-rivet bg-steel-2 py-0.5 pl-0.5 pr-2">
                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-blood text-[7px] font-black text-black">
                   🤘
                 </span>
-                <span className="text-[10px] font-bold text-bone">DEFƎKT</span>
+                <span className="truncate text-[10px] font-bold text-bone">
+                  Metal Crew
+                </span>
               </span>
             </div>
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#35c5d8] text-[9px] font-bold text-black/85 ring-2 ring-[#e7e7ee]">

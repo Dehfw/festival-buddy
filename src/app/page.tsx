@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AppScreenshot } from '@/components/AppScreenshot';
-import { DefektLogo } from '@/components/DefektLogo';
+import { BrandLockup, MERCHMASTER_URL } from '@/components/Brand';
 import { FireFrame } from '@/components/FireFrame';
 import { LandingLogin } from '@/components/LandingLogin';
 import { StandaloneStartRedirect } from '@/components/StandaloneStartRedirect';
 import { resolveSiteUrl } from '@/lib/siteUrl';
 
-const TITLE = 'Festival Buddy – Wer geht zu welcher Band? | DEFƎKT';
+const TITLE = 'Festival Buddy – Wer geht zu welcher Band? | MerchMaster';
 const DESCRIPTION =
   'Der Timetable-Planer für deine Festival-Crew. Wer geht zu welcher Band? Gruppen gründen, Bands markieren, Hot Slots sehen – offline-fähig, Login per Passkey oder E-Mail. Für jedes Festival.';
 
@@ -25,14 +25,14 @@ export const metadata: Metadata = {
     'Festival App',
     'Band Planer',
     'Festival Gruppe',
-    'DEFƎKT',
+    'MerchMaster',
   ],
   alternates: { canonical: '/' },
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website',
     url: '/',
-    siteName: 'DEFƎKT Festival Buddy',
+    siteName: 'Festival Buddy by MerchMaster',
     locale: 'de_DE',
     title: TITLE,
     description: DESCRIPTION,
@@ -58,8 +58,13 @@ async function jsonLd() {
   return JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: 'DEFƎKT Festival Buddy',
+    name: 'Festival Buddy',
     url: await resolveSiteUrl(),
+    publisher: {
+      '@type': 'Organization',
+      name: 'MerchMaster',
+      url: MERCHMASTER_URL,
+    },
     description: DESCRIPTION,
     applicationCategory: 'LifestyleApplication',
     operatingSystem: 'Web, iOS, Android',
@@ -128,7 +133,7 @@ const STEPS: { n: string; title: string; body: string }[] = [
 export default async function LandingPage() {
   const structuredData = await jsonLd();
   return (
-    <main className="defekt-grid min-h-dvh">
+    <main className="brand-grid min-h-dvh">
       {/* Muss vor allem anderen stehen: springt in der installierten App
           direkt auf /app, bevor die Landing gerendert wird */}
       <StandaloneStartRedirect />
@@ -139,7 +144,7 @@ export default async function LandingPage() {
       {/* Topbar mit prominentem Login */}
       <header className="steel-sheen sticky top-0 z-40">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 py-3.5 sm:px-6">
-          <DefektLogo variant="mini" />
+          <BrandLockup variant="mini" align="start" />
           <div className="flex items-center gap-2">
             <Link
               href="/app"
@@ -283,7 +288,7 @@ export default async function LandingPage() {
       {/* CTA */}
       <section className="border-t border-rivet/40 bg-pit/60">
         <div className="mx-auto max-w-3xl px-6 py-20 text-center">
-          <DefektLogo variant="hero" />
+          <BrandLockup variant="hero" />
           <p className="mx-auto mt-6 max-w-md text-base text-ash">
             Kein Auftritt verpasst, keiner verloren im Getümmel. Hol deine Crew
             an Bord.
@@ -297,36 +302,100 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Veranstalter-Teaser: schmaler Querverweis, der Crew-Funnel bleibt
-          unangetastet – die volle Pitch-Seite lebt unter /veranstalter */}
+      {/* Warum kostenlos: erklärt den Absender in einem Satz und ist damit
+          der ehrliche Aufhänger für MerchMaster – kein Werbebanner. */}
       <section className="border-t border-rivet/40">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-5 px-6 py-10 text-center sm:flex-row sm:text-left">
-          <div>
-            <h2 className="font-metal text-xl uppercase tracking-wide text-bone">
-              Du machst selbst ein <span className="text-blood">Festival?</span>
-            </h2>
-            <p className="mt-1.5 max-w-md text-sm text-ash">
-              Pfleg Timetable, Bühnenpläne und Mitteilungen deines Festivals
-              direkt in Festival Buddy – dein Publikum plant live mit.
-            </p>
+        <div className="mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
+          <div className="mb-6 inline-flex items-center gap-2 border border-blood/20 bg-blood/5 px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-blood">
+            <span className="opacity-50">//</span> Kostenlos, ohne Haken
           </div>
-          <Link
-            href="/veranstalter"
-            className="shrink-0 rounded-xl border border-rivet bg-steel px-6 py-3 text-sm font-semibold uppercase tracking-wider text-bone transition active:scale-[0.98]"
-          >
-            Für Veranstalter
-          </Link>
+          <h2 className="font-metal text-3xl uppercase text-bone sm:text-4xl">
+            Warum ist das <span className="text-blood">umsonst?</span>
+          </h2>
+          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-ash">
+            Weil wir unser Geld woanders verdienen. Festival Buddy kommt von
+            MerchMaster – der App, mit der Bands ihren Merch am Stand verkaufen.
+            Kein Abo, keine Werbung, kein Datenverkauf: Wir bauen das Ding, weil
+            wir selbst auf Festivals stehen.
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/fuer-bands"
+              className="w-full rounded-xl border border-blood/40 bg-blood/10 px-7 py-3.5 text-sm font-bold uppercase tracking-wider text-blood transition active:scale-[0.98] sm:w-auto"
+            >
+              Ich bin in einer Band
+            </Link>
+            <a
+              href={MERCHMASTER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full rounded-xl border border-rivet bg-steel px-7 py-3.5 text-sm font-semibold uppercase tracking-wider text-bone transition active:scale-[0.98] sm:w-auto"
+            >
+              MerchMaster ansehen
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Querverweise für Band und Veranstalter: schmal gehalten, der
+          Crew-Funnel bleibt unangetastet – die vollen Pitch-Seiten leben
+          unter /fuer-bands und /veranstalter */}
+      <section className="border-t border-rivet/40">
+        <div className="mx-auto grid max-w-5xl gap-4 px-6 py-10 sm:grid-cols-2">
+          <div className="flex flex-col items-start gap-4 rounded-2xl border border-rivet/60 bg-steel p-7">
+            <div>
+              <h2 className="font-metal text-xl uppercase tracking-wide text-bone">
+                Du spielst selbst in einer{' '}
+                <span className="text-blood">Band?</span>
+              </h2>
+              <p className="mt-1.5 text-sm text-ash">
+                Deine Fans planen deinen Slot hier ein – und für den Merch-Stand
+                danach gibt es MerchMaster.
+              </p>
+            </div>
+            <Link
+              href="/fuer-bands"
+              className="mt-auto rounded-xl border border-rivet bg-steel-2 px-6 py-3 text-sm font-semibold uppercase tracking-wider text-bone transition active:scale-[0.98]"
+            >
+              Für Bands
+            </Link>
+          </div>
+
+          <div className="flex flex-col items-start gap-4 rounded-2xl border border-rivet/60 bg-steel p-7">
+            <div>
+              <h2 className="font-metal text-xl uppercase tracking-wide text-bone">
+                Du machst selbst ein <span className="text-blood">Festival?</span>
+              </h2>
+              <p className="mt-1.5 text-sm text-ash">
+                Pfleg Timetable, Bühnenpläne und Mitteilungen deines Festivals
+                direkt in Festival Buddy – dein Publikum plant live mit.
+              </p>
+            </div>
+            <Link
+              href="/veranstalter"
+              className="mt-auto rounded-xl border border-rivet bg-steel-2 px-6 py-3 text-sm font-semibold uppercase tracking-wider text-bone transition active:scale-[0.98]"
+            >
+              Für Veranstalter
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="border-t border-rivet/40">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-6 py-10 text-center">
-          <DefektLogo variant="mini" />
+          <BrandLockup variant="mini" />
           <p className="max-w-md text-xs leading-relaxed text-ash/70">
             Festival Buddy · Timetable-Planer für die Crew – auf jedem Festival.
           </p>
           <p className="flex items-center justify-center gap-3 font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">
+            <Link
+              href="/fuer-bands"
+              className="underline underline-offset-2 hover:text-ash"
+            >
+              Für Bands
+            </Link>
+            <span aria-hidden>·</span>
             <Link
               href="/veranstalter"
               className="underline underline-offset-2 hover:text-ash"
@@ -349,7 +418,7 @@ export default async function LandingPage() {
             </Link>
           </p>
           <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">
-            © 2026 DEFƎKT — Alle Rechte defekt.
+            © 2026 MerchMaster · Festival Buddy ist kostenlos und bleibt es.
           </p>
         </div>
       </footer>

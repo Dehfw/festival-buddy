@@ -1,5 +1,12 @@
 # 🤘 Festival Buddy
 
+> **Festival Buddy by MerchMaster** – das kostenlose Tool für
+> Festival-Crews, herausgegeben von [MerchMaster](https://merchmaster.app),
+> der App für den Merch-Stand von Bands. Die Marke lebt zentral in
+> `src/components/Brand.tsx` (Wortmarken und `MERCHMASTER_URL`) und in den
+> Farb-Tokens von `src/app/globals.css` – wer den Look nachzieht, fasst
+> diese beiden Dateien an, nicht die Seiten.
+
 Timetable-Planer für Festival-Crews: Wer geht zu welcher Band – und wo
 steht ihr im Publikum? Mandantenfähig über **Gruppen**: Nach dem Login
 gründet man eine Gruppe (mit Festival-Auswahl, Name und Gruppenbild) oder
@@ -71,6 +78,10 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
   Eintragung.
 - **Bühnen-Karten mit POIs** – Toiletten 🚻, Wasser 💧, Merch 🛍️,
   Erste Hilfe ⛑️ und Eingänge 🚪 auf jedem Blueprint, für alle sichtbar.
+- **Band-Seite** (`/fuer-bands`) – die öffentliche Seite für Bands: Was
+  Festival Buddy für ihren Slot tut, und danach der Absender MerchMaster.
+  Von der Startseite aus verlinkt („Warum ist das umsonst?") und aus dem
+  Band-Sheet in der App als leiser Fußtext.
 - **Veranstalter-Bereich** (`/app/veranstalter`) – Veranstalter pflegen den
   Timetable (Tage, Bühnen, Slots), die Festival-Metadaten und die
   Bühnenpläne inkl. POIs **ihres** Festivals selbst. Zugang per
@@ -98,7 +109,7 @@ und Blueprints liegen in **PostgreSQL** (`DATABASE_URL`). Das Schema wird
 beim ersten Zugriff automatisch angelegt bzw. migriert und die Defaults
 werden geseedet: Wacken-Timetable aus `data/timetable.json`, Summer Breeze
 als Gerüst, Blueprints – und **Bestandsnutzer landen automatisch in der
-Default-Gruppe „DEFEKT“** (Name über `DEFAULT_GROUP_NAME` überschreibbar),
+Default-Gruppe „Crew“** (Name über `DEFAULT_GROUP_NAME` überschreibbar),
 damit beim Umstieg auf Gruppen nichts verloren geht. Backup: `pg_dump`.
 Wer noch Daten aus der früheren Datei-Datenbank hat:
 `DATABASE_URL=... node scripts/migrate-db-json.mjs` überträgt `data/db.json`.
@@ -117,7 +128,7 @@ Damit Service Worker **und Passkeys** laufen, muss die App über **HTTPS**
 | `WEBAUTHN_RP_ID`  | Relying-Party-ID (Domain). Default: Hostname des Requests.|
 | `WEBAUTHN_ORIGIN` | Erwartete Origin (`https://…`). Default: Request-Origin.  |
 | `DEFAULT_GROUP_NAME` | Name der Migrations-Gruppe für Bestandsnutzer          |
-|                   | (Default: `DEFEKT`). Greift nur beim allerersten Anlegen. |
+|                   | (Default: `Crew`). Greift nur beim allerersten Anlegen.   |
 
 Achtung: Passkeys sind an die Domain (RP ID) gebunden. Zieht die App auf
 eine andere Domain um, sind bestehende Passkeys dort nicht mehr nutzbar.
@@ -163,7 +174,7 @@ DATABASE_URL=... npm run organizer -- remove woa2026 u-… # Zugang entziehen (s
   Band-Auswahlen und Positionsmarker der Crews mitgelöscht – der Editor
   warnt vorher mit Anzahl.
 
-Neue Festivals kommen über die öffentliche Seite `/fuer-veranstalter`
+Neue Festivals kommen über die öffentliche Seite `/veranstalter`
 (Kontakt: `moin@festivalbuddy.app`) oder weil wir sie ansprechen. Für
 diese Anschreiben – Erstmail, Nachfassen, Rückfragen, Zusagen – ist der
 Ablauf samt Vorlagen als Skill hinterlegt:

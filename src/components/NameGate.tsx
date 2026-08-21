@@ -12,7 +12,7 @@ import {
   loginWithPasskey,
   registerWithPasskey,
 } from '@/lib/client/webauthn';
-import { DefektLogo } from './DefektLogo';
+import { BrandLockup } from './Brand';
 import { PasswordAuth } from './PasswordAuth';
 
 /**
@@ -111,14 +111,14 @@ export function NameGate() {
   };
 
   return (
-    <main className="defekt-grid flex min-h-dvh flex-col items-center justify-center px-6 py-12">
+    <main className="brand-grid flex min-h-dvh flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
           <div className="mb-8 inline-flex items-center gap-2 border border-blood/20 bg-blood/5 px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-blood">
             <span className="opacity-50">//</span> Tja… Festival-Saison 2026
           </div>
           <div>
-            <DefektLogo variant="hero" />
+            <BrandLockup variant="hero" />
           </div>
           <div className="mt-5 flex items-center justify-center gap-3 text-[13px] font-black uppercase tracking-[0.3em] text-bone">
             Stramm
@@ -209,7 +209,7 @@ export function NameGate() {
         </p>
 
         <p className="mt-10 text-center font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">
-          © 2026 DEFƎKT — Alle Rechte defekt.
+          © 2026 MerchMaster · Festival Buddy ist kostenlos und bleibt es.
         </p>
         <p className="mt-3 flex items-center justify-center gap-3 font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">
           <Link

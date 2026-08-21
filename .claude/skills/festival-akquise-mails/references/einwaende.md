@@ -6,13 +6,16 @@ nach, statt zu improvisieren.
 
 ## „Was kostet das?"
 
-Nichts. Festival Buddy ist ein nicht-kommerzielles Projekt; es gibt kein
-Abo, keine Provision, keine Werbung in der App und keinen Datenverkauf.
+Nichts. Kein Abo, keine Provision, keine Werbung in der App und kein
+Datenverkauf.
 
 Wenn nachgehakt wird, wo der Haken ist, ist die ehrliche Antwort die
-beste: Das Ding ist aus dem eigenen Festivalbesuch entstanden, weil die
-Crew immer im Chaos stand. Mehr Festivals in der App heißt mehr Leute,
-die es benutzen – das ist der ganze Nutzen für uns. Versprich **keine**
+beste – und die ist inzwischen konkreter als früher: Festival Buddy
+kommt von MerchMaster, der App für den Merch-Stand von Bands. Damit
+verdienen wir unser Geld. Der Festival Buddy ist aus dem eigenen
+Festivalbesuch entstanden, weil die Crew immer im Chaos stand; dass ihn
+mehr Leute benutzen und dabei mitbekommen, wer dahintersteckt, ist der
+ganze Nutzen für uns. Versprich **keine**
 Preisgarantie für die Zukunft, die du nicht halten kannst; „aktuell und
 auf absehbare Zeit kostenlos" ist die saubere Formulierung.
 
@@ -108,10 +111,11 @@ Angebot, keine Voraussetzung.
 
 ## „Wer steckt dahinter?"
 
-David Schiminski, DEFƎKT, Nürnberg (Impressum unter
-`festivalbuddy.app/impressum`). Ein Ein-Personen-Projekt aus der
-Metal-/Festivalszene, kein Startup und keine Agentur. Bei kleinen
-Festivals ist das ein Vorteil – es antwortet immer derselbe Mensch.
+David Schiminski, MerchMaster, Nürnberg (Impressum unter
+`festivalbuddy.app/impressum`). MerchMaster ist die App, mit der Bands
+ihren Merch am Stand verkaufen – aus der Metal-/Festivalszene heraus
+gebaut, kein Konzern und keine Agentur. Bei kleinen Festivals ist das
+ein Vorteil: Es antwortet immer derselbe Mensch.
 
 ## „Wir melden uns nach dem Festival."
 

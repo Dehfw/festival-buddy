@@ -127,7 +127,7 @@ bestehenden Advisory-Lock, alles idempotent):
 2. **Spalten-Defaults:** bestehende `selections`/`positions`/`blueprints`
    bekommen `festival_id = 'woa2026'` (siehe `ALTER TABLE` oben).
 3. **Default-Gruppe:** existiert noch keine Gruppe **und** gibt es Nutzer →
-   Gruppe **„DEFEKT“** (überschreibbar via `DEFAULT_GROUP_NAME`) auf
+   Gruppe **„Crew“** (überschreibbar via `DEFAULT_GROUP_NAME`) auf
    `woa2026` anlegen, `invite_code` generieren, alle vorhandenen Nutzer
    als Mitglieder, ältester Nutzer (`ORDER BY created_at`) wird `owner` –
    so geht beim Umstieg nichts verloren.

@@ -17,8 +17,8 @@ Signatur immer vollständig:
 Viele Grüße
 David
 
-David Schiminski · DEFƎKT
-Festival Buddy · festivalbuddy.app/fuer-veranstalter
+David Schiminski · MerchMaster
+Festival Buddy · festivalbuddy.app/veranstalter
 moin@festivalbuddy.app
 ```
 
@@ -49,8 +49,9 @@ Für euch als Veranstalter wäre interessant:
 - Zu jeder Bühne ein Plan mit WC, Wasser, Merch und Sanitätern.
 - Besucherdaten seht ihr nie: nur anonyme Zahlen, keine Namen.
 
-Das Ganze ist kostenlos, ich mach das nicht kommerziell. Ihr müsstet
-auch nichts tippen – ich lege euer Festival mitsamt Lineup an.
+Das Ganze ist für euch kostenlos – ich mach nebenbei MerchMaster, die
+App für den Merch-Stand von Bands, davon lebt das hier. Ihr müsstet auch
+nichts tippen: Ich lege euer Festival mitsamt Lineup an.
 
 Soll ich euch das mit eurem Lineup aufsetzen und den Link schicken?
 Wenn das nichts für euch ist, sag einfach kurz Bescheid – dann hörst du
@@ -88,8 +89,9 @@ Für euch als Veranstalter wäre interessant:
 - Ihr könnt Mitteilungen rausschicken, auf Wunsch als Push aufs Handy.
 - Besucherdaten seht ihr nie: nur anonyme Zahlen, keine Namen.
 
-Das Ganze ist kostenlos, ich mach das nicht kommerziell. Ihr müsstet
-auch nichts tippen – ich lege euer Festival mitsamt Running Order an.
+Das Ganze ist für euch kostenlos – ich mach nebenbei MerchMaster, die
+App für den Merch-Stand von Bands, davon lebt das hier. Ihr müsstet auch
+nichts tippen: Ich lege euer Festival mitsamt Running Order an.
 
 Soll ich euch das aufsetzen und den Link schicken? Wenn das nichts für
 euch ist, sag einfach kurz Bescheid – dann hörst du nichts mehr von mir.
@@ -118,8 +120,9 @@ in Sekunden bei allen Nutzern, auf Wunsch zusätzlich als Push-Nachricht.
 Besucherdaten bekommen Sie dabei nicht zu sehen – nur anonyme Summen,
 wie viele Personen Ihr Festival planen.
 
-Das Angebot ist kostenlos; Festival Buddy ist ein nicht-kommerzielles
-Projekt. Die Einrichtung übernehme ich inklusive Lineup.
+Das Angebot ist für Sie kostenlos; Festival Buddy wird von MerchMaster
+herausgegeben, unserer App für den Merch-Verkauf von Bands. Die
+Einrichtung übernehme ich inklusive Lineup.
 
 Hätten Sie Interesse, dass ich Ihnen das einmal mit Ihrem Programm
 aufsetze und den Link schicke? Falls nicht, genügt eine kurze Rückmeldung

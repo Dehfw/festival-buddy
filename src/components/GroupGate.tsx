@@ -9,7 +9,7 @@ import {
   type FestivalSummary,
   type GroupSummary,
 } from '@/lib/types';
-import { DefektLogo } from './DefektLogo';
+import { BrandLockup } from './Brand';
 
 /** Vorbefüllte Wunsch-Mail; Umbrüche als CRLF gemäß RFC 6068 */
 const MISSING_FESTIVAL_MAILTO =
@@ -22,7 +22,7 @@ const MISSING_FESTIVAL_MAILTO =
 /**
  * Festival-Branding für Landingpage-Vorauswahlen: Wer über eine
  * Festival-Landingpage (z. B. /partysan) kommt, sieht hier das
- * Festival-Logo statt der DEFƎKT-Wortmarke.
+ * Festival-Logo statt des Festival-Buddy-Lockups.
  */
 const FESTIVAL_LOGOS: Record<string, { src: string; alt: string }> = {
   psoa2026: { src: '/partysan/psoa-logo.png', alt: 'Party.San Metal Open Air' },
@@ -322,7 +322,7 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="z. B. DEFEKT"
+          placeholder="z. B. Metal Crew"
           maxLength={40}
           className="w-full rounded-xl border border-rivet bg-steel-2 px-4 py-3 text-base text-bone outline-none placeholder:text-ash/40 focus:border-blood"
         />
@@ -356,7 +356,7 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
       role={onClose ? 'dialog' : undefined}
       aria-modal={onClose ? true : undefined}
       aria-labelledby={onClose ? titleId : undefined}
-      className={`defekt-grid flex min-h-dvh flex-col items-center overflow-y-auto px-6 py-10 ${
+      className={`brand-grid flex min-h-dvh flex-col items-center overflow-y-auto px-6 py-10 ${
         onClose ? 'fixed inset-0 z-50 bg-black/95' : ''
       }`}
     >
@@ -388,7 +388,7 @@ export function GroupGate({ onClose }: { onClose?: () => void }) {
                   className="mx-auto w-64 max-w-full select-none"
                 />
               ) : (
-                <DefektLogo variant="hero" />
+                <BrandLockup variant="hero" />
               )}
               <p className="mt-4 text-sm text-ash">
                 Moin{user ? ` ${user.name}` : ''}! 🤘 Fast geschafft – du

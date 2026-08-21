@@ -21,32 +21,42 @@ const PAGE_METADATA: Record<
 > = {
   '/': {
     de: {
-      title: 'Festival Buddy – Wer geht zu welcher Band? | DEFƎKT',
+      title: 'Festival Buddy – Wer geht zu welcher Band? | MerchMaster',
       description: 'Der Timetable-Planer für deine Festival-Crew.',
     },
     en: {
-      title: 'Festival Buddy – Who is going to which band? | DEFƎKT',
+      title: 'Festival Buddy – Who is going to which band? | MerchMaster',
       description: 'The timetable planner for your festival crew.',
     },
   },
   '/veranstalter': {
     de: {
-      title: 'Festival Buddy für Veranstalter – Timetable, Bühnenpläne & Mitteilungen | DEFƎKT',
+      title: 'Festival Buddy für Veranstalter – Timetable, Bühnenpläne & Mitteilungen | MerchMaster',
       description: 'Festival Buddy für Veranstalter und ihre Festivalteams.',
     },
     en: {
-      title: 'Festival Buddy for organisers – timetables, stage maps & notifications | DEFƎKT',
+      title: 'Festival Buddy for organisers – timetables, stage maps & notifications | MerchMaster',
       description: 'Festival Buddy for organisers and their festival teams.',
     },
   },
+  '/fuer-bands': {
+    de: {
+      title: 'Festival Buddy für Bands – deine Fans planen dich ein | MerchMaster',
+      description: 'Festival Buddy für Bands – und MerchMaster für den Merch-Stand.',
+    },
+    en: {
+      title: 'Festival Buddy for bands – your fans plan you in | MerchMaster',
+      description: 'Festival Buddy for bands – and MerchMaster for the merch table.',
+    },
+  },
   '/impressum': {
-    de: { title: 'Impressum – DEFƎKT Festival Buddy' },
-    en: { title: 'Legal notice – DEFƎKT Festival Buddy' },
+    de: { title: 'Impressum – Festival Buddy by MerchMaster' },
+    en: { title: 'Legal notice – Festival Buddy by MerchMaster' },
   },
   // Legal text intentionally remains German in both language modes.
   '/datenschutz': {
-    de: { title: 'Datenschutz – DEFƎKT Festival Buddy' },
-    en: { title: 'Datenschutz – DEFƎKT Festival Buddy' },
+    de: { title: 'Datenschutz – Festival Buddy by MerchMaster' },
+    en: { title: 'Datenschutz – Festival Buddy by MerchMaster' },
   },
 };
 
@@ -108,7 +118,7 @@ const EN: Record<string, string> = {
   'Festival Buddy starten': 'Start Festival Buddy',
   'Festival Buddy · Timetable-Planer für die Crew – auf jedem Festival.':
     'Festival Buddy · The timetable planner for every festival crew.',
-  '© 2026 DEFƎKT — Alle Rechte defekt.': '© 2026 DEFƎKT — All rights defective.',
+  '© 2026 MerchMaster · Festival Buddy ist kostenlos und bleibt es.': '© 2026 MerchMaster · Festival Buddy is free and stays free.',
   'Impressum': 'Legal notice',
   'Datenschutz': 'Privacy',
   'Zur Startseite': 'Back to home',
@@ -117,10 +127,10 @@ const EN: Record<string, string> = {
   'Zur App & anmelden': 'Go to app & sign in',
   'Zur App': 'To the app',
   'Tja… Festival-Saison 2026': 'Well… festival season 2026',
-  'Festival Buddy – Wer geht zu welcher Band? | DEFƎKT':
-    'Festival Buddy – Who is going to which band? | DEFƎKT',
-  'DEFƎKT Festival Buddy – Wer geht zu welcher Band?':
-    'DEFƎKT Festival Buddy – Who is going to which band?',
+  'Festival Buddy – Wer geht zu welcher Band? | MerchMaster':
+    'Festival Buddy – Who is going to which band? | MerchMaster',
+  'Festival Buddy by MerchMaster – Wer geht zu welcher Band?':
+    'Festival Buddy by MerchMaster – Who is going to which band?',
   'Wer geht zu welcher Band? Timetable-Planer für deine Crew – auf jedem Festival.':
     'Who is going to which band? A timetable planner for your crew – at every festival.',
   'Der Timetable-Planer für deine Festival-Crew. Wer geht zu welcher Band? Gruppen gründen, Bands markieren, Hot Slots sehen – offline-fähig, ohne Passwort. Für jedes Festival.':
@@ -403,13 +413,74 @@ const EN: Record<string, string> = {
   'Gruppen & Rollen': 'Groups & roles',
 
   // Public organiser page
-  'Festival Buddy für Veranstalter – Timetable, Bühnenpläne & Mitteilungen | DEFƎKT':
-    'Festival Buddy for organisers – timetables, stage maps & notifications | DEFƎKT',
+  'Festival Buddy für Veranstalter – Timetable, Bühnenpläne & Mitteilungen | MerchMaster':
+    'Festival Buddy for organisers – timetables, stage maps & notifications | MerchMaster',
   'Bring dein Festival in die App: Timetable, Bühnen und Bühnenpläne selbst pflegen, Mitteilungen mit Push an alle Besucher – kostenlos, ohne dass du Besucherdaten siehst.':
     'Bring your festival into the app: manage the timetable, stages and stage maps yourself and send push notifications to every visitor – free, without access to personal visitor data.',
   'Festival Buddy für Veranstalter – Timetable, Bühnenpläne und Mitteilungen selbst pflegen.':
     'Festival Buddy for organisers – manage timetables, stage maps and notifications yourself.',
   'Für Crews': 'For crews',
+
+  /* Marke MerchMaster: Band-Funnel und „Warum kostenlos" */
+  'Kostenlos, ohne Haken': 'Free, no catch',
+  'Warum ist das': 'Why is this',
+  'umsonst?': 'free?',
+  'Weil wir unser Geld woanders verdienen. Festival Buddy kommt von MerchMaster – der App, mit der Bands ihren Merch am Stand verkaufen. Kein Abo, keine Werbung, kein Datenverkauf: Wir bauen das Ding, weil wir selbst auf Festivals stehen.':
+    'Because we earn our money elsewhere. Festival Buddy comes from MerchMaster – the app bands use to sell merch at the table. No subscription, no ads, no data selling: we build this because we go to festivals ourselves.',
+  'Ich bin in einer Band': 'I am in a band',
+  'MerchMaster ansehen': 'Take a look at MerchMaster',
+  'Du spielst selbst in einer': 'Are you in a',
+  'Deine Fans planen deinen Slot hier ein – und für den Merch-Stand danach gibt es MerchMaster.':
+    'Your fans plan your slot in here – and MerchMaster takes care of the merch table afterwards.',
+  'Für Bands': 'For bands',
+  'Selbst in einer Band? Verkauf deinen Merch mit':
+    'In a band yourself? Sell your merch with',
+  'Deine Fans': 'Your fans',
+  'planen dich': 'plan you',
+  'ein.': 'in.',
+  'Auf jedem Festival stehen tausend Leute vor derselben Frage: Wo bin ich um 21 Uhr? Festival Buddy beantwortet sie – und euer Slot steht mittendrin.':
+    'At every festival a thousand people face the same question: where am I at 9pm? Festival Buddy answers it – and your slot is right in the middle of it.',
+  'Merch verkaufen mit MerchMaster': 'Sell merch with MerchMaster',
+  'Was ist MerchMaster?': 'What is MerchMaster?',
+  'Euer Slot im': 'Your slot in the',
+  'Plan der Crew': 'crew\'s plan',
+  'Ihr müsst dafür nichts tun und nichts bezahlen. Sobald euer Festival den Timetable pflegt, seid ihr drin.':
+    'You do not have to do anything or pay anything. As soon as your festival maintains its timetable, you are in.',
+  'Fans markieren euch': 'Fans mark you',
+  'Jede Crew plant ihren Festivaltag über den Timetable. Wer euch antippt, hat euren Slot fest im Plan – und alle in seiner Gruppe sehen es.':
+    'Every crew plans its festival day in the timetable. Anyone who taps you has your slot locked into their plan – and everyone in their group can see it.',
+  'Erinnerung vor dem Auftritt': 'A reminder before you play',
+  'Kurz vor Beginn kommt eine Push-Nachricht aufs Handy. Niemand steht mehr am falschen Ende des Geländes, wenn ihr anfangt.':
+    'Shortly before you start, a push notification hits their phone. Nobody is stuck at the wrong end of the site any more when you go on.',
+  'Hot Slots zeigen Zugkraft': 'Hot slots show your pull',
+  'Sagen genug aus einer Crew fest zu, fängt euer Slot in der App an zu brennen. Das ist der Termin, den keiner mehr sausen lässt.':
+    'When enough of a crew commits, your slot catches fire in the app. That is the show nobody skips any more.',
+  'Reinhören mit einem Tipp': 'One tap to listen',
+  'Zu jeder Band führt ein Link direkt aufs Spotify-Profil. Wer euch noch nicht kennt, hört rein, bevor er sich entscheidet.':
+    'Every band links straight to its Spotify profile. Anyone who does not know you yet can listen before deciding.',
+  'Euer Festival ist noch nicht dabei?': 'Your festival is not on board yet?',
+  'Schreib uns': 'Write to us',
+  '– wir fragen bei der Orga an.': '– we will ask the organisers.',
+  'Und am': 'And at the',
+  'Merch-Stand?': 'merch table?',
+  'Festival Buddy ist kostenlos, weil wir unser Geld woanders verdienen: mit MerchMaster, der App für den Merch-Tisch. Bestand, Kartenzahlung und Abrechnung auf einem Handy – gebaut für Bands, getestet auf Tour.':
+    'Festival Buddy is free because we earn our money elsewhere: with MerchMaster, the app for the merch table. Inventory, card payments and settlement on one phone – built for bands, tested on tour.',
+  'Bestand im Blick': 'Inventory at a glance',
+  'Welche Größe ist noch da, was ist durch? Der Bestand läuft mit, statt auf einem Zettel im Case zu liegen.':
+    'Which size is left, what has sold out? Your stock keeps up instead of sitting on a scrap of paper in the case.',
+  'Kartenzahlung am Stand': 'Card payments at the table',
+  'Karte und kontaktlos direkt am Merch-Tisch, mit dem SumUp-Reader. Kein extra Kassensystem, nur euer Handy.':
+    'Card and contactless right at the merch table with a SumUp reader. No separate POS system, just your phone.',
+  'Abrechnung nach der Show': 'Settlement after the show',
+  'Statt Kopfrechnen im Nightliner steht die Abrechnung fertig da – inklusive dem, was die Venue abbekommt.':
+    'Instead of doing maths in the nightliner, the settlement is ready – including the venue’s cut.',
+  'Zahlen pro Show': 'Numbers per show',
+  'Was lief wo am besten, was verstaubt im Case? Nach der Tour wisst ihr, was ihr nachdrucken solltet.':
+    'What sold best where, what is gathering dust? After the tour you know what to reprint.',
+  'Weniger Zettelwirtschaft hinterm Tisch, mehr Zeit für die Leute davor. Schau dir MerchMaster an.':
+    'Less paperwork behind the table, more time for the people in front of it. Take a look at MerchMaster.',
+  'Zu MerchMaster': 'Go to MerchMaster',
+  'Unsere Band spielt auf einem Festival': 'Our band is playing a festival',
   'Für Veranstalter': 'For organisers',
   'Dein Festival.': 'Your festival.',
   'Live beim': 'Live with your',
@@ -609,7 +680,7 @@ const EN: Record<string, string> = {
     'Tap a POI on the map to edit it.',
 
   // Legal notice. The privacy policy intentionally remains in German.
-  'Impressum – DEFƎKT Festival Buddy': 'Legal notice – DEFƎKT Festival Buddy',
+  'Impressum – Festival Buddy by MerchMaster': 'Legal notice – Festival Buddy by MerchMaster',
   'Anbieterkennzeichnung gemäß § 5 DDG.': 'Provider information pursuant to § 5 DDG.',
   'Angaben gemäß § 5 DDG': 'Information pursuant to § 5 DDG',
   Deutschland: 'Germany',
@@ -617,8 +688,8 @@ const EN: Record<string, string> = {
   'Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV':
     'Responsible for content pursuant to § 18(2) MStV',
   'Haftung für Inhalte': 'Liability for content',
-  'Festival Buddy ist ein nicht-kommerzielles Tool für Festival-Crews. Für eigene Inhalte auf diesen Seiten sind wir nach den allgemeinen Gesetzen verantwortlich. Nutzergenerierte Inhalte (z. B. Namen, Gruppen, Band-Auswahl) geben die Ansicht der jeweiligen Mitglieder wieder. Bandnamen, Timetable und Logos sind Eigentum der jeweiligen Rechteinhaber.':
-    'Festival Buddy is a non-commercial tool for festival crews. We are responsible for our own content on these pages under applicable law. User-generated content (such as names, groups and band selections) reflects the views of the respective members. Band names, timetables and logos belong to their respective rights holders.',
+  'Festival Buddy ist ein kostenloses Tool für Festival-Crews und wird von MerchMaster herausgegeben. Für eigene Inhalte auf diesen Seiten sind wir nach den allgemeinen Gesetzen verantwortlich. Nutzergenerierte Inhalte (z. B. Namen, Gruppen, Band-Auswahl) geben die Ansicht der jeweiligen Mitglieder wieder. Bandnamen, Timetable und Logos sind Eigentum der jeweiligen Rechteinhaber.':
+    'Festival Buddy is a free tool for festival crews, published by MerchMaster. We are responsible for our own content on these pages under applicable law. User-generated content (such as names, groups and band selections) reflects the views of the respective members. Band names, timetables and logos belong to their respective rights holders.',
   'Wie wir mit deinen Daten umgehen, steht in der':
     'Details about how we handle your data are available in the',
   Datenschutzerklärung: 'privacy policy',

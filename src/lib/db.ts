@@ -33,7 +33,7 @@ import { bandSlug, FESTIVAL_TZ, isValidTime, toMinutes } from './types';
  * (DATABASE_URL, z. B. Neon via Vercel). Das Schema wird beim ersten
  * Zugriff automatisch angelegt bzw. migriert und die Defaults werden
  * geseedet (Wacken-Timetable aus data/timetable.json, Blueprints,
- * DEFEKT-Gruppe für Bestandsnutzer).
+ * Default-Gruppe für Bestandsnutzer).
  *
  * Mandanten-Modell: Eine Gruppe gehört zu genau einem Festival. Nutzer
  * können in mehreren Gruppen sein. Auswahlen/Positionen hängen am Nutzer
@@ -413,7 +413,7 @@ async function createSchema(): Promise<void> {
       );
     }
 
-    // Bestands-Crew in die Default-Gruppe "DEFEKT" übernehmen, damit beim
+    // Bestands-Crew in eine Default-Gruppe übernehmen, damit beim
     // Umstieg auf Mandantenfähigkeit nichts verloren geht. Läuft nur, wenn
     // es noch gar keine Gruppe gibt; ältestes Mitglied wird Owner.
     await migrateLegacyUsersIntoDefaultGroup(client);
@@ -443,7 +443,7 @@ async function migrateLegacyUsersIntoDefaultGroup(client: PoolClient): Promise<v
     [
       groupId,
       LEGACY_FESTIVAL_ID,
-      process.env.DEFAULT_GROUP_NAME || 'DEFEKT',
+      process.env.DEFAULT_GROUP_NAME || 'Crew',
       generateInviteCode(),
       users.rows[0].id,
     ]
