@@ -320,7 +320,7 @@ export default async function LandingPage() {
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
-              href="/fuer-bands"
+              href="/bands"
               className="w-full rounded-xl border border-blood/40 bg-blood/10 px-7 py-3.5 text-sm font-bold uppercase tracking-wider text-blood transition active:scale-[0.98] sm:w-auto"
             >
               Ich bin in einer Band
@@ -339,7 +339,7 @@ export default async function LandingPage() {
 
       {/* Querverweise für Band und Veranstalter: schmal gehalten, der
           Crew-Funnel bleibt unangetastet – die vollen Pitch-Seiten leben
-          unter /fuer-bands und /veranstalter */}
+          unter /bands und /veranstalter */}
       <section className="border-t border-rivet/40">
         <div className="mx-auto grid max-w-5xl gap-4 px-6 py-10 sm:grid-cols-2">
           <div className="flex flex-col items-start gap-4 rounded-2xl border border-rivet/60 bg-steel p-7">
@@ -354,7 +354,7 @@ export default async function LandingPage() {
               </p>
             </div>
             <Link
-              href="/fuer-bands"
+              href="/bands"
               className="mt-auto rounded-xl border border-rivet bg-steel-2 px-6 py-3 text-sm font-semibold uppercase tracking-wider text-bone transition active:scale-[0.98]"
             >
               Für Bands
@@ -390,7 +390,7 @@ export default async function LandingPage() {
           </p>
           <p className="flex items-center justify-center gap-3 font-mono text-[9px] uppercase tracking-[0.25em] text-ash/50">
             <Link
-              href="/fuer-bands"
+              href="/bands"
               className="underline underline-offset-2 hover:text-ash"
             >
               Für Bands

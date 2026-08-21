@@ -1,3 +1,4 @@
+import { BrandLockup } from './Brand';
 import { FireFrame } from './FireFrame';
 
 /*
@@ -265,17 +266,11 @@ export function AppScreenshot() {
           <div className="steel-sheen flex items-center justify-between px-3 pb-2 pt-7">
             <div className="flex min-w-0 items-center gap-2">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blood shadow-[0_0_10px_#ff5a17]" />
-              {/* Spiegelt das Lockup aus der echten Topbar (AppShell) */}
-              <span data-no-i18n className="inline-flex shrink-0 flex-col items-start gap-0.5 leading-none">
-                <span className="font-metal whitespace-nowrap text-[11px] uppercase leading-none tracking-[0.04em] text-bone">
-                  Festival <span className="text-blood">Buddy</span>
-                </span>
-                <span className="whitespace-nowrap font-mono text-[6px] uppercase tracking-[0.24em] text-ash/70">
-                  by{' '}
-                  <span className="font-bold text-ash">
-                    Merch<span className="text-blood">Master</span>
-                  </span>
-                </span>
+              {/* Das echte Lockup aus der Topbar (AppShell), auf die Größe
+                  des Mockup-Displays heruntergerechnet – so bleibt der
+                  Screenshot automatisch in sync mit der Marke. */}
+              <span className="block shrink-0 origin-left scale-[0.78]">
+                <BrandLockup variant="compact" align="start" />
               </span>
               <span className="flex min-w-0 items-center gap-1 rounded-full border border-rivet bg-steel-2 py-0.5 pl-0.5 pr-2">
                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-blood text-[7px] font-black text-black">

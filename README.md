@@ -78,7 +78,7 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
   Eintragung.
 - **Bühnen-Karten mit POIs** – Toiletten 🚻, Wasser 💧, Merch 🛍️,
   Erste Hilfe ⛑️ und Eingänge 🚪 auf jedem Blueprint, für alle sichtbar.
-- **Band-Seite** (`/fuer-bands`) – die öffentliche Seite für Bands: Was
+- **Band-Seite** (`/bands`) – die öffentliche Seite für Bands: Was
   Festival Buddy für ihren Slot tut, und danach der Absender MerchMaster.
   Von der Startseite aus verlinkt („Warum ist das umsonst?") und aus dem
   Band-Sheet in der App als leiser Fußtext.

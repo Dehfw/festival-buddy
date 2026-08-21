@@ -15,7 +15,7 @@ import {
   type Slot,
 } from '@/lib/types';
 import { Avatar } from './Avatars';
-import { MERCHMASTER_URL } from './Brand';
+import { MERCHMASTER_URL, MerchMasterLogo } from './Brand';
 import { SpotifyLink } from './SpotifyLink';
 import { StageMap, type MapMarker } from './StageMap';
 
@@ -272,10 +272,7 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
               </span>
               <span>
                 Selbst in einer Band? Verkauf deinen Merch mit{' '}
-                <span data-no-i18n className="font-bold text-ash">
-                  Merch<span className="text-blood">Master</span>
-                </span>
-                .
+                <MerchMasterLogo variant="inline" />.
               </span>
             </a>
           </>

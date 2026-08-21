@@ -39,7 +39,7 @@ const PAGE_METADATA: Record<
       description: 'Festival Buddy for organisers and their festival teams.',
     },
   },
-  '/fuer-bands': {
+  '/bands': {
     de: {
       title: 'Festival Buddy für Bands – deine Fans planen dich ein | MerchMaster',
       description: 'Festival Buddy für Bands – und MerchMaster für den Merch-Stand.',

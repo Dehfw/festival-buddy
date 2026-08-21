@@ -23,11 +23,11 @@ export const metadata: Metadata = {
     'Festival Buddy',
     'MerchMaster',
   ],
-  alternates: { canonical: '/fuer-bands' },
+  alternates: { canonical: '/bands' },
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website',
-    url: '/fuer-bands',
+    url: '/bands',
     siteName: 'Festival Buddy by MerchMaster',
     locale: 'de_DE',
     title: TITLE,
@@ -56,7 +56,7 @@ async function jsonLd() {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
     name: TITLE,
-    url: `${base}/fuer-bands`,
+    url: `${base}/bands`,
     description: DESCRIPTION,
     inLanguage: 'de',
     isPartOf: { '@type': 'WebSite', name: 'Festival Buddy by MerchMaster', url: base },
@@ -64,7 +64,7 @@ async function jsonLd() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Öffentliche Band-Seite (/fuer-bands). Die Brücke zwischen dem       */
+/* Öffentliche Band-Seite (/bands). Die Brücke zwischen dem       */
 /* kostenlosen Besucher-Tool und MerchMaster: Bands sehen zuerst, was  */
 /* Festival Buddy für ihren Auftritt tut, und danach, womit wir das    */
 /* Ganze bezahlen – der App für ihren Merch-Stand.                     */

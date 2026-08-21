@@ -49,40 +49,73 @@ export function FestivalBuddyLogo({ variant = 'mini' }: { variant?: WordmarkSize
 }
 
 /**
- * MerchMaster-Wortmarke.
- *  - byline: Absenderzeile unter dem Produktnamen („by MERCHMASTER")
+ * Die beiden schrägen Balken vor der MerchMaster-Wortmarke. Bewusst als
+ * Geometrie und nicht als Schriftzeichen: So sitzen Winkel und Abstand
+ * unabhängig von der verfügbaren Schrift, und die Marke skaliert über
+ * `em` mit der Schriftgröße ihres Wortmarks mit.
+ */
+function BrandSlashes() {
+  return (
+    <span aria-hidden className="flex shrink-0 items-center gap-[0.1em]">
+      <span className="block h-[0.8em] w-[0.13em] -skew-x-12 bg-blood" />
+      <span className="block h-[0.8em] w-[0.13em] -skew-x-12 bg-blood" />
+    </span>
+  );
+}
+
+/**
+ * MerchMaster-Wortmarke (merchmaster.app): „//MERCHMASTER" – zwei orange
+ * Schrägbalken vor einer fetten kursiven Versalienschrift.
+ *  - byline: Absenderzeile unter dem Produktnamen („by //MERCHMASTER")
  *  - mini: eigenständige Wortmarke, z. B. im Band-Funnel
  *  - hero: großes Wortmark mit Glut
  */
 export function MerchMasterLogo({
   variant = 'mini',
 }: {
-  variant?: 'byline' | 'mini' | 'hero';
+  variant?: 'inline' | 'byline' | 'mini' | 'hero';
 }) {
   if (variant === 'hero') {
     return (
       <span
         data-no-i18n
-        className="font-metal select-none text-4xl uppercase leading-none text-blood sm:text-5xl"
-        style={{ textShadow: '0 0 40px rgba(255,90,23,.45)' }}
+        className="inline-flex select-none items-center gap-[0.22em] text-4xl leading-none sm:text-5xl"
+        style={{ filter: 'drop-shadow(0 0 40px rgba(255,90,23,.35))' }}
       >
-        Merch<span className="text-bone">Master</span>
+        <BrandSlashes />
+        <span className="font-black italic uppercase tracking-[-0.01em] text-bone">
+          MerchMaster
+        </span>
       </span>
     );
   }
   if (variant === 'byline') {
     return (
-      <span data-no-i18n className="select-none whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.28em] text-ash/70">
-        by{' '}
-        <span className="font-bold text-ash">
-          Merch<span className="text-blood">Master</span>
+      <span
+        data-no-i18n
+        className="inline-flex select-none items-baseline gap-[0.4em] whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.28em] text-ash/70"
+      >
+        by
+        <span className="inline-flex items-center gap-[0.28em] text-[10px] tracking-normal">
+          <BrandSlashes />
+          <span className="font-black italic uppercase tracking-[-0.01em] text-ash">
+            MerchMaster
+          </span>
         </span>
       </span>
     );
   }
   return (
-    <span data-no-i18n className="font-metal select-none text-lg uppercase leading-none tracking-[0.04em] text-bone">
-      Merch<span className="text-blood">Master</span>
+    <span
+      data-no-i18n
+      className={`inline-flex select-none items-center gap-[0.22em] leading-none ${
+        variant === 'inline' ? 'align-baseline text-[1em]' : 'text-lg'
+      }`}
+    >
+      <BrandSlashes />
+      <span className="font-black italic uppercase tracking-[-0.01em] text-bone">
+        MerchMaster
+      </span>
     </span>
   );
 }
