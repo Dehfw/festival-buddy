@@ -78,6 +78,10 @@ Anzeigename – die Identität hängt am Passkey. Kein Passwort, kein IdP.
   Eintragung.
 - **Bühnen-Karten mit POIs** – Toiletten 🚻, Wasser 💧, Merch 🛍️,
   Erste Hilfe ⛑️ und Eingänge 🚪 auf jedem Blueprint, für alle sichtbar.
+- **Merch-Link pro Band** – Bands, die ihren Merch mit MerchMaster
+  verkaufen, bekommen im Band-Sheet und im Lineup-Sheet den Button
+  „Merch der Band" in ihren Webshop. Gepflegt wird das vom Betreiber
+  (`npm run merch`, siehe unten), nicht vom Veranstalter.
 - **Band-Seite** (`/bands`) – die öffentliche Seite für Bands: Was
   Festival Buddy für ihren Slot tut, und danach der Absender MerchMaster.
   Von der Startseite aus verlinkt („Warum ist das umsonst?") und aus dem
@@ -142,6 +146,33 @@ eine andere Domain um, sind bestehende Passkeys dort nicht mehr nutzbar.
 2. Deploy – fertig. Der Wacken-Timetable wird beim ersten Schemalauf aus
    `data/timetable.json` in die DB geseedet; danach laufen Lineup-Updates
    über `npm run import:db` direkt gegen die Datenbank (kein Redeploy).
+
+## Merch-Links der Bands
+
+Bands, die MerchMaster nutzen, bekommen in der App einen Button in ihren
+Webshop – im Band-Sheet neben dem Spotify-Link und im Lineup-Sheet. Der
+Shop gehört der **Band**, nicht einem Festival: Einmal gesetzt, taucht er
+überall auf, wo die Band spielt, auch im nächsten Jahr und auf jedem
+anderen Festival.
+
+Deshalb liegt er auch nicht im Timetable-JSON, sondern in der eigenen
+Tabelle `band_merch` (Schlüssel ist der Band-Slug, derselbe wie bei den
+Merkungen). `getTimetable` hängt die URLs beim **Lesen** an Slots und
+Bands; geschrieben wird nie zurück – der Veranstalter-Editor arbeitet auf
+der Rohzeile und kann sie nicht einbacken.
+
+```bash
+npm run merch -- list                                  # alles anzeigen
+npm run merch -- set "Hämatom" https://shop.haematom.de
+npm run merch -- remove "Hämatom"
+npm run merch -- import data/merch.json                # { "Band": "https://…", … }
+npm run merch -- check                                 # Bands ohne Shop auflisten
+```
+
+Groß-/Kleinschreibung und Umlaute sind egal – „Hämatom", `haematom` und
+`HAEMATOM` landen auf derselben Zeile. Nur `http`/`https` wird akzeptiert.
+Änderungen sind nach maximal ~75 Sekunden in der App (Merch-Cache 60 s +
+Timetable-Cache 15 s).
 
 ## Veranstalter
 

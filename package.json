@@ -16,6 +16,7 @@
     "lineup:check": "node scripts/validate-timetable.mjs",
     "lineup:spotify": "node scripts/spotify-ids.mjs",
     "organizer": "node scripts/organizer-code.mjs",
+    "merch": "node scripts/merch-links.mjs",
     "push:broadcast": "node scripts/push-broadcast.mjs"
   },
   "dependencies": {

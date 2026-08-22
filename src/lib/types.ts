@@ -23,6 +23,12 @@ export interface Slot {
   confirmed: boolean;
   /** Spotify-Artist-ID aus dem offiziellen W:O:A-Export */
   spotifyArtistId?: string;
+  /**
+   * Webshop der Band. Steht NICHT im Timetable-JSON, sondern kommt beim
+   * Lesen aus der Tabelle `band_merch` dazu (siehe getTimetable) – ein
+   * Shop gilt für die Band, nicht für ein einzelnes Festival oder Jahr.
+   */
+  merchUrl?: string;
 }
 
 /**
@@ -41,6 +47,8 @@ export interface FestivalBand {
   name: string;
   /** Spotify-Artist-ID – dieselbe Bedeutung wie bei Slot */
   spotifyArtistId?: string;
+  /** Webshop der Band – dieselbe Bedeutung und Herkunft wie bei Slot */
+  merchUrl?: string;
 }
 
 export interface Timetable {

@@ -87,6 +87,11 @@ const BUDDY_FEATURES: { icon: string; title: string; body: string }[] = [
     body: 'Sagen genug aus einer Crew fest zu, fängt euer Slot in der App an zu brennen. Das ist der Termin, den keiner mehr sausen lässt.',
   },
   {
+    icon: '🛍️',
+    title: 'Shop-Link an deinem Slot',
+    body: 'Verkaufst du deinen Merch mit MerchMaster, hängen wir deinen Shop an deine Auftritte: ein Tipp im Timetable, und deine Fans landen direkt bei deinen Shirts – auf jedem Festival, auf dem du spielst.',
+  },
+  {
     icon: '🎧',
     title: 'Reinhören mit einem Tipp',
     body: 'Zu jeder Band führt ein Link direkt aufs Spotify-Profil. Wer euch noch nicht kennt, hört rein, bevor er sich entscheidet.',

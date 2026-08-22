@@ -16,6 +16,7 @@ import {
 } from '@/lib/types';
 import { Avatar } from './Avatars';
 import { MERCHMASTER_URL, MerchMasterLogo } from './Brand';
+import { MerchLink } from './MerchLink';
 import { SpotifyLink } from './SpotifyLink';
 import { StageMap, type MapMarker } from './StageMap';
 
@@ -154,9 +155,10 @@ export function BandSheet({ slot, onClose }: { slot: Slot; onClose: () => void }
             Slot unbestätigt – Zeiten können sich ändern
           </p>
         )}
-        {slot.spotifyArtistId && (
-          <div className="mt-3">
+        {(slot.spotifyArtistId || slot.merchUrl) && (
+          <div className="mt-3 flex flex-wrap gap-2">
             <SpotifyLink artistId={slot.spotifyArtistId} />
+            <MerchLink url={slot.merchUrl} />
           </div>
         )}
 

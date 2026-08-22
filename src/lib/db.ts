@@ -118,14 +118,14 @@ function getPool(): Pool {
  * `festivals` längst – fehlt aber z. B. `organizer_invites`, muss der
  * idempotente Schema-Block unten einmal laufen und sie nachziehen.
  * Beim Anlegen neuer Tabellen hier IMMER auf die neueste umstellen!
- * Die zuletzt hinzugekommene ist `band_interests`; fehlt sie, läuft der
+ * Die zuletzt hinzugekommene ist `band_merch`; fehlt sie, läuft der
  * idempotente Block unten und zieht auch alles Ältere nach, was einer
  * Bestands-DB noch fehlt (z. B. push_reminders_sent oder
  * password_credentials aus den parallel entstandenen Features).
  */
 async function schemaAlreadyExists(client: PoolClient): Promise<boolean> {
   const res = await client.query<{ a: string | null }>(
-    "SELECT to_regclass('public.band_interests') AS a"
+    "SELECT to_regclass('public.band_merch') AS a"
   );
   return res.rows[0]?.a != null;
 }
@@ -229,6 +229,19 @@ async function createSchema(): Promise<void> {
       );
       CREATE INDEX IF NOT EXISTS band_interests_festival_idx
         ON band_interests (festival_id, band_slug);
+      -- Webshop einer Band (MerchMaster-Kundschaft). Bewusst global und
+      -- nicht im Timetable-JSON: Der Shop gehört der Band, nicht einem
+      -- Festival – einmal gepflegt, taucht er überall auf, wo die Band
+      -- spielt, auch nächstes Jahr. Schlüssel ist derselbe Band-Slug wie
+      -- bei band_interests. Gepflegt vom Betreiber per
+      -- "npm run merch" (scripts/merch-links.mjs), es gibt bewusst kein
+      -- Web-Interface dafür.
+      CREATE TABLE IF NOT EXISTS band_merch (
+        slug       TEXT PRIMARY KEY,
+        name       TEXT NOT NULL,
+        url        TEXT NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
       CREATE TABLE IF NOT EXISTS webauthn_credentials (
         id         TEXT PRIMARY KEY,
         user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -535,6 +548,60 @@ function mergeBands(bands: FestivalBand[], slots: Slot[]): FestivalBand[] {
   return [...merged.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
 }
 
+/**
+ * Band-Slug -> Webshop-URL, einmal für alle Festivals. Die Tabelle ist
+ * klein (eine Zeile je MerchMaster-Band), deshalb kommt sie am Stück in
+ * den Prozess-Cache statt pro Timetable gejoint zu werden.
+ */
+let merchCache: { at: number; value: Map<string, string> } | null = null;
+const MERCH_CACHE_MS = 60_000;
+
+/** Nur http(s) durchlassen – die URL landet ungeprüft in einem href. */
+function safeShopUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : null;
+  } catch {
+    return null;
+  }
+}
+
+async function getBandMerchMap(): Promise<Map<string, string>> {
+  if (merchCache && Date.now() - merchCache.at < MERCH_CACHE_MS) return merchCache.value;
+  const res = await query<{ slug: string; url: string }>(
+    'SELECT slug, url FROM band_merch'
+  );
+  const value = new Map<string, string>();
+  for (const row of res.rows) {
+    const url = safeShopUrl(row.url);
+    if (url) value.set(row.slug, url);
+  }
+  merchCache = { at: Date.now(), value };
+  return value;
+}
+
+/**
+ * Hängt die Webshops an Slots und Bands. Der Shop gehört der Band, nicht
+ * dem Timetable – deshalb passiert das erst beim Lesen und nie beim
+ * Schreiben. Muss jeder Pfad aufrufen, der einen Timetable in den Cache
+ * legt, sonst verschwinden die Links bis zum nächsten Ablauf der TTL.
+ */
+async function attachBandMerch(
+  slots: Slot[],
+  bands: FestivalBand[]
+): Promise<{ slots: Slot[]; bands: FestivalBand[] }> {
+  const merch = await getBandMerchMap();
+  if (merch.size === 0) return { slots, bands };
+  const withMerch = <T extends { merchUrl?: string }>(entry: T, slug: string): T => {
+    const url = merch.get(slug);
+    return url ? { ...entry, merchUrl: url } : entry;
+  };
+  return {
+    slots: slots.map((slot) => withMerch(slot, bandSlug(slot.band))),
+    bands: bands.map((band) => withMerch(band, band.slug)),
+  };
+}
+
 export async function getTimetable(festivalId: string): Promise<Timetable | null> {
   const hit = timetableCache.get(festivalId);
   if (hit && Date.now() - hit.at < TIMETABLE_CACHE_MS) return hit.value;
@@ -544,7 +611,11 @@ export async function getTimetable(festivalId: string): Promise<Timetable | null
   );
   const row = res.rows[0];
   if (!row) return null;
-  const slots = row.timetable.slots ?? [];
+  const rawSlots = row.timetable.slots ?? [];
+  const { slots, bands } = await attachBandMerch(
+    rawSlots,
+    mergeBands(row.timetable.bands ?? [], rawSlots)
+  );
   const timetable: Timetable = {
     festival: row.name,
     edition: row.edition,
@@ -552,7 +623,7 @@ export async function getTimetable(festivalId: string): Promise<Timetable | null
     days: row.timetable.days ?? [],
     stages: row.timetable.stages ?? [],
     slots,
-    bands: mergeBands(row.timetable.bands ?? [], slots),
+    bands,
   };
   timetableCache.set(festivalId, { at: Date.now(), value: timetable });
   return timetable;
@@ -2159,14 +2230,18 @@ async function mutateTimetable(
     );
     await client.query('COMMIT');
 
+    const { slots: slotsWithMerch, bands } = await attachBandMerch(
+      applied.slots,
+      mergeBands(applied.bands ?? [], applied.slots)
+    );
     const timetable: Timetable = {
       festival: row.name,
       edition: row.edition,
       dataVersion,
       days: applied.days,
       stages: applied.stages,
-      slots: applied.slots,
-      bands: mergeBands(applied.bands ?? [], applied.slots),
+      slots: slotsWithMerch,
+      bands,
     };
     // Write-through: dieselbe Instanz sieht den neuen Stand sofort; andere
     // Instanzen konvergieren über die Cache-TTL + den Rev-Poll.

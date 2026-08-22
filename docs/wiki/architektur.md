@@ -59,6 +59,14 @@ Steady-State-Check `schemaAlreadyExists()` fragt dabei immer die
 hielte er eine Bestands-DB für fertig, der die neueste Tabelle noch
 fehlt. Beim Anlegen einer neuen Tabelle gehört er mit umgestellt.
 
+`band_merch` steht bewusst neben dem Timetable und nicht darin: Der
+Webshop gehört der Band, nicht einem Festival oder Jahrgang. `getTimetable`
+hängt die URLs beim Lesen an Slots und Bands (`attachBandMerch`), die
+Schreibpfade sehen sie nie – `editTimetable` arbeitet auf der Rohzeile.
+Wer einen weiteren Pfad baut, der einen Timetable in `timetableCache`
+legt, muss `attachBandMerch` mit aufrufen, sonst fallen die Links bis zum
+Ablauf der TTL weg.
+
 Danach wird geseedet: Wacken-Timetable aus `data/timetable.json`, Summer Breeze als
 Gerüst, Default-Blueprints – und Bestandsnutzer aus der Zeit vor dem
 Gruppen-Feature landen einmalig in der Default-Gruppe „Crew"

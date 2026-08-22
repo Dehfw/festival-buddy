@@ -422,6 +422,10 @@ const EN: Record<string, string> = {
   'Für Crews': 'For crews',
 
   /* Marke MerchMaster: Band-Funnel und „Warum kostenlos" */
+  'Merch der Band': 'Band merch',
+  'Shop-Link an deinem Slot': 'Shop link on your slot',
+  'Verkaufst du deinen Merch mit MerchMaster, hängen wir deinen Shop an deine Auftritte: ein Tipp im Timetable, und deine Fans landen direkt bei deinen Shirts – auf jedem Festival, auf dem du spielst.':
+    'If you sell your merch with MerchMaster we attach your shop to your shows: one tap in the timetable and your fans land on your shirts – at every festival you play.',
   'Kostenlos, ohne Haken': 'Free, no catch',
   'Warum ist das': 'Why is this',
   'umsonst?': 'free?',

@@ -7,6 +7,7 @@ import { useSheetDrag } from '@/lib/client/useSheetDrag';
 import { useSheetHistory } from '@/lib/client/useSheetHistory';
 import { bandInterestUsers, type FestivalBand } from '@/lib/types';
 import { Avatar } from './Avatars';
+import { MerchLink } from './MerchLink';
 import { SpotifyLink } from './SpotifyLink';
 
 /**
@@ -93,6 +94,7 @@ export function BandPreviewSheet({
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <SpotifyLink artistId={band.spotifyArtistId} />
+          <MerchLink url={band.merchUrl} />
           <button
             type="button"
             onClick={() => setBandInterest(band.slug, !mine)}
