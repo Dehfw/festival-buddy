@@ -25,7 +25,7 @@ export default async function InviteImage({
   const preview = await loadInvitePreview(code);
 
   const name = preview?.name ?? 'Deine Festival-Crew';
-  const festival = preview?.festivalName ?? 'Wer geht zu welcher Band?';
+  const festival = preview?.festivalName ?? 'Gemeinsam den Timetable planen';
   const members = preview
     ? preview.memberCount === 1
       ? '1 Person ist schon dabei'
