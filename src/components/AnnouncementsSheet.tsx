@@ -90,7 +90,7 @@ export function AnnouncementsBell() {
       </button>
       {open && <AnnouncementsSheet onClose={() => setOpen(false)} />}
       {toast && !open && (
-        <div className="fixed inset-x-3 top-[calc(3.4rem+env(safe-area-inset-top))] z-50 mx-auto max-w-lg">
+        <div className="fixed inset-x-3 top-[calc(4rem+env(safe-area-inset-top))] z-50 mx-auto max-w-lg">
           <div
             role="status"
             className="flex items-start gap-2.5 rounded-2xl border border-blood/40 bg-steel p-3.5 shadow-2xl shadow-black/60"

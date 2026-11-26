@@ -308,7 +308,7 @@ function GroupPageInner() {
   };
 
   return (
-    <main className="mx-auto max-w-lg px-4 pb-16 pt-[max(0.75rem,env(safe-area-inset-top))]">
+    <main className="mx-auto max-w-lg px-4 pb-16 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
       <div className="flex items-center justify-between">
         <h1 className="font-metal text-xl font-black uppercase">Gruppe & Konto</h1>
         <Link href="/app" className="text-sm text-ash underline">
