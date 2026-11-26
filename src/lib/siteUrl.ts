@@ -15,6 +15,24 @@ import { headers } from 'next/headers';
  *     auch wenn APP_URL beim Build vergessen wurde,
  *  3. localhost nur als letzter Fallback (Build ohne Request-Kontext).
  */
+/**
+ * Basis-URL für sicherheitskritische Links (Passwort-Reset-Mail). Hier
+ * darf NIE der Host-Header durchschlagen: Hinter einem Proxy, der
+ * X-Forwarded-Host ungeprüft weiterreicht, könnte ein Angreifer sonst
+ * Reset-Links auf seine eigene Domain umbiegen ("Host header poisoning").
+ * Reihenfolge: APP_URL, sonst Vercels Produktions-Domain, außerhalb von
+ * Produktion der Request-Host (lokale Entwicklung). null = keine
+ * vertrauenswürdige URL bekannt -> Aufrufer schickt nichts raus.
+ */
+export async function resolveTrustedSiteUrl(): Promise<string | null> {
+  const configured = process.env.APP_URL?.replace(/\/$/, '');
+  if (configured) return configured;
+  const vercelProd = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (vercelProd) return `https://${vercelProd.replace(/\/$/, '')}`;
+  if (process.env.NODE_ENV !== 'production') return resolveSiteUrl();
+  return null;
+}
+
 export async function resolveSiteUrl(): Promise<string> {
   const configured = process.env.APP_URL?.replace(/\/$/, '');
   if (configured) return configured;

@@ -118,14 +118,14 @@ function getPool(): Pool {
  * `festivals` längst – fehlt aber z. B. `organizer_invites`, muss der
  * idempotente Schema-Block unten einmal laufen und sie nachziehen.
  * Beim Anlegen neuer Tabellen hier IMMER auf die neueste umstellen!
- * Die zuletzt hinzugekommene ist `band_interests`; fehlt sie, läuft der
+ * Die zuletzt hinzugekommene ist `session_epochs`; fehlt sie, läuft der
  * idempotente Block unten und zieht auch alles Ältere nach, was einer
  * Bestands-DB noch fehlt (z. B. push_reminders_sent oder
  * password_credentials aus den parallel entstandenen Features).
  */
 async function schemaAlreadyExists(client: PoolClient): Promise<boolean> {
   const res = await client.query<{ a: string | null }>(
-    "SELECT to_regclass('public.band_interests') AS a"
+    "SELECT to_regclass('public.session_epochs') AS a"
   );
   return res.rows[0]?.a != null;
 }
@@ -220,6 +220,13 @@ async function createSchema(): Promise<void> {
       -- Gemerkte Bands ("die will ich sehen") aus der Lineup-Ansicht.
       -- Hängt am Band-Slug statt an einer Slot-ID: Die entstehen erst mit
       -- dem Timetable, die Merkung soll den Import aber überleben.
+      -- Session-Epoche je Nutzer: steckt als "sv" im Session-Token. Hochzählen
+      -- macht alle bisher ausgestellten Sessions des Nutzers ungültig (nach
+      -- Passwort-Reset/-Änderung, entferntem Passkey). Kein Eintrag = 0.
+      CREATE TABLE IF NOT EXISTS session_epochs (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        epoch   INT NOT NULL DEFAULT 0
+      );
       CREATE TABLE IF NOT EXISTS band_interests (
         user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         festival_id TEXT NOT NULL,
@@ -474,6 +481,31 @@ async function query<R extends object = Record<string, unknown>>(
 ) {
   await ensureSchema();
   return getPool().query<R>(text, params as never[]);
+}
+
+/**
+ * Aktuelle Session-Epoche des Nutzers; null, wenn es den Nutzer nicht
+ * (mehr) gibt – dann ist auch keine Session mehr gültig.
+ */
+export async function getSessionEpoch(userId: string): Promise<number | null> {
+  const res = await query<{ epoch: number }>(
+    `SELECT COALESCE(e.epoch, 0) AS epoch
+       FROM users u LEFT JOIN session_epochs e ON e.user_id = u.id
+      WHERE u.id = $1`,
+    [userId]
+  );
+  return res.rows[0] ? Number(res.rows[0].epoch) : null;
+}
+
+/** Session-Epoche hochzählen = alle bestehenden Sessions des Nutzers ungültig. */
+export async function bumpSessionEpoch(userId: string): Promise<number> {
+  const res = await query<{ epoch: number }>(
+    `INSERT INTO session_epochs (user_id, epoch) VALUES ($1, 1)
+     ON CONFLICT (user_id) DO UPDATE SET epoch = session_epochs.epoch + 1
+     RETURNING epoch`,
+    [userId]
+  );
+  return Number(res.rows[0].epoch);
 }
 
 /** Revisions-Zähler: erhöht sich bei jeder Mutation (billiges Client-Polling) */
@@ -964,13 +996,29 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
 
 /** Mitglied entfernen (Admin-Check macht die Route; Owner ist tabu). */
 export async function removeMember(groupId: string, targetUserId: string): Promise<boolean> {
-  const res = await query(
-    `DELETE FROM group_members
-      WHERE group_id = $1 AND user_id = $2 AND role <> 'owner'`,
-    [groupId, targetUserId]
-  );
-  await bumpRev();
-  return (res.rowCount ?? 0) > 0;
+  // Jedes Mitglied kennt den Einladungscode – ohne neuen Code könnte sich
+  // ein Rausgeworfener sofort per /api/groups/join wieder reinholen.
+  // Entfernen und Code-Rotation laufen deshalb atomar in einem Statement;
+  // rotiert wird nur, wenn wirklich jemand entfernt wurde.
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await query(
+        `WITH removed AS (
+           DELETE FROM group_members
+            WHERE group_id = $1 AND user_id = $2 AND role <> 'owner'
+            RETURNING 1
+         )
+         UPDATE groups SET invite_code = $3
+          WHERE id = $1 AND EXISTS (SELECT 1 FROM removed)`,
+        [groupId, targetUserId, generateInviteCode()]
+      );
+      await bumpRev();
+      return (res.rowCount ?? 0) > 0;
+    } catch (err) {
+      // UNIQUE-Kollision beim neuen Code (praktisch ausgeschlossen): neu würfeln.
+      if ((err as { code?: string }).code !== '23505' || attempt >= 2) throw err;
+    }
+  }
 }
 
 /**

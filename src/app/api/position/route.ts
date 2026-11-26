@@ -68,7 +68,7 @@ async function notifyGroup(
  * (mit Karenzzeit).
  */
 export async function POST(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json(
       { error: 'Nicht eingeloggt – bitte mit Passkey anmelden' },

@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
  * deshalb den späteren Import der Running Order.
  */
 export async function POST(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json(
       { error: 'Nicht eingeloggt – bitte mit Passkey anmelden' },

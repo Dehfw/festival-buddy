@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readSessionUserId } from '@/lib/auth';
 import { deletePushSubscription, upsertPushSubscription } from '@/lib/db';
+import { isKnownPushEndpoint } from '@/lib/push';
 import { clientIp, rateLimit } from '@/lib/ratelimit';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +17,7 @@ function parseSubscription(
   const endpoint = typeof sub.endpoint === 'string' ? sub.endpoint : '';
   const p256dh = typeof sub.keys?.p256dh === 'string' ? sub.keys.p256dh : '';
   const auth = typeof sub.keys?.auth === 'string' ? sub.keys.auth : '';
-  if (!endpoint || endpoint.length > 2048 || !endpoint.startsWith('https://')) return null;
+  if (!endpoint || endpoint.length > 2048 || !isKnownPushEndpoint(endpoint)) return null;
   if (!KEY_RE.test(p256dh) || !KEY_RE.test(auth)) return null;
   return { endpoint, p256dh, auth };
 }
@@ -27,7 +28,7 @@ function parseSubscription(
  * bedenkenlos re-syncen.
  */
 export async function POST(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
 
 /** Abo dieses Geräts löschen: { endpoint }. Idempotent. */
 export async function DELETE(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }

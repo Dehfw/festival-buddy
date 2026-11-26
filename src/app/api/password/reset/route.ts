@@ -2,10 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   getRpConfig,
   openToken,
-  sealToken,
-  SESSION_COOKIE,
-  SESSION_MAX_AGE_S,
-  setAuthCookie,
+  revokeOtherSessions,
 } from '@/lib/auth';
 import {
   getPasswordCredentialForUser,
@@ -72,11 +69,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: INVALID }, { status: 400 });
   }
 
-  // Frisch gesetztes Passwort = bewiesener Kontozugriff -> direkt einloggen
+  // Frisch gesetztes Passwort = bewiesener Kontozugriff -> direkt einloggen.
+  // Alle anderen Sessions fliegen raus: Wer sein Passwort zurücksetzt, will
+  // typischerweise auch einen Eindringling loswerden.
   const rp = getRpConfig(req);
   const res = NextResponse.json({ user });
-  setAuthCookie(res, rp, SESSION_COOKIE, sealToken({ uid: user.id }, SESSION_MAX_AGE_S), {
-    maxAge: SESSION_MAX_AGE_S,
-  });
+  await revokeOtherSessions(user.id, { res, rp });
   return res;
 }

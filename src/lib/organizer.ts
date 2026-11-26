@@ -16,7 +16,7 @@ export async function canManageFestival(
   req: Request,
   festivalId: string
 ): Promise<ManageAuth> {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) return { ok: false, status: 401 };
   if (await isFestivalOrganizer(userId, festivalId)) return { ok: true, userId };
   return { ok: false, status: 403 };

@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
  * organizerFestivals (> 0) blendet den Veranstalter-Link in der Nav ein.
  */
 export async function GET(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
@@ -46,7 +46,7 @@ export async function GET(req: Request) {
  * also frei ändern.
  */
 export async function PATCH(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }

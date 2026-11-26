@@ -728,8 +728,8 @@ function translated(value: string): string {
   if (interested) return spaced(`${interested[1]} interested`);
   const since = key.match(/^seit (.+)$/);
   if (since) return spaced(`since ${since[1]}`);
-  const removeMember = key.match(/^(.+) wirklich aus der Gruppe entfernen\?$/);
-  if (removeMember) return spaced(`Really remove ${removeMember[1]} from the group?`);
+  const removeMember = key.match(/^(.+) wirklich aus der Gruppe entfernen\? Der Einladungscode wird dabei erneuert, damit niemand mit dem alten Code zurückkommt\.$/);
+  if (removeMember) return spaced(`Really remove ${removeMember[1]} from the group? The invite code will be renewed so nobody can rejoin with the old one.`);
   const removeLogin = key.match(/^(.+) wirklich entfernen\? Damit kannst du dich dann nicht mehr einloggen\.$/);
   if (removeLogin) return spaced(`Really remove ${removeLogin[1]}? You will no longer be able to sign in with it.`);
   const commitments = key.match(/^(\d+) festen Zusagen$/);

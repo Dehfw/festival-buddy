@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { sealToken } from '@/lib/auth';
 import { getUserByEmail } from '@/lib/db';
 import { sendPasswordResetMail } from '@/lib/mail';
@@ -8,7 +8,7 @@ import {
   RESET_TOKEN_MAX_AGE_S,
 } from '@/lib/password';
 import { clientIp, rateLimit } from '@/lib/ratelimit';
-import { resolveSiteUrl } from '@/lib/siteUrl';
+import { resolveTrustedSiteUrl } from '@/lib/siteUrl';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +28,8 @@ export async function POST(req: Request) {
   if (!email) return neutral;
   // Limit erreicht? Auch dann neutral antworten und einfach nichts senden.
   if (!rateLimit(`pw-forgot:${clientIp(req)}`, 5, 15 * 60_000)) return neutral;
+  // Zusätzlich pro Adresse: wechselnde IPs sollen kein Postfach zumüllen.
+  if (!rateLimit(`pw-forgot-mail:${email}`, 3, 60 * 60_000)) return neutral;
 
   const stored = await getUserByEmail(email);
   if (stored) {
@@ -39,8 +41,14 @@ export async function POST(req: Request) {
       },
       RESET_TOKEN_MAX_AGE_S
     );
-    const base = await resolveSiteUrl();
-    await sendPasswordResetMail(email, `${base}/passwort-reset#${token}`, locale);
+    const base = await resolveTrustedSiteUrl();
+    if (!base) {
+      console.error('Passwort-Reset: APP_URL nicht gesetzt – keine Reset-Mail verschickt');
+      return neutral;
+    }
+    // Versand erst nach der Antwort: sonst verrät die Antwortzeit (SendGrid-
+    // Roundtrip nur bei existierendem Konto), ob es die Adresse gibt.
+    after(() => sendPasswordResetMail(email, `${base}/passwort-reset#${token}`, locale));
   }
   return neutral;
 }

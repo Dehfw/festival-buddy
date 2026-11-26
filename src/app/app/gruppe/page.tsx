@@ -198,7 +198,7 @@ function GroupPageInner() {
   const kick = (userId: string, name: string) => {
     setConfirmReq({
       title: 'Mitglied entfernen?',
-      message: `${name} wirklich aus der Gruppe entfernen?`,
+      message: `${name} wirklich aus der Gruppe entfernen? Der Einladungscode wird dabei erneuert, damit niemand mit dem alten Code zurückkommt.`,
       confirmLabel: 'Entfernen',
       onConfirm: () =>
         void api(

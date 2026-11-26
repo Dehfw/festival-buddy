@@ -191,6 +191,10 @@ self.addEventListener('fetch', (event) => {
   // Andere API-Routen nicht cachen
   if (url.pathname.startsWith('/api/')) return;
 
+  // Einladungsseiten tragen Code + Gruppenname im HTML und sind offline
+  // ohnehin nutzlos: nicht cachen, sonst überleben sie den Logout.
+  if (request.mode === 'navigate' && url.pathname.startsWith('/join/')) return;
+
   // Seiten-Navigation: Netz zuerst, sonst gecachte Shell
   if (request.mode === 'navigate') {
     event.respondWith(

@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
  * der Gruppe (Slot-IDs sind nur pro Festival eindeutig).
  */
 export async function POST(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json(
       { error: 'Nicht eingeloggt – bitte mit Passkey anmelden' },

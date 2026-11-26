@@ -126,7 +126,9 @@ const STEPS: { n: string; title: string; body: string }[] = [
 ];
 
 export default async function LandingPage() {
-  const structuredData = await jsonLd();
+  // "<" escapen: JSON-LD steht roh in einem <script>; ein "</script>" in
+  // einem Wert (z. B. aus dem Host-Header) dürfte nie das Tag beenden.
+  const structuredData = (await jsonLd()).replace(/</g, '\\u003c');
   return (
     <main className="defekt-grid min-h-dvh">
       {/* Muss vor allem anderen stehen: springt in der installierten App

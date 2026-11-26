@@ -48,6 +48,35 @@ export interface PushFanoutResult extends PushSendResult {
   users: number;
 }
 
+/**
+ * Push-Endpoints kommen vom Client – ohne Prüfung könnte man der App eine
+ * beliebige https-URL (auch interne Hosts/Ports) als "Abo" unterjubeln und
+ * den Server per Erinnerung/Position zu POSTs dorthin bringen (blind SSRF).
+ * Deshalb nur die bekannten Push-Dienste der Browser zulassen:
+ * Chrome/Edge-Chromium/Opera/Samsung/Brave (FCM), Firefox (Mozilla autopush),
+ * Safari/iOS (Apple), Edge-Legacy/Windows (WNS).
+ */
+const PUSH_HOSTS = new Set([
+  'fcm.googleapis.com',
+  'android.googleapis.com',
+  'updates.push.services.mozilla.com',
+]);
+const PUSH_HOST_SUFFIXES = ['.push.apple.com', '.notify.windows.com'];
+
+export function isKnownPushEndpoint(endpoint: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== 'https:' || url.port !== '' || url.username || url.password) {
+    return false;
+  }
+  const host = url.hostname.toLowerCase();
+  return PUSH_HOSTS.has(host) || PUSH_HOST_SUFFIXES.some((s) => host.endsWith(s));
+}
+
 let vapidConfigured = false;
 
 export function isPushConfigured(): boolean {
@@ -79,6 +108,8 @@ async function sendToSubscription(
   sub: PushSubscriptionRecord,
   json: string
 ): Promise<'sent' | 'gone' | 'failed'> {
+  // Altbestand aus der Zeit vor der Host-Prüfung: nicht mehr beliefern.
+  if (!isKnownPushEndpoint(sub.endpoint)) return 'failed';
   try {
     // timeout: web-push hat sonst KEINEN Socket-Timeout – ein hängender
     // Push-Dienst würde den ganzen Versand (und damit die wartende

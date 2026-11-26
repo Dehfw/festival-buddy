@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
  * Bewusst dieselbe Fehlermeldung für "gibt es nicht" und "Tippfehler".
  */
 export async function POST(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId || !(await getUserById(userId))) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
