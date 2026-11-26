@@ -14,7 +14,7 @@
  * Mitteilung, nur ohne Web-UI.
  */
 import pg from 'pg';
-import webpush from 'web-push';
+import * as webpush from 'web-push';
 import { randomUUID } from 'node:crypto';
 
 function fail(msg) {
