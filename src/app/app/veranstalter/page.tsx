@@ -272,7 +272,7 @@ function VeranstalterInner() {
   const stage = state?.timetable.stages.find((s) => s.id === stageId) ?? null;
 
   return (
-    <main className="mx-auto max-w-lg px-4 pb-16 pt-[max(0.75rem,env(safe-area-inset-top))] md:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
+    <main className="mx-auto max-w-lg px-4 pb-16 pt-[calc(env(safe-area-inset-top)+0.75rem)] md:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
       <div className="flex items-center justify-between">
         <h1 className="font-metal text-xl font-black uppercase md:text-2xl">Veranstalter</h1>
         <Link href="/app" className="text-sm text-ash underline">
