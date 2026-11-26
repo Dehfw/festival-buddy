@@ -79,8 +79,9 @@ export function AppShell() {
 
   return (
     <div className="app-shell flex flex-col">
-      {/* Header */}
-      <header className="steel-sheen flex items-center justify-between px-4 pb-2 pt-[max(0.6rem,env(safe-area-inset-top))]">
+      {/* Header – sticky, damit iOS 26 die Statusleiste mit seiner Farbe
+          einfärbt statt einen Blur darüberzulegen (siehe .steel-sheen) */}
+      <header className="steel-sheen sticky top-0 z-30 flex items-center justify-between px-4 pb-2 pt-[max(0.6rem,env(safe-area-inset-top))]">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-blood shadow-[0_0_10px_#ff5a17]" />
           <DefektLogo />

@@ -46,9 +46,14 @@ body {
   }
 }
 
-/* Header-Schimmer, DEFƎKT-dunkel mit Orange-Linie */
+/* Header-Schimmer, DEFƎKT-dunkel mit Orange-Linie.
+   Die volle background-color ist Absicht: iOS 26 (Safari & installierte
+   App) färbt die Statusleiste nach der Hintergrundfarbe eines oben
+   klebenden Elements ein. Ohne sie zeichnet das System dort einen
+   milchigen Glas-Blur über den Header. */
 .steel-sheen {
-  background: linear-gradient(160deg, #1c1c1c 0%, #101010 50%, #141414 100%);
+  background-color: #141414;
+  background-image: linear-gradient(160deg, #1c1c1c 0%, #101010 50%, #141414 100%);
   border-bottom: 1px solid rgba(255, 90, 23, 0.18);
 }
 
