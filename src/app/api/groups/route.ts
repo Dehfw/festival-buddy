@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
  * Antwort (fürs "Lade Leute ein"-Sheet direkt nach dem Anlegen).
  */
 export async function POST(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   const user = userId ? await getUserById(userId) : null;
   if (!userId || !user) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });

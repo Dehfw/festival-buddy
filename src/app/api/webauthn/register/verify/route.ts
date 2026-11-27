@@ -12,10 +12,7 @@ import {
   getRpConfig,
   openToken,
   REG_CHALLENGE_COOKIE,
-  sealToken,
-  SESSION_COOKIE,
-  SESSION_MAX_AGE_S,
-  setAuthCookie,
+  setSessionCookie,
 } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -91,9 +88,7 @@ export async function POST(req: Request) {
   after(() => notifyUserRegistered(user.name, 'Passkey'));
 
   const res = NextResponse.json({ user });
-  setAuthCookie(res, rp, SESSION_COOKIE, sealToken({ uid: user.id }, SESSION_MAX_AGE_S), {
-    maxAge: SESSION_MAX_AGE_S,
-  });
+  await setSessionCookie(res, rp, user.id);
   clearAuthCookie(res, rp, REG_CHALLENGE_COOKIE, '/api/webauthn');
   return res;
 }

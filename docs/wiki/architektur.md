@@ -52,10 +52,10 @@ billig, und der gepollte Payload ist ohnehin klein und gruppengescopet.
 `createSchema()` in `src/lib/db.ts` läuft **beim ersten DB-Zugriff pro
 Prozess** und ist idempotent (`CREATE TABLE IF NOT EXISTS`,
 `ALTER TABLE … ADD COLUMN IF NOT EXISTS`, PK-Umbauten in einem
-`DO`-Block). Ein Postgres-**Advisory-Lock** verhindert, dass parallele
-Serverless-Cold-Starts das Schema gleichzeitig anlegen. Der billige
+`DO`-Block). Ein Postgres-**Advisory-Lock** verhindert, dass parallel
+startende Container (Rolling Deploy) das Schema gleichzeitig anlegen. Der billige
 Steady-State-Check `schemaAlreadyExists()` fragt dabei immer die
-**zuletzt hinzugekommene** Tabelle ab (aktuell `band_interests`) – sonst
+**zuletzt hinzugekommene** Tabelle ab (aktuell `session_epochs`) – sonst
 hielte er eine Bestands-DB für fertig, der die neueste Tabelle noch
 fehlt. Beim Anlegen einer neuen Tabelle gehört er mit umgestellt.
 
@@ -66,8 +66,7 @@ Gruppen-Feature landen einmalig in der Default-Gruppe „DEFEKT"
 
 ## Verbindung
 
-Der `pg`-Pool wird global gecacht (Hot-Reload/Lambda-Wiederverwendung
-soll keine Verbindungen leaken). `DATABASE_URL` oder `POSTGRES_URL`
-werden erkannt; `sslmode` aus der URL wird explizit in eine
+Der `pg`-Pool wird global gecacht (Hot-Reload soll keine Verbindungen
+leaken). Die Verbindung kommt aus `DATABASE_URL`; `sslmode` aus der URL wird explizit in eine
 pg-SSL-Config übersetzt (`require`/`verify-*` = TLS mit Prüfung,
 `no-verify` = ohne, `disable` = kein TLS).

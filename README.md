@@ -113,7 +113,7 @@ Damit Service Worker **und Passkeys** laufen, muss die App über **HTTPS**
 | ----------------- | --------------------------------------------------------- |
 | `AUTH_SECRET`     | HMAC-Schlüssel für Session-/Challenge-Cookies. Ohne die   |
 |                   | Variable wird er aus der `DATABASE_URL` abgeleitet (alle  |
-|                   | Serverless-Instanzen rechnen gleich). Setzen = empfohlen. |
+|                   | Server-Prozesse rechnen gleich). In Produktion setzen!    |
 | `WEBAUTHN_RP_ID`  | Relying-Party-ID (Domain). Default: Hostname des Requests.|
 | `WEBAUTHN_ORIGIN` | Erwartete Origin (`https://…`). Default: Request-Origin.  |
 | `DEFAULT_GROUP_NAME` | Name der Migrations-Gruppe für Bestandsnutzer          |
@@ -122,15 +122,30 @@ Damit Service Worker **und Passkeys** laufen, muss die App über **HTTPS**
 Achtung: Passkeys sind an die Domain (RP ID) gebunden. Zieht die App auf
 eine andere Domain um, sind bestehende Passkeys dort nicht mehr nutzbar.
 
-### Deployment auf Vercel mit Neon
+### Deployment auf Coolify
 
-1. Neon-Datenbank über den Vercel-Marketplace anlegen – die Integration
-   setzt `DATABASE_URL` (bzw. `POSTGRES_URL`, beides wird erkannt)
-   automatisch als Env-Variable. Den **pooled** Connection-String verwenden
-   (Host mit `-pooler`), mit `?sslmode=require` am Ende.
-2. Deploy – fertig. Der Wacken-Timetable wird beim ersten Schemalauf aus
+Die App läuft als normaler, langlebiger Node-Server (`npm run build`,
+dann `npm start`, Port 3000) hinter dem Coolify-Proxy.
+
+1. **Datenbank:** PostgreSQL-Ressource in Coolify anlegen und deren
+   interne URL als `DATABASE_URL` in die App eintragen.
+2. **Node-Version:** kommt aus `engines.node` in `package.json` (26.x LTS).
+3. **Umgebungsvariablen** (siehe `.env.example`): mindestens
+   `DATABASE_URL`, `APP_URL` (als *Build Variable* markieren, sie wird
+   beim Build eingebacken) und `AUTH_SECRET`; für Push die drei
+   `VAPID_*`-Keys, für Reset-Mails `SENDGRID_API_KEY`/`MAIL_FROM`.
+4. **„Include Source Commit in Build“** aktivieren: Daraus entsteht die
+   Service-Worker-Version (`SOURCE_COMMIT`), damit die App nach jedem
+   Deploy ein Update anbietet. Ohne die Option wird der Zeitstempel des
+   Builds genommen.
+5. Deploy – fertig. Der Wacken-Timetable wird beim ersten Schemalauf aus
    `data/timetable.json` in die DB geseedet; danach laufen Lineup-Updates
    über `npm run import:db` direkt gegen die Datenbank (kein Redeploy).
+
+Band-Erinnerungen brauchen keinen externen Cron: Der Server prüft selbst
+jede Minute, ob welche fällig sind (`REMINDER_SCHEDULER=off` schaltet das
+ab). Sicherheitsheader inklusive HSTS setzt die App selbst
+(`next.config.mjs`).
 
 ## Veranstalter
 
@@ -251,7 +266,7 @@ gefundene Bands zum Nachsehen. Zugangsdaten gibt es kostenlos über
 developer.spotify.com und gehören als `SPOTIFY_CLIENT_ID` /
 `SPOTIFY_CLIENT_SECRET` in die lokale `.env.local` – nur für dieses
 Script, nicht zur Laufzeit: die App selbst spricht nie mit Spotify, auf
-Vercel braucht es die Variablen also nicht.
+dem Server braucht es die Variablen also nicht.
 
 `lineup`, `import:db`, `lineup:check` und `lineup:spotify` lesen
 `.env.local` selbst ein (`scripts/env.mjs`), `DATABASE_URL` muss also
@@ -310,9 +325,9 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 
 | Baustein   | Wahl                                                        |
 | ---------- | ----------------------------------------------------------- |
-| Framework  | Next.js 15 (App Router) + React 19 + TypeScript             |
+| Framework  | Next.js 16 (App Router) + React 19 + TypeScript             |
 | Styling    | Tailwind CSS 4, Mobile-First, dunkles Metal-Theme           |
-| Datenbank  | PostgreSQL via `pg` (Neon/Vercel-tauglich); Schema wird     |
+| Datenbank  | PostgreSQL via `pg`; Schema wird                            |
 |            | automatisch angelegt/migriert; Timetables pro Festival als  |
 |            | JSONB in der DB (Lineup-Update ohne Redeploy)               |
 | Sync       | Client pollt `GET /api/data` alle 7 s; Mutationen werden    |

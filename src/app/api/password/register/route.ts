@@ -2,10 +2,7 @@ import { after, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import {
   getRpConfig,
-  sealToken,
-  SESSION_COOKIE,
-  SESSION_MAX_AGE_S,
-  setAuthCookie,
+  setSessionCookie,
 } from '@/lib/auth';
 import { createUserWithPassword } from '@/lib/db';
 import { notifyUserRegistered } from '@/lib/discord';
@@ -83,8 +80,6 @@ export async function POST(req: Request) {
 
   const rp = getRpConfig(req);
   const res = NextResponse.json({ user });
-  setAuthCookie(res, rp, SESSION_COOKIE, sealToken({ uid: user.id }, SESSION_MAX_AGE_S), {
-    maxAge: SESSION_MAX_AGE_S,
-  });
+  await setSessionCookie(res, rp, user.id);
   return res;
 }

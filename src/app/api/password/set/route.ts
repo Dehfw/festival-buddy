@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readSessionUserId } from '@/lib/auth';
+import { getRpConfig, readSessionUserId, revokeOtherSessions } from '@/lib/auth';
 import {
   deletePasswordCredentialGuarded,
   getPasswordCredentialForUser,
@@ -24,7 +24,7 @@ export const dynamic = 'force-dynamic';
  * nicht, um es still zu überschreiben.
  */
 export async function POST(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
@@ -69,7 +69,11 @@ export async function POST(req: Request) {
       { status: 409 }
     );
   }
-  return NextResponse.json({ email });
+  const res = NextResponse.json({ email });
+  // Passwort geändert (nicht nur erstmals angelegt): andere Sessions
+  // beenden, dieses Gerät bleibt eingeloggt.
+  if (existing) await revokeOtherSessions(userId, { res, rp: getRpConfig(req) });
+  return res;
 }
 
 /**
@@ -79,7 +83,7 @@ export async function POST(req: Request) {
  * Angriffsfläche, und der Passkey-Zwang verhindert das Aussperren.
  */
 export async function DELETE(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
@@ -93,5 +97,7 @@ export async function DELETE(req: Request) {
       { status: 409 }
     );
   }
-  return NextResponse.json({ ok: true });
+  const res = NextResponse.json({ ok: true });
+  await revokeOtherSessions(userId, { res, rp: getRpConfig(req) });
+  return res;
 }

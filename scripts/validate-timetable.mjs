@@ -354,7 +354,7 @@ function report() {
 
 /** Bisherigen Stand aus der DB holen (gleiche sslmode-Logik wie import-festival.mjs) */
 async function loadFromDb(festivalId) {
-  const raw = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  const raw = process.env.DATABASE_URL;
   if (!raw) {
     warn('--festival gesetzt, aber DATABASE_URL fehlt – Vergleich mit dem Live-Stand übersprungen');
     return null;

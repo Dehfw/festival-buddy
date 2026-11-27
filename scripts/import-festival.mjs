@@ -35,7 +35,7 @@ const { festival, file } = parseArgs(process.argv.slice(2));
 if (!festival || !/^[a-z0-9-]{2,40}$/.test(festival)) {
   fail('Bitte --festival <id> angeben (z. B. --festival woa2026)');
 }
-const raw = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const raw = process.env.DATABASE_URL;
 if (!raw) fail('DATABASE_URL ist nicht gesetzt');
 
 const filePath = path.resolve(file ?? path.join('data', 'timetable.json'));

@@ -15,6 +15,25 @@ import { headers } from 'next/headers';
  *     auch wenn APP_URL beim Build vergessen wurde,
  *  3. localhost nur als letzter Fallback (Build ohne Request-Kontext).
  */
+/**
+ * Basis-URL für sicherheitskritische Links (Passwort-Reset-Mail). Hier
+ * darf NIE der Host-Header durchschlagen: Hinter einem Proxy, der
+ * X-Forwarded-Host ungeprüft weiterreicht, könnte ein Angreifer sonst
+ * Reset-Links auf seine eigene Domain umbiegen ("Host header poisoning").
+ * Reihenfolge: APP_URL, sonst die in Coolify eingetragene Domain
+ * (COOLIFY_URL, ggf. kommagetrennt – die erste zählt), außerhalb von
+ * Produktion der Request-Host (lokale Entwicklung). null = keine
+ * vertrauenswürdige URL bekannt -> Aufrufer schickt nichts raus.
+ */
+export async function resolveTrustedSiteUrl(): Promise<string | null> {
+  const configured = process.env.APP_URL?.replace(/\/$/, '');
+  if (configured) return configured;
+  const coolify = process.env.COOLIFY_URL?.split(',')[0]?.trim().replace(/\/$/, '');
+  if (coolify && /^https?:\/\//.test(coolify)) return coolify;
+  if (process.env.NODE_ENV !== 'production') return resolveSiteUrl();
+  return null;
+}
+
 export async function resolveSiteUrl(): Promise<string> {
   const configured = process.env.APP_URL?.replace(/\/$/, '');
   if (configured) return configured;

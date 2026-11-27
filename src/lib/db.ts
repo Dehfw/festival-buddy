@@ -30,7 +30,7 @@ import { bandSlug, FESTIVAL_TZ, isValidTime, toMinutes } from './types';
 /**
  * Datenschicht: Festivals (inkl. Timetable), Gruppen, Nutzer, Band-
  * Auswahlen, Positionen und Blueprints liegen in PostgreSQL
- * (DATABASE_URL, z. B. Neon via Vercel). Das Schema wird beim ersten
+ * (DATABASE_URL). Das Schema wird beim ersten
  * Zugriff automatisch angelegt bzw. migriert und die Defaults werden
  * geseedet (Wacken-Timetable aus data/timetable.json, Blueprints,
  * DEFEKT-Gruppe für Bestandsnutzer).
@@ -52,8 +52,7 @@ const LEGACY_FESTIVAL_ID = 'woa2026';
 /* Verbindung                                                          */
 /* ------------------------------------------------------------------ */
 
-// Pool global cachen, damit Hot-Reload/Lambda-Wiederverwendung keine
-// Verbindungen leakt
+// Pool global cachen, damit Hot-Reload keine Verbindungen leakt
 const globalForDb = globalThis as unknown as {
   __fbPool?: Pool;
   __fbSchemaReady?: Promise<void>;
@@ -61,7 +60,7 @@ const globalForDb = globalThis as unknown as {
 
 /**
  * `sslmode` aus der URL nehmen und explizit in eine pg-SSL-Config übersetzen.
- * pg v8 warnt sonst bei sslmode=require (Neon-Standard), weil sich die
+ * pg v8 warnt sonst bei sslmode=require, weil sich die
  * Semantik in pg v9 ändern wird – wir legen das Verhalten hier selbst fest:
  * require/verify-* => TLS mit Zertifikatsprüfung, no-verify => TLS ohne
  * Prüfung, disable => kein TLS.
@@ -94,11 +93,10 @@ function normalizeConnection(raw: string): {
 
 function getPool(): Pool {
   if (!globalForDb.__fbPool) {
-    // Vercel-Integrationen nennen die Variable je nach Version anders
-    const raw = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    const raw = process.env.DATABASE_URL;
     if (!raw) {
       throw new Error(
-        'DATABASE_URL ist nicht gesetzt. Beispiel: postgres://festival:festival@localhost:5432/festival (bei Neon/Vercel: ?sslmode=require anhängen)'
+        'DATABASE_URL ist nicht gesetzt. Beispiel: postgres://festival:festival@localhost:5432/festival (bei TLS-Pflicht: ?sslmode=require anhängen)'
       );
     }
     const { connectionString, ssl } = normalizeConnection(raw);
@@ -118,31 +116,31 @@ function getPool(): Pool {
  * `festivals` längst – fehlt aber z. B. `organizer_invites`, muss der
  * idempotente Schema-Block unten einmal laufen und sie nachziehen.
  * Beim Anlegen neuer Tabellen hier IMMER auf die neueste umstellen!
- * Die zuletzt hinzugekommene ist `band_interests`; fehlt sie, läuft der
+ * Die zuletzt hinzugekommene ist `session_epochs`; fehlt sie, läuft der
  * idempotente Block unten und zieht auch alles Ältere nach, was einer
  * Bestands-DB noch fehlt (z. B. push_reminders_sent oder
  * password_credentials aus den parallel entstandenen Features).
  */
 async function schemaAlreadyExists(client: PoolClient): Promise<boolean> {
   const res = await client.query<{ a: string | null }>(
-    "SELECT to_regclass('public.band_interests') AS a"
+    "SELECT to_regclass('public.session_epochs') AS a"
   );
   return res.rows[0]?.a != null;
 }
 
 async function createSchema(): Promise<void> {
-  // Advisory-Lock: parallele Cold-Starts (Serverless!) sollen das Schema
-  // nicht gleichzeitig anlegen. Lock ist session-gebunden -> ein Client.
+  // Advisory-Lock: parallel startende Container (Rolling Deploy, mehrere
+  // Replikas) sollen das Schema nicht gleichzeitig anlegen. Lock ist session-gebunden -> ein Client.
   const client = await getPool().connect();
   let locked = false;
   try {
     // Steady-State: existiert das Schema bereits, ist der Lock überflüssig.
-    // So blockiert kein warmer Cold-Start auf einem Lock, den eine
-    // eingefrorene Serverless-Verbindung evtl. noch hält.
+    // So blockiert kein Start auf einem Lock, den eine hängende
+    // Verbindung evtl. noch hält.
     if (await schemaAlreadyExists(client)) return;
 
-    // Lock-Wait hart begrenzen: ein geleakter Advisory-Lock (suspendierte
-    // Lambda-Verbindung) darf nicht jede Anfrage unendlich hängen lassen.
+    // Lock-Wait hart begrenzen: ein geleakter Advisory-Lock (hängende
+    // Verbindung eines alten Containers) darf nicht jede Anfrage unendlich hängen lassen.
     // Ohne Timeout wartet pg_advisory_lock() für immer -> /api/festivals & Co
     // laden nie. lock_timeout gilt auch für Advisory-Locks.
     await client.query("SET lock_timeout = '5s'");
@@ -220,6 +218,13 @@ async function createSchema(): Promise<void> {
       -- Gemerkte Bands ("die will ich sehen") aus der Lineup-Ansicht.
       -- Hängt am Band-Slug statt an einer Slot-ID: Die entstehen erst mit
       -- dem Timetable, die Merkung soll den Import aber überleben.
+      -- Session-Epoche je Nutzer: steckt als "sv" im Session-Token. Hochzählen
+      -- macht alle bisher ausgestellten Sessions des Nutzers ungültig (nach
+      -- Passwort-Reset/-Änderung, entferntem Passkey). Kein Eintrag = 0.
+      CREATE TABLE IF NOT EXISTS session_epochs (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        epoch   INT NOT NULL DEFAULT 0
+      );
       CREATE TABLE IF NOT EXISTS band_interests (
         user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         festival_id TEXT NOT NULL,
@@ -474,6 +479,31 @@ async function query<R extends object = Record<string, unknown>>(
 ) {
   await ensureSchema();
   return getPool().query<R>(text, params as never[]);
+}
+
+/**
+ * Aktuelle Session-Epoche des Nutzers; null, wenn es den Nutzer nicht
+ * (mehr) gibt – dann ist auch keine Session mehr gültig.
+ */
+export async function getSessionEpoch(userId: string): Promise<number | null> {
+  const res = await query<{ epoch: number }>(
+    `SELECT COALESCE(e.epoch, 0) AS epoch
+       FROM users u LEFT JOIN session_epochs e ON e.user_id = u.id
+      WHERE u.id = $1`,
+    [userId]
+  );
+  return res.rows[0] ? Number(res.rows[0].epoch) : null;
+}
+
+/** Session-Epoche hochzählen = alle bestehenden Sessions des Nutzers ungültig. */
+export async function bumpSessionEpoch(userId: string): Promise<number> {
+  const res = await query<{ epoch: number }>(
+    `INSERT INTO session_epochs (user_id, epoch) VALUES ($1, 1)
+     ON CONFLICT (user_id) DO UPDATE SET epoch = session_epochs.epoch + 1
+     RETURNING epoch`,
+    [userId]
+  );
+  return Number(res.rows[0].epoch);
 }
 
 /** Revisions-Zähler: erhöht sich bei jeder Mutation (billiges Client-Polling) */
@@ -964,13 +994,29 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
 
 /** Mitglied entfernen (Admin-Check macht die Route; Owner ist tabu). */
 export async function removeMember(groupId: string, targetUserId: string): Promise<boolean> {
-  const res = await query(
-    `DELETE FROM group_members
-      WHERE group_id = $1 AND user_id = $2 AND role <> 'owner'`,
-    [groupId, targetUserId]
-  );
-  await bumpRev();
-  return (res.rowCount ?? 0) > 0;
+  // Jedes Mitglied kennt den Einladungscode – ohne neuen Code könnte sich
+  // ein Rausgeworfener sofort per /api/groups/join wieder reinholen.
+  // Entfernen und Code-Rotation laufen deshalb atomar in einem Statement;
+  // rotiert wird nur, wenn wirklich jemand entfernt wurde.
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await query(
+        `WITH removed AS (
+           DELETE FROM group_members
+            WHERE group_id = $1 AND user_id = $2 AND role <> 'owner'
+            RETURNING 1
+         )
+         UPDATE groups SET invite_code = $3
+          WHERE id = $1 AND EXISTS (SELECT 1 FROM removed)`,
+        [groupId, targetUserId, generateInviteCode()]
+      );
+      await bumpRev();
+      return (res.rowCount ?? 0) > 0;
+    } catch (err) {
+      // UNIQUE-Kollision beim neuen Code (praktisch ausgeschlossen): neu würfeln.
+      if ((err as { code?: string }).code !== '23505' || attempt >= 2) throw err;
+    }
+  }
 }
 
 /**

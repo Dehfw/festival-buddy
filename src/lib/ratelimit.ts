@@ -1,7 +1,7 @@
 /**
  * Kleine In-Memory-Brute-Force-Bremse für Code-Rate-Versuche
- * (join/preview). Auf Serverless ist das best effort – jede Instanz
- * zählt für sich –, aber bei 32^8 möglichen Einladungscodes und ein
+ * (join/preview). Best effort – jeder Server-Prozess zählt für sich und
+ * ein Neustart setzt zurück –, aber bei 32^8 möglichen Einladungscodes und ein
  * paar hundert Gruppen ist Durchprobieren ohnehin aussichtslos; die
  * Bremse nimmt nur die Spitze raus.
  */
@@ -24,7 +24,11 @@ export function rateLimit(key: string, max: number, windowMs: number): boolean {
   return true;
 }
 
-/** Client-IP hinter Proxy/Vercel (erster Eintrag in x-forwarded-for) */
+/**
+ * Client-IP hinter dem Reverse-Proxy (Coolify/Traefik): erster Eintrag in
+ * x-forwarded-for. Traefik verwirft von Clients mitgeschickte
+ * X-Forwarded-For-Header, solange forwardedHeaders.insecure nicht aktiv ist.
+ */
 export function clientIp(req: Request): string {
   const fwd = req.headers.get('x-forwarded-for');
   if (fwd) return fwd.split(',')[0].trim();

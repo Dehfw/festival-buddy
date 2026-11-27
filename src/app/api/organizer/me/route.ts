@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
  * zeigt dann nur das Code-Einlöse-Formular.
  */
 export async function GET(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }

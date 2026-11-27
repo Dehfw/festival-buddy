@@ -11,8 +11,8 @@ import { PUSH_BODY_MAX, PUSH_TITLE_MAX, sendPushToUsers } from '@/lib/push';
 import { rateLimit } from '@/lib/ratelimit';
 
 export const dynamic = 'force-dynamic';
-// Push-Fan-out an alle Abos des Festivals muss vor der Response fertig sein.
-export const maxDuration = 60;
+// Der Push-Fan-out an alle Abos des Festivals wird vor der Response
+// ge-awaitet (die Antwort meldet { sent, gone, failed }).
 
 function authError(status: 401 | 403) {
   return NextResponse.json(

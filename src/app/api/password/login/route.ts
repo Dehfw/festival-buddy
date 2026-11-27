@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
 import {
   getRpConfig,
-  sealToken,
-  SESSION_COOKIE,
-  SESSION_MAX_AGE_S,
-  setAuthCookie,
+  setSessionCookie,
 } from '@/lib/auth';
 import { getUserByEmail } from '@/lib/db';
 import {
@@ -28,7 +25,13 @@ export async function POST(req: Request) {
   if (!email || password.length === 0 || password.length > PASSWORD_MAX_LENGTH) {
     return NextResponse.json({ error: WRONG }, { status: 401 });
   }
-  if (!rateLimit(`pw-login:${clientIp(req)}:${email}`, 10, 15 * 60_000)) {
+  const ip = clientIp(req);
+  // Pro IP+Adresse (gezieltes Raten) UND pro IP gesamt (Password-Spraying
+  // über viele Adressen).
+  if (
+    !rateLimit(`pw-login:${ip}:${email}`, 10, 15 * 60_000) ||
+    !rateLimit(`pw-login-ip:${ip}`, 30, 15 * 60_000)
+  ) {
     return NextResponse.json(
       { error: 'Zu viele Versuche – bitte kurz warten' },
       { status: 429 }
@@ -48,12 +51,6 @@ export async function POST(req: Request) {
 
   const rp = getRpConfig(req);
   const res = NextResponse.json({ user: stored.user });
-  setAuthCookie(
-    res,
-    rp,
-    SESSION_COOKIE,
-    sealToken({ uid: stored.user.id }, SESSION_MAX_AGE_S),
-    { maxAge: SESSION_MAX_AGE_S }
-  );
+  await setSessionCookie(res, rp, stored.user.id);
   return res;
 }

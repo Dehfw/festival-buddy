@@ -1,5 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import type { NextResponse } from 'next/server';
+import { bumpSessionEpoch, getSessionEpoch } from './db';
 
 /**
  * Leichtgewichtige Auth-Schicht für den Passkey-Login:
@@ -7,7 +8,7 @@ import type { NextResponse } from 'next/server';
  *    externer IdP, keine Session-Tabelle.
  *  - Der Signatur-Schlüssel kommt aus AUTH_SECRET; ohne die Variable wird
  *    er deterministisch aus der DATABASE_URL abgeleitet, damit alle
- *    Serverless-Instanzen denselben Schlüssel benutzen.
+ *    Server-Prozesse denselben Schlüssel benutzen.
  */
 
 export const SESSION_COOKIE = 'fb_session';
@@ -23,11 +24,20 @@ export const SESSION_MAX_AGE_S = 180 * 24 * 60 * 60;
 /** Challenge muss innerhalb weniger Minuten beantwortet werden */
 export const CHALLENGE_MAX_AGE_S = 5 * 60;
 
+let warnedMissingSecret = false;
+
 function getSecret(): Buffer {
+  if (!process.env.AUTH_SECRET && process.env.NODE_ENV === 'production' && !warnedMissingSecret) {
+    // Ohne eigenes AUTH_SECRET kann jeder mit Kenntnis der DATABASE_URL
+    // (Dashboards, .env-Dateien, Betreiber-Skripte) Sessions fälschen.
+    warnedMissingSecret = true;
+    console.warn(
+      'AUTH_SECRET ist nicht gesetzt – Tokens werden mit einem aus der DATABASE_URL abgeleiteten Schlüssel signiert. Bitte AUTH_SECRET (>= 32 zufällige Zeichen) setzen.'
+    );
+  }
   const seed =
     process.env.AUTH_SECRET ||
     process.env.DATABASE_URL ||
-    process.env.POSTGRES_URL ||
     'festival-buddy-dev-secret';
   return createHash('sha256').update(`fb-auth:${seed}`).digest();
 }
@@ -82,10 +92,49 @@ export function getCookie(req: Request, name: string): string | null {
   return null;
 }
 
-/** Nutzer-ID aus dem Session-Cookie; null wenn nicht (mehr) eingeloggt */
-export function readSessionUserId(req: Request): string | null {
-  const data = openToken<{ uid: string }>(getCookie(req, SESSION_COOKIE));
-  return typeof data?.uid === 'string' ? data.uid : null;
+/**
+ * Nutzer-ID aus dem Session-Cookie; null wenn nicht (mehr) eingeloggt.
+ * Neben Signatur und Ablauf muss die Session-Epoche ("sv") zur DB passen –
+ * so lassen sich ausgestellte Sessions widerrufen (revokeOtherSessions).
+ * Alte Tokens ohne sv zählen als Epoche 0 und bleiben gültig, bis der
+ * Nutzer zum ersten Mal widerruft.
+ */
+export async function readSessionUserId(req: Request): Promise<string | null> {
+  const data = openToken<{ uid: string; sv?: number }>(getCookie(req, SESSION_COOKIE));
+  if (typeof data?.uid !== 'string') return null;
+  const epoch = await getSessionEpoch(data.uid);
+  if (epoch === null || (data.sv ?? 0) !== epoch) return null;
+  return data.uid;
+}
+
+/** Frische Session für userId ausstellen (aktuelle Epoche) und als Cookie setzen. */
+export async function setSessionCookie(
+  res: NextResponse,
+  rp: RpConfig,
+  userId: string
+): Promise<void> {
+  const sv = (await getSessionEpoch(userId)) ?? 0;
+  setAuthCookie(res, rp, SESSION_COOKIE, sealToken({ uid: userId, sv }, SESSION_MAX_AGE_S), {
+    maxAge: SESSION_MAX_AGE_S,
+  });
+}
+
+/**
+ * Alle bisherigen Sessions des Nutzers ungültig machen und – falls res
+ * übergeben – dem aktuellen Gerät gleich eine neue ausstellen. Für
+ * sicherheitsrelevante Kontoänderungen (Passwort-Reset/-Änderung,
+ * Login-Weg entfernt): ein Angreifer mit geklautem Cookie fliegt raus.
+ */
+export async function revokeOtherSessions(
+  userId: string,
+  keep?: { res: NextResponse; rp: RpConfig }
+): Promise<void> {
+  const sv = await bumpSessionEpoch(userId);
+  if (keep) {
+    setAuthCookie(keep.res, keep.rp, SESSION_COOKIE, sealToken({ uid: userId, sv }, SESSION_MAX_AGE_S), {
+      maxAge: SESSION_MAX_AGE_S,
+    });
+  }
 }
 
 export interface RpConfig {

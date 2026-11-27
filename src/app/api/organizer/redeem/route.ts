@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
  * dazu eine strengere Bremse als beim Gruppenbeitritt.
  */
 export async function POST(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId || !(await getUserById(userId))) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }

@@ -4,11 +4,14 @@ import { execSync } from 'node:child_process';
  * Version für den Service Worker: pro Deploy eindeutig, damit der Browser
  * einen neuen SW erkennt und die App ein Update anbieten kann.
  *  1. SW_VERSION aus der Umgebung (falls das Deployment eine setzt),
- *  2. sonst der aktuelle Git-Kurz-SHA (stabil pro Commit),
- *  3. Fallback: grober Zeitstempel.
+ *  2. SOURCE_COMMIT (setzt Coolify beim Build, wenn "Include Source Commit
+ *     in Build" aktiv ist – im Docker-Build fehlt oft das .git-Verzeichnis),
+ *  3. sonst der aktuelle Git-Kurz-SHA (stabil pro Commit),
+ *  4. Fallback: grober Zeitstempel.
  */
 function resolveSwVersion() {
   if (process.env.SW_VERSION) return process.env.SW_VERSION;
+  if (process.env.SOURCE_COMMIT) return process.env.SOURCE_COMMIT.slice(0, 12);
   try {
     return execSync('git rev-parse --short HEAD', {
       stdio: ['ignore', 'pipe', 'ignore'],
@@ -23,9 +26,6 @@ function resolveSwVersion() {
 const SW_VERSION = resolveSwVersion();
 
 const isDev = process.env.NODE_ENV === 'development';
-// Vercel-Preview-Deployments injizieren das Live-Feedback-Toolbar-Script
-// von vercel.live; nur dort werden die zugehörigen Quellen freigeschaltet.
-const isVercelPreview = process.env.VERCEL_ENV === 'preview';
 
 /**
  * Content-Security-Policy (Issue #30).
@@ -62,30 +62,20 @@ const contentSecurityPolicy = [
   // Primärer Framing-Schutz; X-Frame-Options: DENY dient als Fallback.
   "frame-ancestors 'none'",
   "form-action 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}${
-    isVercelPreview ? ' https://vercel.live' : ''
-  }`,
-  `style-src 'self' 'unsafe-inline'${
-    isVercelPreview ? ' https://vercel.live' : ''
-  }`,
-  `img-src 'self' data: blob:${
-    isVercelPreview ? ' https://vercel.live https://vercel.com' : ''
-  }`,
-  `font-src 'self'${
-    isVercelPreview ? ' https://vercel.live https://assets.vercel.com' : ''
-  }`,
-  `connect-src 'self'${
-    isVercelPreview ? ' https://vercel.live wss://*.pusher.com' : ''
-  }`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  "connect-src 'self'",
   "worker-src 'self'",
   "manifest-src 'self'",
-  ...(isVercelPreview ? ['frame-src https://vercel.live'] : []),
 ].join('; ');
 
 /**
  * Globale Sicherheitsheader für alle Antworten (HTML, API, Assets, Fehler).
- * HSTS setzt die Plattform (Vercel) bereits selbst und wird hier bewusst
- * nicht angefasst (siehe Issue #30).
+ * HSTS: Der Coolify-Proxy (Traefik) setzt den Header nicht von sich aus,
+ * deshalb kommt er in Produktion von der App. Bewusst ohne
+ * includeSubDomains/preload – andere Subdomains bleiben unberührt.
  */
 const securityHeaders = [
   { key: 'Content-Security-Policy', value: contentSecurityPolicy },
@@ -102,6 +92,7 @@ const securityHeaders = [
       'camera=(), microphone=(), geolocation=(), payment=(), usb=(), ' +
       'publickey-credentials-create=(self), publickey-credentials-get=(self)',
   },
+  ...(isDev ? [] : [{ key: 'Strict-Transport-Security', value: 'max-age=31536000' }]),
 ];
 
 /** @type {import('next').NextConfig} */

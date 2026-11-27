@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readSessionUserId } from '@/lib/auth';
+import { getRpConfig, readSessionUserId, revokeOtherSessions } from '@/lib/auth';
 import { deleteWebauthnCredentialGuarded } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +13,7 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }
@@ -28,5 +28,9 @@ export async function DELETE(
       { status: 409 }
     );
   }
-  return NextResponse.json({ ok: true });
+  // Ein entfernter Passkey (z. B. verlorenes Handy) soll keine noch offene
+  // Session auf jenem Gerät übrig lassen.
+  const res = NextResponse.json({ ok: true });
+  await revokeOtherSessions(userId, { res, rp: getRpConfig(req) });
+  return res;
 }

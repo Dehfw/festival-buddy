@@ -69,8 +69,8 @@ Erinnerungen kommt `CRON_SECRET` dazu (siehe unten).
   (`POST /api/organizer/announcement`, Guard `canManageFestival`,
   Rate-Limit 5 pro 10 Min.). Zielgruppe: alle Mitglieder aller Gruppen
   des Festivals; als Absender erscheint der **Festivalname**, nicht das
-  Konto. Der Versand wird vor der Antwort komplett ge-awaitet
-  (Serverless!), die Antwort meldet `{ sent, gone, failed }`.
+  Konto. Der Versand wird vor der Antwort komplett ge-awaitet, die
+  Antwort meldet `{ sent, gone, failed }`.
 - **Betreiber**: CLI wie bei den Veranstalter-Codes –
 
   ```bash
@@ -97,7 +97,7 @@ neuem und altem Stand im Text. Details:
   gar nicht konfiguriert (keine VAPID-Keys), entfällt der Dialog
   ebenfalls – er würde sonst etwas versprechen, das das Deployment nie
   sendet (`pushConfigured` aus `GET /api/organizer/state`). Der
-  Versand wird vor der Antwort komplett ge-awaitet (Serverless!), das
+  Versand wird vor der Antwort komplett ge-awaitet, das
   Ergebnis erscheint als Bestätigung im Editor – **ehrlich gezählt**:
   „Push ist raus an X von Y Eingetragenen“, wobei als informiert nur
   zählt, wen mindestens ein Gerät wirklich erreicht hat
@@ -140,10 +140,15 @@ nicht – der bleibt unbehelligt. Details:
 
 ## Band-Erinnerungen
 
-`GET /api/cron/reminders` (Bearer `CRON_SECRET`) läuft idealerweise alle
-5 Minuten – `vercel.json` bringt den Cron mit. **Achtung:** Der
-Vercel-Hobby-Plan erlaubt nur tägliche Crons; dann einen externen Dienst
-(cron-job.org, GitHub Actions) auf die Route zeigen lassen.
+Der Server stößt den Sweep selbst **jede Minute** an
+(`src/instrumentation.ts` → `src/lib/reminderScheduler.ts`), sobald die
+VAPID-Keys gesetzt sind – kein externer Cron nötig. Mit
+`REMINDER_SCHEDULER=off` lässt sich der Takt abschalten;
+`GET /api/cron/reminders` (Bearer `CRON_SECRET`) löst denselben Sweep
+manuell oder per externem Cron (z. B. Coolify-Scheduled-Task) aus.
+Mehrere Läufe gleichzeitig (Rolling Deploy, mehrere Container, Takt plus
+externer Cron) sind unschädlich: Jede Erinnerung wird über
+`push_reminders_sent` genau einmal geclaimt.
 
 Ein Lauf: Für jedes Festival werden Slots gesucht, die in den nächsten
 45 Minuten starten (Zeitzone `Europe/Berlin`; Stunden < 8 zählen via

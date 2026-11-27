@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
  * im eigenen fb_wa_add-Cookie an die Session-Identität gebunden.
  */
 export async function POST(req: Request) {
-  const userId = readSessionUserId(req);
+  const userId = await readSessionUserId(req);
   if (!userId) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
   }

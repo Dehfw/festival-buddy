@@ -8,7 +8,7 @@ import { createHash, randomBytes, scrypt, timingSafeEqual } from 'crypto';
  * Erhöhung alte Hashes nicht bricht (verifyPassword liest N/r/p mit).
  */
 
-const SCRYPT_N = 16384; // 2^14 – ~16 MB RAM, schnell genug für Serverless
+const SCRYPT_N = 16384; // 2^14 – ~16 MB RAM, ~50 ms pro Hash
 const SCRYPT_R = 8;
 const SCRYPT_P = 1;
 const KEY_LENGTH = 32;

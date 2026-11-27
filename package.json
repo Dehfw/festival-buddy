@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "description": "Festival-Buddy für das Wacken Open Air 2026 – wer geht zu welcher Band?",
+  "engines": {
+    "node": "26.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "scrape": "node scripts/scrape-wacken.mjs",
     "import": "node scripts/import-lineup.mjs",
     "import:db": "node scripts/import-festival.mjs",
@@ -19,22 +22,22 @@
     "push:broadcast": "node scripts/push-broadcast.mjs"
   },
   "dependencies": {
-    "@simplewebauthn/browser": "^13.3.0",
-    "@simplewebauthn/server": "^13.3.2",
-    "next": "^15.3.4",
-    "pg": "^8.22.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "web-push": "^3.6.7"
+    "@simplewebauthn/browser": "^14.0.0",
+    "@simplewebauthn/server": "^14.1.0",
+    "next": "^16.4.6",
+    "pg": "^8.23.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "web-push": "^4.0.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.10",
-    "@types/node": "^22.15.0",
-    "@types/pg": "^8.20.0",
-    "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0",
+    "@tailwindcss/postcss": "^4.3.5",
+    "@types/node": "^26.6.11",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.3.3",
+    "@types/react-dom": "^19.3.0",
     "@types/web-push": "^3.6.4",
-    "tailwindcss": "^4.1.10",
-    "typescript": "^5.8.0"
+    "tailwindcss": "^4.3.5",
+    "typescript": "^6.0.3"
   }
 }

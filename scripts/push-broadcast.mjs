@@ -14,7 +14,25 @@
  * Mitteilung, nur ohne Web-UI.
  */
 import pg from 'pg';
-import webpush from 'web-push';
+import * as webpush from 'web-push';
+
+const PUSH_HOSTS = new Set([
+  'fcm.googleapis.com',
+  'android.googleapis.com',
+  'updates.push.services.mozilla.com',
+]);
+const PUSH_HOST_SUFFIXES = ['.push.apple.com', '.notify.windows.com'];
+function isKnownPushEndpoint(endpoint) {
+  let url;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== 'https:' || url.port !== '' || url.username || url.password) return false;
+  const host = url.hostname.toLowerCase();
+  return PUSH_HOSTS.has(host) || PUSH_HOST_SUFFIXES.some((s) => host.endsWith(s));
+}
 import { randomUUID } from 'node:crypto';
 
 function fail(msg) {
@@ -45,7 +63,7 @@ if (!title || !body || rest.length !== 2) fail(USAGE);
 if (title.length > TITLE_MAX) fail(`Titel länger als ${TITLE_MAX} Zeichen`);
 if (body.length > BODY_MAX) fail(`Text länger als ${BODY_MAX} Zeichen`);
 
-const raw = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const raw = process.env.DATABASE_URL;
 if (!raw) fail('DATABASE_URL ist nicht gesetzt');
 const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT } = process.env;
 if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !VAPID_SUBJECT) {
@@ -126,6 +144,12 @@ try {
   const workers = Array.from({ length: Math.min(10, rows.length) }, async () => {
     while (next < rows.length) {
       const sub = rows[next++];
+      // Gleiche Host-Allowlist wie isKnownPushEndpoint() in src/lib/push.ts:
+      // keine POSTs an beliebige (evtl. interne) Hosts aus der DB.
+      if (!isKnownPushEndpoint(sub.endpoint)) {
+        failed++;
+        continue;
+      }
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
