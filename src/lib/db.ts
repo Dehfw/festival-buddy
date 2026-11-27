@@ -30,7 +30,7 @@ import { bandSlug, FESTIVAL_TZ, isValidTime, toMinutes } from './types';
 /**
  * Datenschicht: Festivals (inkl. Timetable), Gruppen, Nutzer, Band-
  * Auswahlen, Positionen und Blueprints liegen in PostgreSQL
- * (DATABASE_URL, z. B. Neon via Vercel). Das Schema wird beim ersten
+ * (DATABASE_URL). Das Schema wird beim ersten
  * Zugriff automatisch angelegt bzw. migriert und die Defaults werden
  * geseedet (Wacken-Timetable aus data/timetable.json, Blueprints,
  * DEFEKT-Gruppe für Bestandsnutzer).
@@ -52,8 +52,7 @@ const LEGACY_FESTIVAL_ID = 'woa2026';
 /* Verbindung                                                          */
 /* ------------------------------------------------------------------ */
 
-// Pool global cachen, damit Hot-Reload/Lambda-Wiederverwendung keine
-// Verbindungen leakt
+// Pool global cachen, damit Hot-Reload keine Verbindungen leakt
 const globalForDb = globalThis as unknown as {
   __fbPool?: Pool;
   __fbSchemaReady?: Promise<void>;
@@ -61,7 +60,7 @@ const globalForDb = globalThis as unknown as {
 
 /**
  * `sslmode` aus der URL nehmen und explizit in eine pg-SSL-Config übersetzen.
- * pg v8 warnt sonst bei sslmode=require (Neon-Standard), weil sich die
+ * pg v8 warnt sonst bei sslmode=require, weil sich die
  * Semantik in pg v9 ändern wird – wir legen das Verhalten hier selbst fest:
  * require/verify-* => TLS mit Zertifikatsprüfung, no-verify => TLS ohne
  * Prüfung, disable => kein TLS.
@@ -94,11 +93,10 @@ function normalizeConnection(raw: string): {
 
 function getPool(): Pool {
   if (!globalForDb.__fbPool) {
-    // Vercel-Integrationen nennen die Variable je nach Version anders
-    const raw = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    const raw = process.env.DATABASE_URL;
     if (!raw) {
       throw new Error(
-        'DATABASE_URL ist nicht gesetzt. Beispiel: postgres://festival:festival@localhost:5432/festival (bei Neon/Vercel: ?sslmode=require anhängen)'
+        'DATABASE_URL ist nicht gesetzt. Beispiel: postgres://festival:festival@localhost:5432/festival (bei TLS-Pflicht: ?sslmode=require anhängen)'
       );
     }
     const { connectionString, ssl } = normalizeConnection(raw);
@@ -131,18 +129,18 @@ async function schemaAlreadyExists(client: PoolClient): Promise<boolean> {
 }
 
 async function createSchema(): Promise<void> {
-  // Advisory-Lock: parallele Cold-Starts (Serverless!) sollen das Schema
-  // nicht gleichzeitig anlegen. Lock ist session-gebunden -> ein Client.
+  // Advisory-Lock: parallel startende Container (Rolling Deploy, mehrere
+  // Replikas) sollen das Schema nicht gleichzeitig anlegen. Lock ist session-gebunden -> ein Client.
   const client = await getPool().connect();
   let locked = false;
   try {
     // Steady-State: existiert das Schema bereits, ist der Lock überflüssig.
-    // So blockiert kein warmer Cold-Start auf einem Lock, den eine
-    // eingefrorene Serverless-Verbindung evtl. noch hält.
+    // So blockiert kein Start auf einem Lock, den eine hängende
+    // Verbindung evtl. noch hält.
     if (await schemaAlreadyExists(client)) return;
 
-    // Lock-Wait hart begrenzen: ein geleakter Advisory-Lock (suspendierte
-    // Lambda-Verbindung) darf nicht jede Anfrage unendlich hängen lassen.
+    // Lock-Wait hart begrenzen: ein geleakter Advisory-Lock (hängende
+    // Verbindung eines alten Containers) darf nicht jede Anfrage unendlich hängen lassen.
     // Ohne Timeout wartet pg_advisory_lock() für immer -> /api/festivals & Co
     // laden nie. lock_timeout gilt auch für Advisory-Locks.
     await client.query("SET lock_timeout = '5s'");

@@ -41,14 +41,21 @@ sind HMAC-signierte, ablaufende Tokens in `httpOnly`-Cookies
 
 | Cookie | Zweck | Laufzeit |
 | --- | --- | --- |
-| `fb_session` | Nutzer-Session (`{ uid }`) | 180 Tage (die ganze Festival-Saison) |
+| `fb_session` | Nutzer-Session (`{ uid, sv }`) | 180 Tage (die ganze Festival-Saison) |
 | `fb_wa_reg` / `fb_wa_auth` | WebAuthn-Challenge zwischen options- und verify-Request | 5 Minuten |
 
 Der Signatur-Schlüssel kommt aus `AUTH_SECRET`; fehlt die Variable,
 wird er deterministisch aus der `DATABASE_URL` abgeleitet, damit alle
-Serverless-Instanzen denselben Schlüssel benutzen. Jede API-Route
-liest die Nutzer-ID über `readSessionUserId(req)` – ungültige oder
+Server-Prozesse denselben Schlüssel benutzen. Jede API-Route
+liest die Nutzer-ID über `await readSessionUserId(req)` – ungültige oder
 abgelaufene Tokens ergeben schlicht `null` → 401.
+
+Sessions sind widerrufbar: `sv` im Token muss zur Session-Epoche des
+Nutzers in der Tabelle `session_epochs` passen (kein Eintrag = 0).
+Passwort-Reset, Passwortänderung und das Entfernen eines Passkeys oder
+des Passwort-Logins zählen die Epoche hoch (`revokeOtherSessions`) – alle
+anderen Geräte sind dann abgemeldet, das auslösende bekommt sofort eine
+neue Session.
 
 Die Relying-Party-Konfiguration (`WEBAUTHN_RP_ID`/`WEBAUTHN_ORIGIN`,
 sonst aus dem Request abgeleitet) kann nicht per gefälschtem Header
@@ -84,7 +91,7 @@ Passkey-Support, fremde Geräte oder als Fallback bei Geräteverlust.
   effektiv den Zugriff auf sein Konto (Reset-Mail geht an den echten
   Inhaber) – für ein Crew-Tool ist das der akzeptierte Kompromiss.
 - **Rate-Limits:** alle Passwort-Routen bremsen per In-Memory-Limit
-  (`src/lib/ratelimit.ts`, pro Serverless-Instanz, best effort); die
+  (`src/lib/ratelimit.ts`, pro Server-Prozess, best effort); die
   eigentliche Brute-Force-Härte kommt aus den scrypt-Kosten.
 - **UI:** Umschalter in beiden Login-Gates (`PasswordAuth`-Komponente),
   Reset-Seite `/passwort-reset`, und unter *Gruppe → Konto → „Login &

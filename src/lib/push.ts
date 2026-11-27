@@ -133,8 +133,9 @@ async function sendToSubscription(
 }
 
 /**
- * Payload an alle Abos der genannten Nutzer senden. Muss vor der Response
- * fertig ge-awaitet sein – auf Vercel läuft nach ihr nichts mehr.
+ * Payload an alle Abos der genannten Nutzer senden und das Ergebnis
+ * (sent/gone/failed) zurückgeben – Aufrufer awaiten es vor der Response
+ * oder hängen es per after() hinter sie.
  */
 export async function sendPushToUsers(
   userIds: string[],

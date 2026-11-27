@@ -63,7 +63,7 @@ if (!title || !body || rest.length !== 2) fail(USAGE);
 if (title.length > TITLE_MAX) fail(`Titel länger als ${TITLE_MAX} Zeichen`);
 if (body.length > BODY_MAX) fail(`Text länger als ${BODY_MAX} Zeichen`);
 
-const raw = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const raw = process.env.DATABASE_URL;
 if (!raw) fail('DATABASE_URL ist nicht gesetzt');
 const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT } = process.env;
 if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !VAPID_SUBJECT) {

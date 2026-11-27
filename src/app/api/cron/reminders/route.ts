@@ -3,15 +3,14 @@ import { NextResponse } from 'next/server';
 import { runReminderSweep } from '@/lib/reminders';
 
 export const dynamic = 'force-dynamic';
-// Der Sweep muss vor der Response fertig sein (Serverless).
-export const maxDuration = 60;
 
 /**
- * Zeitgesteuerter Einstieg für die Band-Erinnerungen, gedacht für einen
- * Aufruf alle ~5 Minuten. Vercel Cron (vercel.json) schickt CRON_SECRET
- * automatisch als Bearer-Header mit; ein externer Trigger (cron-job.org,
- * GitHub Actions – nötig auf dem Vercel-Hobby-Plan, der nur tägliche Crons
- * erlaubt) setzt denselben Header. Ohne CRON_SECRET bleibt die Route zu.
+ * Manueller/externer Einstieg für die Band-Erinnerungen. Im Normalbetrieb
+ * überflüssig: Der Server stößt den Sweep selbst jede Minute an
+ * (src/instrumentation.ts). Nützlich zum Testen oder wenn der eingebaute
+ * Takt per REMINDER_SCHEDULER=off abgeschaltet und z. B. durch einen
+ * Coolify-Scheduled-Task ersetzt ist. Aufruf mit
+ * `Authorization: Bearer <CRON_SECRET>`; ohne CRON_SECRET bleibt die Route zu.
  */
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;

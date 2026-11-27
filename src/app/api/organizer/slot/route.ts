@@ -6,8 +6,7 @@ import { formatTime, toMinutes, type Slot, type Timetable } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 // Bei Zeit-/Tag-/Bühnen-Änderungen wird der Push-Fan-out an die
-// eingetragenen Besucher vor der Antwort komplett ge-awaitet (Serverless!).
-export const maxDuration = 60;
+// eingetragenen Besucher vor der Antwort komplett ge-awaitet.
 
 function authError(status: 401 | 403) {
   return NextResponse.json(

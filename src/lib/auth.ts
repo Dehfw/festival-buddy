@@ -8,7 +8,7 @@ import { bumpSessionEpoch, getSessionEpoch } from './db';
  *    externer IdP, keine Session-Tabelle.
  *  - Der Signatur-Schlüssel kommt aus AUTH_SECRET; ohne die Variable wird
  *    er deterministisch aus der DATABASE_URL abgeleitet, damit alle
- *    Serverless-Instanzen denselben Schlüssel benutzen.
+ *    Server-Prozesse denselben Schlüssel benutzen.
  */
 
 export const SESSION_COOKIE = 'fb_session';
@@ -38,7 +38,6 @@ function getSecret(): Buffer {
   const seed =
     process.env.AUTH_SECRET ||
     process.env.DATABASE_URL ||
-    process.env.POSTGRES_URL ||
     'festival-buddy-dev-secret';
   return createHash('sha256').update(`fb-auth:${seed}`).digest();
 }

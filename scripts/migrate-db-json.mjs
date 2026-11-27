@@ -10,7 +10,7 @@ import pg from 'pg';
 
 const DB_JSON = path.join(process.cwd(), 'data', 'db.json');
 
-const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   console.error('DATABASE_URL ist nicht gesetzt.');
   process.exit(1);

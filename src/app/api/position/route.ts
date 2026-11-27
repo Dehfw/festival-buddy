@@ -17,9 +17,8 @@ import {
 } from '@/lib/push';
 
 export const dynamic = 'force-dynamic';
-// Der Push-Fan-out läuft NACH der Antwort (next/server after) – maxDuration
-// gibt ihm den nötigen Spielraum, die Antwort selbst bleibt sofort.
-export const maxDuration = 60;
+// Der Push-Fan-out läuft NACH der Antwort (next/server after) – die
+// Antwort selbst bleibt sofort.
 
 /**
  * Karenzzeit für die Standort-Pushes: Erst wenn der eigene Marker so lange

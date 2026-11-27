@@ -29,7 +29,7 @@ const USAGE =
 const [command, ...args] = process.argv.slice(2);
 if (!['generate', 'list', 'revoke', 'remove'].includes(command ?? '')) fail(USAGE);
 
-const raw = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const raw = process.env.DATABASE_URL;
 if (!raw) fail('DATABASE_URL ist nicht gesetzt');
 
 // Crockford-Base32 ohne Verwechsler + Normalisierung – identisch zur App
