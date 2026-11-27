@@ -87,6 +87,9 @@ pro Zeile.
   Pool.
 - Schreibweise: normale Groß-/Kleinschreibung statt Versalien, sonst so
   wie die Quelle. Was `notes` in der Watchlist dazu sagt, geht vor.
+- Liefert die Quelle die Spotify-ID mit (der Wacken-Export tut das),
+  schreib sie dazu: `Avatar | spotify=4jpaXieuls7LVzG1uma5Rs`. Das ist
+  verlässlicher als die Namenssuche in Schritt 4.
 - Prüf, dass es wirklich die richtige Ausgabe ist. Viele Seiten zeigen
   nach dem Festival noch monatelang das Vorjahr.
 
@@ -103,10 +106,15 @@ die `dataVersion`. Lies den Bericht, bevor du weitermachst:
   Schau die Liste an: Sind das plausibel Bands dieses Festivals?
 - **`=` andere Schreibweise** – bekannt, nichts zu tun. Die Datei behält
   ihre Schreibweise; am Slug hängen die gemerkten Bands der Nutzer.
-- **`?` verdächtig ähnlich** – wurde nicht übernommen. Meist ein
-  Tippfehler oder eine Umbenennung auf der Website. Nur wenn die Quelle
-  beide Bands nebeneinander führt, es also wirklich zwei sind, einzeln
-  nachtragen: `npm run lineup:add -- lineups/<id>.txt --force "Name"`.
+- **`?` verdächtig ähnlich** – wurde nicht übernommen. Der Name liegt
+  einen Tippfehler neben einer bekannten Band oder beginnt wie sie, und
+  die bekannte Band selbst steht nicht mehr in der Quelle: das Muster
+  einer Korrektur oder Umbenennung auf der Website („John 5" → „John 5
+  And The Creatures"), nicht das einer neuen Band. Im Normalfall also
+  nichts tun und im Bericht nennen – eine Umbenennung ändert den Slug
+  und ist eine Entscheidung für einen Menschen. Nur wenn du sicher bist,
+  dass es wirklich eine andere Band ist, einzeln nachtragen:
+  `npm run lineup:add -- lineups/<id>.txt --force "Name"`.
 - **`−` fehlt in der Quelle** – nie selbst löschen. Eine Absage ist eine
   Entscheidung für einen Menschen; nenn die Bands im Bericht.
 

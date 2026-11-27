@@ -17,9 +17,20 @@
  *
  *   - gleicher Slug                      → bekannt, nichts zu tun
  *   - gleiche Band, andere Schreibweise  → bekannt, die Datei bleibt wie sie ist
- *   - verdächtig ähnlich (Tippfehler?)   → NICHT übernommen, im Bericht genannt;
+ *   - verdächtig ähnlich                 → NICHT übernommen, im Bericht genannt;
  *                                          nach Prüfung mit --force übernehmen
  *   - sonst                              → neu, wird angehängt
+ *
+ * "Verdächtig ähnlich" heißt: Der Name liegt einen Tippfehler neben einer
+ * bekannten Band ("Fleshgod Apocalpyse") oder beginnt wie sie bzw. sie wie
+ * er ("John 5" → "John 5 And The Creatures") – UND die bekannte Band selbst
+ * steht nicht mehr in der übergebenen Liste. Das ist das Muster einer
+ * Umbenennung oder Korrektur auf der Website, nicht das einer neuen Band.
+ * Führt die Quelle beide nebeneinander ("Death" und "Death Angel"), sind es
+ * zwei Bands, und die neue wird ganz normal übernommen.
+ *
+ * Eine Zeile der Liste darf die Spotify-ID mitbringen, wenn die Quelle sie
+ * liefert: `Avatar | spotify=4jpaXieuls7LVzG1uma5Rs`.
  *
  * Entfernt wird nie etwas. `--complete` (die Liste ist das vollständige
  * Lineup der Quelle) meldet zusätzlich, welche Bands der Datei in der
@@ -98,6 +109,30 @@ function isSimilar(a, b) {
   return levenshtein(a, b) <= (len >= 10 ? 2 : 1);
 }
 
+/** Wörter eines Namens in Vergleichsform – für die Umbenennungs-Erkennung */
+function words(name) {
+  return String(name)
+    .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter((w, i) => w && !(i === 0 && w === 'the'));
+}
+
+/** Beginnt der eine Name wortweise mit dem anderen? ("John 5" / "John 5 And …") */
+function isExtension(a, b) {
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  if (short.length === 0 || short.length === long.length) return false;
+  if (short.join('').length < 4) return false;
+  return short.every((w, i) => long[i] === w);
+}
+
 function parseArgs(argv) {
   const args = { file: null, from: null, names: [], dryRun: false, force: false, complete: false };
   for (let i = 0; i < argv.length; i++) {
@@ -139,11 +174,19 @@ if (args.from) {
 }
 candidates.push(...args.names);
 
+/** Name -> Spotify-ID, sofern die Liste sie mitbringt */
+const spotifyIds = new Map();
 for (const [i, raw] of candidates.entries()) {
-  const name = raw.replace(/\s+/g, ' ').trim();
+  const [first, ...options] = raw.split('|').map((p) => p.trim());
+  const name = first.replace(/\s+/g, ' ');
+  for (const opt of options) {
+    const m = /^spotify\s*=\s*([A-Za-z0-9]{1,40})$/.exec(opt);
+    if (!m) fail(`unbekannte Option "${opt}" bei "${first}" – erlaubt ist nur spotify=<ID>`);
+    spotifyIds.set(name, m[1]);
+  }
   if (name.length < 1 || name.length > 80) fail(`Bandname muss 1–80 Zeichen lang sein: "${raw}"`);
   // Die Zeichen hätten in der Textdatei eine eigene Bedeutung
-  if (/[|[\]]/.test(name) || name.startsWith('#')) fail(`Bandname mit | [ ] oder # am Anfang: "${raw}"`);
+  if (/[[\]]/.test(name) || name.startsWith('#')) fail(`Bandname mit [ ] oder # am Anfang: "${raw}"`);
   if (/^(festival|edition|dataVersion|stage|day)\s*:/i.test(name)) fail(`Bandname sieht aus wie eine Kopfzeile: "${raw}"`);
   if (/^\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}\s/.test(name)) fail(`Bandname sieht aus wie eine Slot-Zeile: "${raw}"`);
   candidates[i] = name;
@@ -205,12 +248,17 @@ const added = [];
 const variants = [];
 const similar = [];
 let alreadyKnown = 0;
+// Alles, was die übergebene Liste nennt – vorab, weil die Frage "steht die
+// bekannte Band selbst noch in der Quelle?" die ganze Liste braucht.
 const seenLoose = new Set();
+for (const name of candidates) for (const key of looseKeys(name)) seenLoose.add(key);
+const inSource = (name) => [...looseKeys(name)].some((k) => seenLoose.has(k));
+/** Bestand vor diesem Lauf – nur gegen ihn wird auf Ähnlichkeit geprüft */
+const before = [...known.values()];
 
 for (const name of candidates) {
   const slug = slugify(name);
   const keys = looseKeys(name);
-  for (const key of keys) seenLoose.add(key);
 
   if (known.has(slug)) {
     alreadyKnown++;
@@ -221,11 +269,15 @@ for (const name of candidates) {
     variants.push({ name, known: sameBand });
     continue;
   }
-  const lookalike = [...knownLoose.entries()].find(([key]) =>
-    [...keys].some((k) => isSimilar(k, key))
+  const nameWords = words(name);
+  const lookalike = before.find(
+    (other) =>
+      !inSource(other) &&
+      (isExtension(nameWords, words(other)) ||
+        [...looseKeys(other)].some((o) => [...keys].some((k) => isSimilar(k, o))))
   );
   if (lookalike && !args.force) {
-    similar.push({ name, known: lookalike[1] });
+    similar.push({ name, known: lookalike });
     continue;
   }
   added.push(name);
@@ -239,7 +291,7 @@ if (args.complete) {
   const addedSet = new Set(added);
   for (const name of known.values()) {
     if (addedSet.has(name)) continue;
-    if (![...looseKeys(name)].some((k) => seenLoose.has(k))) missing.push(name);
+    if (!inSource(name)) missing.push(name);
   }
 }
 
@@ -254,12 +306,15 @@ const today = new Intl.DateTimeFormat('en-CA', {
   day: '2-digit',
 }).format(new Date());
 
+const toLine = (name) =>
+  spotifyIds.has(name) ? `${name} | spotify=${spotifyIds.get(name)}` : name;
+
 if (added.length > 0 && !args.dryRun) {
   if (announcedStart < 0) {
     while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
-    lines.push('', '[announced]', ...added, '');
+    lines.push('', '[announced]', ...added.map(toLine), '');
   } else {
-    lines.splice(announcedLast + 1, 0, ...added);
+    lines.splice(announcedLast + 1, 0, ...added.map(toLine));
   }
   // Die Datenversion zeigt die App an – sie soll sagen, von wann der Stand ist.
   const versionLine = lines.findIndex((l) => /^dataVersion\s*:/i.test(l.trim()));
@@ -289,8 +344,9 @@ if (variants.length) {
 }
 if (similar.length) {
   console.log(
-    '\n⚠ Verdächtig ähnlich zu einer bekannten Band – NICHT übernommen. Tippfehler der\n' +
-      '  Quelle oder wirklich eine andere Band? Erst prüfen, dann einzeln mit --force:'
+    '\n⚠ Verdächtig ähnlich zu einer bekannten Band, die selbst nicht mehr in der Liste\n' +
+      '  steht – NICHT übernommen. Umbenennung/Tippfehler der Quelle oder wirklich eine\n' +
+      '  andere Band? Erst prüfen, dann einzeln mit --force:'
   );
   for (const s of similar) console.log(`  ? ${s.name}  ↔  ${s.known}`);
 }
