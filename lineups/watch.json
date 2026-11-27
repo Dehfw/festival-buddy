@@ -1,0 +1,17 @@
+{
+  "//": "Watchlist der Lineup-Watch (.claude/skills/lineup-watch/SKILL.md): Für diese Festivals wird regelmäßig geprüft, ob die offizielle Quelle neue Bands zeigt. Nur Festivals OHNE Running Order – sobald Spielzeiten da sind, fliegt der Eintrag raus. Jeder Host unter sources muss in der Cloud-Umgebung der Watch freigegeben sein.",
+  "festivals": [
+    {
+      "id": "woa2027",
+      "lineup": "lineups/woa2027.txt",
+      "sources": ["https://www.wacken.com/de/programm/bands/"],
+      "notes": "Schreibweisen exakt wie im offiziellen W:O:A-Export halten (siehe Kopf der Textdatei)."
+    },
+    {
+      "id": "sb2027",
+      "lineup": "lineups/sb2027.txt",
+      "sources": ["https://www.summer-breeze.de/de/bands/"],
+      "notes": "Die Seite schreibt in Versalien – neue Bands in normaler Groß-/Kleinschreibung übernehmen (siehe Kopf der Textdatei)."
+    }
+  ]
+}

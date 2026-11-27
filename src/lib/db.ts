@@ -2227,6 +2227,163 @@ async function mutateTimetable(
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Lineup-Ergänzung (Betreiber-API)                                    */
+/* ------------------------------------------------------------------ */
+
+const MAX_BANDS = 2000;
+
+export interface LineupBandInput {
+  name: string;
+  spotifyArtistId?: string;
+}
+
+export type AddLineupBandsResult =
+  | {
+      ok: true;
+      /** Festivalname – Absender der Mitteilung */
+      festival: string;
+      /** Wirklich neue Bands, in der Reihenfolge der Anfrage */
+      added: FestivalBand[];
+      /** Bekannte Bands, die jetzt erst ihre Spotify-ID bekommen haben */
+      enriched: number;
+      /** Bands im Pool nach der Ergänzung */
+      total: number;
+      /** Nur gesetzt, wenn eine Mitteilung entstanden ist */
+      announcement?: Announcement;
+    }
+  | { ok: false; error: string; status: number };
+
+/**
+ * Neue Bands in den Lineup-Pool eines Festivals einpflegen – rein additiv:
+ * Es wird nie etwas entfernt oder umbenannt, und Slots/Tage/Bühnen bleiben
+ * unangetastet. Damit ist der Weg sicher genug für eine Automatik (der
+ * Voll-Import ersetzt dagegen den kompletten Timetable und braucht einen
+ * Menschen, der auf entfallene IDs schaut).
+ *
+ * "Neu" entscheidet sich unter FOR UPDATE am Live-Stand, gemessen am Slug.
+ * Ein zweiter Aufruf mit denselben Bands findet nichts Neues mehr – das ist
+ * die Sperre gegen doppelte Mitteilungen, egal wie oft oder wie parallel
+ * die Lineup-Watch läuft. Die Mitteilung entsteht in derselben Transaktion
+ * wie die Ergänzung: Entweder beides oder nichts.
+ *
+ * Festivals mit Running Order werden abgelehnt (409): Dort ist die
+ * Lineup-Ansicht ausgeblendet, eine Band ohne Slot wäre unsichtbar – sie
+ * gehört per Import oder Veranstalter-Editor in den Timetable.
+ */
+export async function addLineupBands(
+  festivalId: string,
+  input: LineupBandInput[],
+  opts: {
+    /** Neue Datenversion (reine Anzeige); nur gesetzt, wenn sich etwas ändert */
+    dataVersion?: string;
+    /** Nur ermitteln, was neu wäre – nichts schreiben */
+    dryRun?: boolean;
+    /** Text der Mitteilung zu den neuen Bands; ohne Callback gibt es keine */
+    announce?: (added: FestivalBand[]) => { title: string; body: string };
+  } = {}
+): Promise<AddLineupBandsResult> {
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const res = await client.query<{ name: string; timetable: TimetableBody }>(
+      'SELECT name, timetable FROM festivals WHERE id = $1 FOR UPDATE',
+      [festivalId]
+    );
+    const row = res.rows[0];
+    const reject = async (error: string, status: number): Promise<AddLineupBandsResult> => {
+      await client.query('ROLLBACK');
+      return { ok: false, error, status };
+    };
+    if (!row) return reject('Unbekanntes Festival', 404);
+    if ((row.timetable.slots ?? []).length > 0) {
+      return reject(
+        'Das Festival hat bereits eine Running Order – neue Bands brauchen dort einen Slot (Import oder Veranstalter-Editor)',
+        409
+      );
+    }
+
+    const pool = new Map<string, FestivalBand>();
+    for (const b of row.timetable.bands ?? []) {
+      if (typeof b?.slug === 'string' && typeof b?.name === 'string') pool.set(b.slug, b);
+    }
+    const added: FestivalBand[] = [];
+    let enriched = 0;
+    for (const raw of input) {
+      const name = raw.name.trim().replace(/\s+/g, ' ');
+      if (name.length < 1 || name.length > 80) {
+        return reject('Bandname muss 1–80 Zeichen lang sein', 400);
+      }
+      if (
+        raw.spotifyArtistId !== undefined &&
+        !/^[A-Za-z0-9]{1,40}$/.test(raw.spotifyArtistId)
+      ) {
+        return reject(`Ungültige Spotify-Artist-ID bei "${name}"`, 400);
+      }
+      const slug = bandSlug(name);
+      const existing = pool.get(slug);
+      if (!existing) {
+        const band: FestivalBand = {
+          slug,
+          name,
+          ...(raw.spotifyArtistId ? { spotifyArtistId: raw.spotifyArtistId } : {}),
+        };
+        pool.set(slug, band);
+        added.push(band);
+      } else if (!existing.spotifyArtistId && raw.spotifyArtistId) {
+        // Schreibweise der bekannten Band bleibt – nur die ID kommt dazu.
+        const next = { ...existing, spotifyArtistId: raw.spotifyArtistId };
+        pool.set(slug, next);
+        // Doppelt in derselben Anfrage: die eben ergänzte Band nachziehen
+        const idx = added.indexOf(existing);
+        if (idx >= 0) added[idx] = next;
+        else enriched++;
+      }
+    }
+    if (pool.size > MAX_BANDS) return reject(`Höchstens ${MAX_BANDS} Bands möglich`, 400);
+
+    const base = { festival: row.name, added, enriched, total: pool.size };
+    if (opts.dryRun || (added.length === 0 && enriched === 0)) {
+      await client.query('ROLLBACK');
+      return { ok: true, ...base };
+    }
+
+    const bands = [...pool.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    await client.query(
+      `UPDATE festivals
+          SET timetable = jsonb_set(timetable, '{bands}', $2::jsonb),
+              data_version = COALESCE($3, data_version),
+              updated_at = now()
+        WHERE id = $1`,
+      [festivalId, JSON.stringify(bands), opts.dataVersion ?? null]
+    );
+
+    let announcement: Announcement | undefined;
+    if (added.length > 0 && opts.announce) {
+      const text = opts.announce(added);
+      const ins = await client.query<AnnouncementRow>(
+        `INSERT INTO announcements (id, festival_id, author_id, title, body)
+         VALUES ($1, $2, NULL, $3, $4)
+         RETURNING id, festival_id, title, body, created_at`,
+        [`a-${randomUUID()}`, festivalId, text.title, text.body]
+      );
+      announcement = toAnnouncement(ins.rows[0]);
+    }
+    await client.query('COMMIT');
+
+    // Andere Instanzen konvergieren über die Cache-TTL + den Rev-Poll.
+    timetableCache.delete(festivalId);
+    await bumpRev();
+    return { ok: true, ...base, ...(announcement ? { announcement } : {}) };
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 /** Festival-Metadaten (Name, Edition) ändern */
 export async function updateFestivalMeta(
   festivalId: string,

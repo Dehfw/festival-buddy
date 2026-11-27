@@ -190,10 +190,14 @@ bei der Gruppengründung „· 30 Bands announced", ohne bleibt es bei
 die Datei – das ist der Unterschied zwischen einem Festival, das man
 schon planen kann, und einem Namen ohne Inhalt.
 
-**Band wird announced, spielt aber erst später.** Zeile in
-`[announced]` anhängen, `npm run lineup` laufen lassen, importieren. Der
-Diff der Bandliste sagt gleich, welche Bands neu dazugekommen sind –
-Material für eine Mitteilung an die Crews.
+**Band wird announced, spielt aber erst später.** Solange das Festival
+noch keine Running Order hat, ist das der Fall für die Lineup-Ergänzung
+statt für den Voll-Import: `npm run lineup:add -- lineups/<id>.txt
+"Band"`, dann `npm run lineup`, dann `npm run lineup:announce --
+--festival <id>`. Das pflegt nur die neuen Bands ein (rein additiv, ohne
+`DATABASE_URL`) und schickt allen Gruppen des Festivals eine Mitteilung
+samt Push. Für die Festivals in `lineups/watch.json` passiert genau das
+automatisch – siehe Skill `lineup-watch`.
 
 **Band fällt ersatzlos aus.** Zeile löschen. Der Validator meldet die
 verschwundene ID – das ist hier die richtige Antwort, nicht der Fehler.

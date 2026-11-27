@@ -1,5 +1,5 @@
-import { timingSafeEqual } from 'crypto';
 import { NextResponse } from 'next/server';
+import { hasBearer } from '@/lib/bearer';
 import { runReminderSweep } from '@/lib/reminders';
 
 export const dynamic = 'force-dynamic';
@@ -17,9 +17,7 @@ export async function GET(req: Request) {
   if (!secret) {
     return NextResponse.json({ error: 'CRON_SECRET nicht gesetzt' }, { status: 503 });
   }
-  const got = Buffer.from(req.headers.get('authorization') ?? '');
-  const want = Buffer.from(`Bearer ${secret}`);
-  if (got.length !== want.length || !timingSafeEqual(got, want)) {
+  if (!hasBearer(req, secret)) {
     return NextResponse.json({ error: 'Kein Zugriff' }, { status: 401 });
   }
   const result = await runReminderSweep(new Date());

@@ -1,8 +1,9 @@
 # Push & Mitteilungen
 
-Vier Dinge, ein Unterbau: **Mitteilungen** (Durchsagen von Veranstaltern
+Fünf Dinge, ein Unterbau: **Mitteilungen** (Durchsagen von Veranstaltern
 bzw. dem Betreiber), **Band-Erinnerungen** („Deine Band startet
-gleich“), **Programm-Änderungen** („Neue Zeit für …“, siehe unten) und
+gleich“), **Programm-Änderungen** („Neue Zeit für …“, siehe unten),
+**neue Bands im Lineup** („3 neue Bands im Lineup“, siehe unten) und
 **Standort-Benachrichtigungen** („Max steht bei …“, siehe
 unten). Zugestellt wird per **Web Push (VAPID)** – Standard-Browser-Push
 ohne Firebase, Server-seitig über das npm-Paket `web-push`. Wer kein Push
@@ -114,6 +115,58 @@ neuem und altem Stand im Text. Details:
 - Bewusste Vereinfachung: Das Ändern des **Datums eines Festivaltags**
   (Tab „Tage“) pusht nicht – es verschiebt alle Slots des Tages auf
   einmal und ist praktisch die Tippfehler-Korrektur vor dem Festival.
+
+## Neue Bands im Lineup (Lineup-Watch)
+
+Kündigt ein Festival weitere Bands an, landen sie ohne Zutun in der App,
+und alle Mitglieder aller Gruppen dieses Festivals erfahren davon. Zwei
+Teile greifen ineinander:
+
+- **Die Watch** – ein geplanter Claude-Lauf (Skill
+  `.claude/skills/lineup-watch/`). Er liest die offiziellen Quellen der
+  Festivals aus `lineups/watch.json`, ergänzt `lineups/<id>.txt`
+  (`npm run lineup:add`), baut die Importdatei und schickt deren Band-Pool
+  an die App (`npm run lineup:announce`). Die Watch hat keinen
+  Datenbank-Zugang und keine VAPID-Keys – nur HTTPS zur App.
+- **Der Endpunkt** – `POST /api/operator/lineup` mit
+  `Authorization: Bearer <LINEUP_API_SECRET>`
+  (`{ festivalId, bands: [{ name, spotifyArtistId? }], dataVersion?,
+  dryRun?, notify? }`). Er pflegt ein und benachrichtigt.
+
+Was der Endpunkt garantiert:
+
+- **Rein additiv.** Es wird nie eine Band entfernt oder umbenannt, Slots,
+  Tage und Bühnen bleiben unangetastet – Eintragungen und gemerkte Bands
+  können auf diesem Weg nicht verloren gehen. Genau das macht ihn
+  automatisierbar; der Voll-Import ersetzt dagegen den kompletten
+  Timetable und bleibt Handarbeit.
+- **„Neu“ entscheidet der Live-Stand**, gemessen am Band-Slug und unter
+  Zeilen-Lock (`addLineupBands` in `src/lib/db.ts`). Die Watch darf immer
+  das ganze Lineup schicken; ein zweiter Aufruf mit denselben Bands
+  findet nichts Neues und verschickt nichts – egal wie oft oder wie
+  parallel sie läuft.
+- **Mitteilung und Ergänzung sind eine Transaktion.** Die Mitteilung
+  (`announcements`, ohne Autor – Absender ist das Festival) entsteht nur
+  zusammen mit den neuen Bands. Danach geht derselbe Text als Push an
+  `getFestivalAudienceUserIds()` – dieselbe Zielgruppe wie eine
+  Veranstalter-Durchsage. Wer kein Push hat, sieht sie in der Glocke.
+- Text: „Neu im Lineup: <Band>“ bzw. „N neue Bands im Lineup“, im Body
+  die Namen in der Reihenfolge der Ankündigung; passen nicht alle in die
+  500 Zeichen, steht am Ende „… und 12 weitere Bands“
+  (`src/lib/lineupNews.ts`).
+- **Nur vor der Running Order.** Hat das Festival schon Slots, antwortet
+  der Endpunkt 409: Die Lineup-Ansicht ist dann ausgeblendet, eine Band
+  ohne Slot wäre unsichtbar. Sie gehört in den Timetable (Import oder
+  Editor).
+- `dryRun: true` zeigt nur, was neu wäre; `notify: false` pflegt still
+  ein. `GET /api/operator/lineup?festival=…` liefert den Live-Pool, damit
+  die Watch ohne DB sieht, was schon eingepflegt ist.
+
+Die Schreibweisen-Falle fängt `scripts/lineup-add.mjs` ab, bevor etwas
+gesendet wird: Websites ändern Schreibweisen, und ein anderer Name ist
+ein anderer Slug – also scheinbar eine neue Band. Gleiche Band in anderer
+Schreibweise gilt als bekannt, verdächtig Ähnliches (Tippfehler-Abstand)
+wird nicht übernommen, sondern gemeldet.
 
 ## Standort-Benachrichtigungen
 
