@@ -163,22 +163,24 @@ sieht die Mitteilung in der App.
 ### 6. Stand ins Repo bringen
 
 `lineups/<id>.txt` und `data/<id>.json` committen (Message:
-`Lineup-Watch: <Festivalname> +N Bands`), auf den Branch der Session
-pushen und einen Pull-Request gegen `main` öffnen – ein PR für alle
-Festivals dieses Laufs. Ohne Merge startet der nächste Lauf wieder vom
-alten Stand; das ist unschädlich (Schritt 1 fängt es ab, gesendet wird
-nichts doppelt), aber der PR sollte nicht liegen bleiben. Liegt schon
-ein offener Lineup-Watch-PR, ersetzt der neue ihn inhaltlich – sag das
-im Bericht dazu.
+`Lineup-Watch: <Festivalname> +N Bands`) und auf den Branch der Session
+pushen – ein Commit pro Festival, ein Branch für den ganzen Lauf. Einen
+Pull-Request öffnest du nur, wenn der Auftrag des Laufs das ausdrücklich
+vorsieht; sonst nennst du den Branch im Bericht.
 
-Lief der Lauf ohne neue Bands, gibt es nichts zu committen und keinen PR.
+Solange der Stand nicht in `main` ist, startet der nächste Lauf wieder
+von der alten Datei. Das ist unschädlich – Schritt 1 fängt es ab, und
+gesendet wird nichts doppelt –, aber die Datei im Repo hinkt dem
+Live-Stand hinterher. Sag im Bericht dazu, wenn das schon länger so ist.
+
+Lief der Lauf ohne neue Bands, gibt es nichts zu committen.
 
 ## Abschlussbericht
 
 Kurz, pro Festival eine Zeile, Auffälligkeiten darunter:
 
 - geprüft, nichts Neues / N neue Bands (Namen), Push an X von Y
-  Mitgliedern, PR-Link
+  Mitgliedern, Branch bzw. PR
 - was nicht ging und warum (Quelle nicht abrufbar, Host gesperrt, App
   antwortet 401 …)
 - was ein Mensch entscheiden muss: verdächtig ähnliche Namen, Bands, die
