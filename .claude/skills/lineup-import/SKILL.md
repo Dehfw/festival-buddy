@@ -120,20 +120,60 @@ wird. Bei angekündigten Bands wiegt das schwerer als beim fertigen
 Timetable: Reinhören ist dort die einzige Funktion, die die Band
 überhaupt hat. Die Zugangsdaten (`SPOTIFY_CLIENT_ID`,
 `SPOTIFY_CLIENT_SECRET`) kommen aus `.env.local`; fehlen sie, wird der
-Schritt übersprungen und der Rest läuft weiter. Übernommen wird nur, was
-exakt auf den Bandnamen passt, alles andere landet im Bericht. Zwei
-Dinge daraus gehören angesehen:
+Schritt übersprungen und der Rest läuft weiter.
 
-- **Mehrere gleichnamige Künstler** – „Sacrifice", „Nirvana", „Sacred
-  Reich" gibt es auf Spotify mehrfach. Das Script nimmt den mit den
-  meisten Followern und nennt die Alternativen. Bei einer Nischenband
-  auf einem Underground-Festival ist der bekannteste Treffer nicht
-  automatisch der richtige.
+Spotify liefert zu einem Künstler nur noch Name und ID – keine Follower,
+keine Genres, keine Popularität. Das Script kann den „bekannteren" von
+zwei Namensvettern also nicht mehr erkennen und rät auch nicht.
+Übernommen wird nur, wer exakt so heißt wie die Band **und** unter den
+ersten 20 Suchergebnissen der einzige gleichnamige Künstler mit
+Veröffentlichungen ist (leere Profile zählen nicht). Der einzige Kontext,
+den es noch gibt, sind Alben und Singles – sie stehen im Bericht, und
+der will gelesen werden:
+
+- **Zugeordnet** – zu jeder neuen ID die jüngsten Titel mit Jahr. Der
+  einzige Namensvetter ist nicht zwingend die gemeinte Band: Für die
+  Thrash-Band „Victim" lieferte die Suche vorn nur ein anderes „victim".
+  Passen Titel und Jahre nicht zur Band (falsches Genre, seit 20 Jahren
+  nichts erschienen, nur eine Single), ersetz die ID durch die richtige
+  oder durch `spotify=-`. Nur löschen hilft nicht – der nächste Lauf
+  trüge sie wieder ein.
+- **Mehrere gleichnamige Künstler** – „Emperor", „Invasion", „Europe"
+  gibt es mehrfach. Hier wird **nichts** übernommen; der Bericht nennt
+  die Kandidaten mit ID und Alben. Entscheide anhand der Alben und der
+  Festival-Seite (Bandinfo, verlinktes Spotify-Profil) und trag die ID
+  von Hand ein: `| spotify=<ID>`. Die Reihenfolge der Kandidaten ist die
+  der Spotify-Suche und sagt nichts – in einer Stichprobe war der erste
+  Treffer bei Namensgleichheit in jedem fünften Fall der falsche. Passt
+  keiner sicher: `| spotify=-`.
 - **Ohne Treffer** – Tribute-Projekte, Lesungen, DJ-Sets und lokale
-  Bands sind oft nicht auf Spotify oder anders geschrieben. Der Bericht
-  gibt zu jedem einen Suchlink; wer sich findet, bekommt seine ID von
-  Hand nachgetragen (`| spotify=<ID>` in der Textdatei). Wer nicht,
-  bleibt ohne Button – das ist kein Fehler.
+  Bands sind oft nicht auf Spotify oder anders geschrieben; Bands mit
+  Allerweltsnamen stehen manchmal erst weit hinten („Seth" an Stelle 31)
+  und finden sich über den Suchlink im Bericht. Wer sich findet, bekommt
+  seine ID von Hand, wer nicht, `| spotify=-`. Das ist kein Fehler.
+- **Nicht geprüft** – eine Abfrage ist gescheitert, das Budget des Laufs
+  war aufgebraucht oder Spotify hat gesperrt. Diese Bands sind weder
+  gefunden noch ausgeschlossen; ein späterer Lauf holt sie nach.
+
+`| spotify=-` heißt „bewusst ohne Button": Die Band wird nicht mehr
+gesucht, auch nicht mit `--force`. Setz es, sobald entschieden ist, dass
+es keinen passenden Künstler gibt – sonst fragt jeder weitere Lauf
+Spotify erneut nach derselben Band. Nach Korrekturen von Hand reicht
+`npm run lineup -- lineups/<id>.txt --festival <id> --no-spotify`: Das
+baut und prüft, ohne noch einmal zu suchen.
+
+**Das Spotify-Kontingent ist knapp.** Die App läuft im Development Mode
+mit einem Kontingent pro Entwicklerkonto, dessen Größe Spotify nicht
+nennt; am 28.11.2026 haben rund 500 Abfragen in einer Viertelstunde für
+eine Sperre von knapp 24 Stunden gereicht (HTTP 429, `QUOTA_EXCEEDED`).
+In der Zeit bekommt auch der tägliche Lineup-Watch-Lauf keine IDs. Eine
+Band kostet etwa drei bis vier Abfragen; das Script beginnt deshalb nach
+250 Abfragen keine weitere Band mehr und meldet den Rest als „nicht
+geprüft". Ein großes Lineup braucht also zwei Läufe an zwei Tagen (oder
+einmalig `npm run lineup:spotify -- lineups/<id>.txt --budget 400` vor
+der Strecke). Ruf die Spotify-API nicht in eigenen Schleifen ab, lass
+die Suche nicht „zum Testen" mehrfach laufen und geh mit `--force` und
+`--pages` sparsam um.
 
 **Zur Prüfung.** Fehler (`✗`) brechen die Strecke ab, die Datei geht
 nicht in die DB. Warnungen (`⚠`) musst du **lesen und einordnen**:

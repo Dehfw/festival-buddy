@@ -141,19 +141,47 @@ Spotify-IDs, Importdatei, Validator – wie im Skill `lineup-import`.
 Die Spotify-Suche läuft auch im geplanten Lauf: In der Cloud-Umgebung
 stehen in `SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET` nur Platzhalter,
 die echten Zugangsdaten setzt der Proxy für `accounts.spotify.com` ein.
-Übernommen wird nur, was exakt auf den Bandnamen passt. Meldet das
-Script **mehrere gleichnamige Künstler**, hat es den mit den meisten
-Followern genommen – nenn diese Bands im Bericht, damit jemand
-gegenprüfen kann. Eine falsche Zuordnung lässt sich in der Textdatei
-korrigieren, live kommt die Korrektur aber erst mit dem nächsten
-Voll-Import an: Die Lineup-Ergänzung trägt nur fehlende IDs nach und
-überschreibt keine vorhandene. Bands **ohne Treffer** bleiben ohne
-Button, auch das gehört in den Bericht.
 
-Scheitert der Spotify-Schritt ganz (Secret fehlt, Host gesperrt), läuft
-die Strecke ohne ihn weiter: Die Bands kommen dann ohne „Auf Spotify
-anhören"-Button, und der Bericht sagt, warum. Ein Validator-Fehler hält
-den Lauf dagegen auf: Änderung zurücknehmen, berichten.
+Spotify liefert zu Künstlern keine Follower, Genres oder Popularität
+mehr. Das Script übernimmt deshalb nur, wer exakt so heißt wie die Band
+und dabei der einzige gleichnamige Künstler mit Veröffentlichungen ist –
+und nennt im Bericht zu jeder Zuordnung die Alben. Das ist die Stelle,
+an der du prüfst, bevor etwas live geht (Details im Skill
+`lineup-import`, Abschnitt „Zur Spotify-Suche"):
+
+- **Zugeordnet:** Lies die Titel zu jeder neuen ID. Passen sie
+  erkennbar nicht zur Band – anderes Genre als das Festival, seit
+  Jahrzehnten nichts erschienen, die Festival-Seite nennt ein anderes
+  aktuelles Album –, ersetz die ID in der Textdatei durch `spotify=-`
+  und bau neu – mit `--no-spotify`, die Suche ist ja schon gelaufen
+  (`npm run lineup -- lineups/<id>.txt --festival <id> --no-spotify`).
+  Im Zweifel raus damit:
+  Ein fehlender Button ist besser als ein falscher, und eine falsche ID
+  wird man live nicht mehr los – die Lineup-Ergänzung trägt nur fehlende
+  IDs nach und überschreibt keine vorhandene; korrigieren kann sie erst
+  der nächste Voll-Import oder der Veranstalter-Editor.
+- **Mehrere gleichnamige Künstler:** Das Script hat nichts übernommen
+  und nennt die Kandidaten mit ihren Alben. Trag eine ID nur ein
+  (`| spotify=<ID>`), wenn die Quelle den Kandidaten belegt – die
+  Bandseite des Festivals verlinkt das Profil oder nennt ein Album, das
+  bei genau einem Kandidaten steht – danach ebenfalls mit
+  `--no-spotify` neu bauen. Sonst bleibt die Band ohne Button und kommt
+  mit ihren Kandidaten in den Abschlussbericht.
+- **Ohne Treffer / nicht geprüft:** bleiben ohne Button, auch das gehört
+  in den Bericht. Die Lineup-Ergänzung kann eine fehlende ID später
+  nachreichen.
+
+Geh sparsam mit Spotify um: Das Kontingent der App reicht nur für
+wenige hundert Abfragen am Tag, danach ist sie rund 24 Stunden gesperrt.
+Lass die Strecke pro Festival nicht öfter laufen als nötig und ruf die
+Spotify-API nicht selbst in Schleifen ab.
+
+Scheitert der Spotify-Schritt ganz (Secret fehlt, Host gesperrt,
+Kontingent erschöpft), läuft die Strecke ohne ihn weiter: Die Bands
+kommen dann ohne „Auf Spotify anhören"-Button, und der Bericht sagt,
+warum – bei einer Sperre mit der Uhrzeit, die das Script nennt. Ein
+Validator-Fehler hält den Lauf dagegen auf: Änderung zurücknehmen,
+berichten.
 
 ### 5. Probelauf, dann senden
 
@@ -207,7 +235,10 @@ Kurz, pro Festival eine Zeile, Auffälligkeiten darunter:
 - was nicht ging und warum (Quelle nicht abrufbar, Host gesperrt, App
   antwortet 401 …)
 - was ein Mensch entscheiden muss: verdächtig ähnliche Namen, Bands, die
-  in der Quelle fehlen, eine erschienene Running Order
+  in der Quelle fehlen, eine erschienene Running Order, Bands mit
+  mehreren gleichnamigen Spotify-Künstlern (Kandidaten mit Alben nennen)
+- neue Spotify-Zuordnungen mit je einem Albumtitel, damit eine falsche
+  auffällt
 
 ## Running Order erschienen?
 

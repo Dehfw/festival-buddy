@@ -18,11 +18,34 @@
  * Zugangsdaten gibt es kostenlos unter developer.spotify.com (App
  * anlegen, Client ID + Secret kopieren).
  *
- * Bewusst konservativ: Übernommen wird nur, was nach Normalisierung
- * exakt auf den Bandnamen passt. Ein falscher Treffer ist schlimmer als
- * ein fehlender Button – „Nirvana" auf ein unbekanntes Coverprojekt zu
- * verlinken fällt niemandem auf, führt aber alle in die Irre. Alles
- * Unklare landet im Bericht am Ende und will von Hand entschieden werden.
+ * Bewusst konservativ: Ein falscher Treffer ist schlimmer als ein
+ * fehlender Button – „Nirvana" auf ein unbekanntes Coverprojekt zu
+ * verlinken fällt niemandem auf, führt aber alle in die Irre. Übernommen
+ * wird deshalb nur, was nach Normalisierung exakt auf den Bandnamen passt
+ * UND in der durchsuchten Tiefe der einzige gleichnamige Künstler mit
+ * Veröffentlichungen ist. Gibt es mehrere, wird nichts übernommen: Der
+ * Bericht nennt die Kandidaten mit ihren Alben, und die Wahl trifft
+ * jemand von Hand ("| spotify=<ID>").
+ *
+ * Spotify liefert weder in der Suche noch unter /v1/artists/{id} noch
+ * Follower, Genres oder Popularität (geprüft 28.11.2026: nur id, name,
+ * images, uri). Es gibt also kein Merkmal mehr, an dem das Script den
+ * „bekannteren" von zwei Namensvettern erkennen könnte – und die
+ * Reihenfolge der Suche taugt dafür nicht. Das Einzige, woran sich eine
+ * Zuordnung prüfen lässt, sind die Veröffentlichungen. Deshalb stehen sie
+ * auch bei jedem übernommenen Treffer im Bericht.
+ *
+ * Wer eine Band bewusst ohne Button lassen will – nicht auf Spotify, kein
+ * Kandidat passt, der einzige Treffer ist der falsche –, schreibt
+ * "| spotify=-" an die Zeile. Dann wird sie nicht mehr gesucht; ohne die
+ * Markierung trüge der nächste Lauf denselben falschen Treffer wieder ein
+ * und fragte Spotify jedes Mal neu.
+ *
+ * Sparsam mit Abfragen: Apps im Development Mode haben ein Kontingent
+ * pro Entwicklerkonto, dessen Größe Spotify nicht nennt. Am 28.11.2026
+ * haben rund 500 Abfragen in einer Viertelstunde gereicht, um für knapp
+ * 24 Stunden gesperrt zu werden (HTTP 429, reason QUOTA_EXCEEDED). Daher
+ * die geringe Suchtiefe, das Budget je Lauf und der saubere Abbruch.
  */
 import './env.mjs';
 import './proxy.mjs';
@@ -35,20 +58,26 @@ function fail(msg) {
 }
 
 function parseArgs(argv) {
-  const args = { file: null, dryRun: false, force: false, optional: false, limit: Infinity };
+  const args = { file: null, dryRun: false, force: false, optional: false, limit: Infinity, pages: 2, budget: 250 };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--dry-run') args.dryRun = true;
     else if (argv[i] === '--force') args.force = true;
     else if (argv[i] === '--optional') args.optional = true;
     else if (argv[i] === '--limit') args.limit = Number(argv[++i]);
+    else if (argv[i] === '--pages') args.pages = Number(argv[++i]);
+    else if (argv[i] === '--budget') args.budget = Number(argv[++i]);
     else if (!argv[i].startsWith('-')) args.file ??= argv[i];
   }
   return args;
 }
 
-const { file, dryRun, force, optional, limit } = parseArgs(process.argv.slice(2));
-if (!file) {
-  console.error('Aufruf: node scripts/spotify-ids.mjs <lineups/x.txt | data/x.json> [--dry-run] [--force]');
+const { file, dryRun, force, optional, limit, pages, budget } = parseArgs(process.argv.slice(2));
+if (!file || !Number.isInteger(pages) || pages < 1 || pages > 10 || !(budget > 0)) {
+  console.error(
+    'Aufruf: node scripts/spotify-ids.mjs <lineups/x.txt | data/x.json> [--dry-run] [--force]\n' +
+      '        [--pages N]   Suchtiefe in Seiten zu 10 Ergebnissen (1–10, Standard 2)\n' +
+      '        [--budget N]  nach N Spotify-Abfragen keine weitere Band beginnen (Standard 250)'
+  );
   process.exit(2);
 }
 
@@ -190,9 +219,33 @@ async function getToken() {
 
 const token = await getToken();
 
-async function searchArtists(query) {
-  const url = `https://api.spotify.com/v1/search?type=artist&limit=10&q=${encodeURIComponent(query)}`;
+const API = 'https://api.spotify.com/v1';
+/** Mehr als 10 Ergebnisse je Aufruf lehnt Spotify ab (HTTP 400 „Invalid limit"). */
+const PAGE_SIZE = 10;
+/** Mehr Namensvettern je Band werden nicht einzeln nachgeschlagen – das Kontingent ist knapp. */
+const MAX_CANDIDATES = 8;
+/** Kurze Rate-Limits wartet das Script ab, längere Sperren nicht. */
+const MAX_RATE_LIMIT_WAIT_S = 60;
+/** Kleine Pause zwischen zwei Abfragen, damit kein Dauerfeuer entsteht. */
+const PAUSE_MS = 150;
+
+let requests = 0;
+/** Gesetzt, sobald Spotify sperrt: { seconds, quota } – danach geht keine Abfrage mehr raus. */
+let locked = null;
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Ein GET gegen die Spotify-API. Liefert das JSON oder null, wenn die
+ * Abfrage scheitert. Wer aufruft, muss null als „weiß ich nicht" lesen,
+ * nie als „gibt es nicht": Eine fehlende Ergebnisseite würde sonst aus
+ * einem mehrdeutigen Namen einen eindeutigen machen.
+ */
+async function spotifyGet(url, what) {
   for (let attempt = 0; ; attempt++) {
+    if (locked) return null;
+    if (requests > 0) await sleep(PAUSE_MS);
+    requests++;
     let res;
     try {
       res = await fetch(url, {
@@ -200,55 +253,179 @@ async function searchArtists(query) {
         signal: AbortSignal.timeout(30_000),
       });
     } catch (err) {
+      if (attempt < 2) {
+        await sleep(1000 * (attempt + 1));
+        continue;
+      }
       fail(
-        `Spotify-Suche nicht erreichbar (api.spotify.com): ${err?.cause?.message ?? err?.message ?? err}\n${CLOUD_HINT}`
+        `Spotify nicht erreichbar (api.spotify.com): ${err?.cause?.message ?? err?.message ?? err}\n${CLOUD_HINT}`
       );
     }
-    if (res.status === 429 && attempt < 5) {
-      const wait = (Number(res.headers.get('retry-after')) || 2) * 1000;
-      console.log(`  … Rate-Limit, warte ${wait / 1000}s`);
-      await new Promise((r) => setTimeout(r, wait));
+    if (res.status === 429) {
+      const wait = Number(res.headers.get('retry-after')) || 2;
+      const body = await res.text().catch(() => '');
+      const quota = body.includes('QUOTA_EXCEEDED');
+      // Ein erschöpftes Kontingent meldet Spotify mit Wartezeiten von
+      // vielen Stunden. Das sitzt niemand aus – schon gar nicht ein
+      // geplanter Lauf, der sonst einen Tag lang hängt.
+      if (quota || wait > MAX_RATE_LIMIT_WAIT_S || attempt >= 4) {
+        locked = { seconds: wait, quota };
+        console.warn(
+          `  ⚠ Spotify sperrt weitere Abfragen für ${describeWait(wait)}` +
+            (quota ? ' (Kontingent erschöpft)' : ' (Rate-Limit)') +
+            ' – der Rest bleibt ungeprüft'
+        );
+        return null;
+      }
+      console.log(`  … Rate-Limit, warte ${wait}s`);
+      await sleep(wait * 1000);
       continue;
     }
     if (!res.ok) {
-      console.warn(`  ⚠ Suche fehlgeschlagen (HTTP ${res.status}) für "${query}"`);
-      return [];
+      console.warn(`  ⚠ ${what} fehlgeschlagen (HTTP ${res.status})`);
+      return null;
     }
-    return (await res.json()).artists?.items ?? [];
+    try {
+      return await res.json();
+    } catch {
+      console.warn(`  ⚠ ${what}: Antwort nicht lesbar`);
+      return null;
+    }
   }
 }
 
+function describeWait(seconds) {
+  if (seconds < 120) return `${seconds}s`;
+  if (seconds < 7200) return `${Math.round(seconds / 60)} min`;
+  return `rund ${Math.round(seconds / 3600)} h`;
+}
+
 /**
- * Ein Treffer zählt nur bei exakter Namensgleichheit (nach Normalisierung).
- * Gibt es mehrere gleichnamige Künstler, gewinnt der mit den meisten
- * Followern – aber der Fall wird gemeldet, weil "Nirvana" oder "Sacrifice"
- * eben mehrfach existieren und die Wahl dann jemand ansehen sollte.
+ * Eine Ergebnisseite der Künstlersuche, reduziert auf die Künstler, deren
+ * Name exakt (nach Normalisierung) auf die Anfrage passt. `last` heißt:
+ * dahinter kommt nichts mehr. null = Abfrage gescheitert.
+ */
+async function searchPage(query, page) {
+  const data = await spotifyGet(
+    `${API}/search?type=artist&limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}&q=${encodeURIComponent(query)}`,
+    `Suche nach "${query}"`
+  );
+  if (!data) return null;
+  const items = data.artists?.items ?? [];
+  const exact = items.filter(
+    (artist) =>
+      typeof artist?.name === 'string' &&
+      // Dieselbe ID-Prüfung wie upsertSlot – was hier durchrutscht, macht
+      // die Datei später unimportierbar.
+      /^[A-Za-z0-9]{1,40}$/.test(artist.id ?? '') &&
+      sameName(artist.name, query)
+  );
+  return { exact, last: items.length < PAGE_SIZE };
+}
+
+/**
+ * Alben und Singles eines Künstlers: Gesamtzahl und die ersten Titel mit
+ * Jahr (Spotify liefert Alben vor Singles, jeweils neueste zuerst). Das
+ * ist der einzige Kontext, den die API zu einem Künstler noch hergibt –
+ * und damit das, woran ein Mensch die richtige Band erkennt.
+ */
+async function releasesOf(id) {
+  const data = await spotifyGet(
+    `${API}/artists/${id}/albums?include_groups=album,single&limit=${PAGE_SIZE}`,
+    `Alben von ${id}`
+  );
+  if (!Array.isArray(data?.items)) return null;
+  const titles = [];
+  const seen = new Set();
+  for (const item of data.items) {
+    const name = typeof item?.name === 'string' ? item.name.trim() : '';
+    if (!name || seen.has(name.toLowerCase())) continue; // Album und gleichnamige Vorab-Single
+    seen.add(name.toLowerCase());
+    const title = name.length > 45 ? `${name.slice(0, 44)}…` : name;
+    const year = /^\d{4}/.exec(item.release_date ?? '')?.[0];
+    titles.push(year ? `${title} (${year})` : title);
+  }
+  return { total: Number.isInteger(data.total) ? data.total : data.items.length, titles };
+}
+
+function describeReleases(releases) {
+  const shown = releases.titles.slice(0, 4);
+  const count = releases.total === 1 ? '1 Veröffentlichung' : `${releases.total} Veröffentlichungen`;
+  if (shown.length === 0) return count;
+  return `${shown.join(', ')}${releases.total > shown.length ? ', …' : ''} · ${count}`;
+}
+
+/**
+ * Sucht den Künstler zu einem Bandnamen. Mögliche Ergebnisse:
+ *
+ * - `found`      genau ein gleichnamiger Künstler mit Veröffentlichungen
+ *                → wird übernommen, samt Alben für den Bericht
+ * - `ambiguous`  mehrere davon → nichts wird übernommen. Früher gewann
+ *                der mit den meisten Followern; die liefert Spotify nicht
+ *                mehr. Der erste Treffer der Suche ist kein Ersatz: In
+ *                einer Stichprobe mit 57 Wacken-Bands (IDs vom Festival)
+ *                war er bei Namensgleichheit in 4 von 21 Fällen der
+ *                falsche („Mob Rules", „Gagor", „Invasion", „5th Avenue").
+ * - `empty`      nur gleichnamige Profile ohne Alben und Singles
+ * - `none`       kein exakter Namenstreffer
+ * - `error`      eine Abfrage ist gescheitert – nichts bewiesen, nichts
+ *                übernommen
+ *
+ * Profile ohne Veröffentlichungen zählen nicht als Kandidaten: Hinter dem
+ * Button gäbe es dort nichts zu hören. Das räumt die häufigste Art von
+ * Namensvettern weg (leere Dubletten neben „Sepultura", „Arch Enemy") –
+ * in derselben Stichprobe 7 von 21 Fällen, alle richtig –, ohne zu raten.
+ *
+ * Eine Ergebnisseite reicht nicht: „Gagor" (richtig an Stelle 11) und
+ * „Victim" (weitere an 15, 21, 31 …; der gesuchte an 34) haben auf der
+ * ersten Seite genau einen Namensvetter, und zwar den falschen. Deshalb
+ * wird weitergeblättert, bis `--pages` erreicht ist – oder bis zwei
+ * Kandidaten feststehen, denn dann ist die Frage entschieden und jede
+ * weitere Seite kostet nur Kontingent.
  */
 async function resolve(band) {
-  const candidates = [band];
+  const queries = [band];
   const cleaned = cleanBandName(band);
-  if (cleaned && !sameName(cleaned, band)) candidates.push(cleaned);
+  if (cleaned && !sameName(cleaned, band)) queries.push(cleaned);
 
-  for (const query of candidates) {
-    if (!query) continue;
-    const items = await searchArtists(query);
-    // Dieselbe Prüfung wie upsertSlot – was hier durchrutscht, macht die
-    // Datei später unimportierbar.
-    const exact = items.filter((a) => sameName(a.name, query) && /^[A-Za-z0-9]{1,40}$/.test(a.id ?? ''));
-    if (exact.length === 0) continue;
-    exact.sort((a, b) => (b.followers?.total ?? 0) - (a.followers?.total ?? 0));
-    return {
-      id: exact[0].id,
-      name: exact[0].name,
-      followers: exact[0].followers?.total ?? 0,
-      viaCleanedName: query !== band,
-      ambiguous: exact.length > 1,
-      alternatives: exact
-        .slice(1, 4)
-        .map((a) => `${a.name} (${a.followers?.total ?? 0} Follower, ${a.id})`),
-    };
+  for (const query of queries) {
+    const seen = new Set();
+    const candidates = [];
+    const empty = [];
+    let unchecked = 0;
+    let exhausted = false;
+
+    for (let page = 0; page < pages && candidates.length < 2; page++) {
+      const result = await searchPage(query, page);
+      if (!result) return { status: 'error' };
+      for (const artist of result.exact) {
+        if (seen.has(artist.id)) continue;
+        seen.add(artist.id);
+        if (candidates.length + empty.length >= MAX_CANDIDATES) {
+          unchecked++;
+          continue;
+        }
+        const releases = await releasesOf(artist.id);
+        if (!releases) return { status: 'error' };
+        (releases.total > 0 ? candidates : empty).push({ id: artist.id, name: artist.name, releases });
+      }
+      if (result.last) {
+        exhausted = true;
+        break;
+      }
+    }
+    if (seen.size === 0) continue;
+
+    const base = { query, viaCleanedName: query !== band, ignoredEmpty: empty.length };
+    if (candidates.length === 1 && unchecked === 0) return { status: 'found', ...base, ...candidates[0] };
+    if (candidates.length > 0 || unchecked > 0) {
+      // `open`: Es kann weitere geben – nicht alle Seiten gelesen oder
+      // nicht alle Namensvettern nachgeschlagen.
+      return { status: 'ambiguous', ...base, candidates, unchecked, open: !exhausted || unchecked > 0 };
+    }
+    return { status: 'empty', ...base, candidates: empty };
   }
-  return null;
+  return { status: 'none' };
 }
 
 /* ------------------------------------------------------------------ */
@@ -259,6 +436,10 @@ async function resolve(band) {
 const known = new Map();
 /** Alle vorkommenden Bandnamen (auch die ohne ID) */
 const bands = new Set();
+/** Bands mit "spotify=-": bewusst ohne Button, werden nie gesucht – auch nicht mit --force */
+const declined = new Set();
+/** So steht die Absage in der Textdatei */
+const DECLINED = 'spotify=-';
 
 if (isJson) {
   const timetable = JSON.parse(source);
@@ -289,14 +470,18 @@ if (isJson) {
     if (!band) continue;
     bands.add(band);
     const existing = parts.find((p) => p.startsWith('spotify='));
-    if (existing && !known.has(band)) known.set(band, existing.slice('spotify='.length));
+    if (existing === DECLINED) declined.add(band);
+    else if (existing && !known.has(band)) known.set(band, existing.slice('spotify='.length));
   }
 }
 
-const todo = [...bands].filter((band) => force || !known.has(band)).slice(0, limit);
+const todo = [...bands]
+  .filter((band) => !declined.has(band) && (force || !known.has(band)))
+  .slice(0, limit);
+const declinedNote = declined.size > 0 ? `, ${declined.size} bewusst ohne (${DECLINED})` : '';
 
 if (todo.length === 0) {
-  console.log(`✓ ${file}: alle ${bands.size} Bands haben schon eine Spotify-ID`);
+  console.log(`✓ ${file}: nichts zu suchen – ${known.size} von ${bands.size} Bands mit Spotify-ID${declinedNote}`);
   process.exit(0);
 }
 
@@ -307,20 +492,35 @@ console.log(`→ ${todo.length} von ${bands.size} Bands ohne ID, suche bei Spoti
 /* ------------------------------------------------------------------ */
 
 const found = new Map();
+const adopted = [];
+const ambiguous = [];
 const unresolved = [];
-const review = [];
+const failed = [];
+/** Bands, die wegen Budget oder Sperre gar nicht erst gesucht wurden */
+const skipped = [];
 
 for (const band of todo) {
-  const hit = await resolve(band);
-  if (!hit) {
-    unresolved.push(band);
-    console.log(`  ? ${band}`);
+  if (locked || requests >= budget) {
+    skipped.push(band);
     continue;
   }
-  found.set(band, hit.id);
-  console.log(`  ✓ ${band} → ${hit.name} (${hit.id})`);
-  if (hit.ambiguous || hit.viaCleanedName) review.push({ band, hit });
+  const hit = await resolve(band);
+  if (hit.status === 'found') {
+    found.set(band, hit.id);
+    adopted.push({ band, hit });
+    console.log(`  ✓ ${band} → ${hit.name} (${hit.id})`);
+  } else if (hit.status === 'ambiguous') {
+    ambiguous.push({ band, hit });
+    console.log(`  ≠ ${band}: mehrere gleichnamige Künstler – nichts übernommen`);
+  } else if (hit.status === 'error') {
+    failed.push(band);
+    console.log(`  ! ${band}: Abfrage gescheitert – nicht geprüft`);
+  } else {
+    unresolved.push({ band, hit });
+    console.log(`  ? ${band}`);
+  }
 }
+if (skipped.length > 0) console.log(`  … ${skipped.length} weitere nicht mehr gesucht`);
 
 /**
  * Was am Ende an einem Slot stehen soll. Ohne --force gewinnt eine
@@ -379,7 +579,7 @@ if (isJson) {
       const band = parts.shift();
       if (!band) return line;
       const id = idFor(band);
-      if (!id) return line;
+      if (!id || parts.includes(DECLINED)) return line;
       const options = parts.filter((p) => !p.startsWith('spotify='));
       if (parts.length !== options.length && known.get(band) === id && !force) return line;
       patched++;
@@ -404,29 +604,106 @@ if (dryRun) {
 /* ------------------------------------------------------------------ */
 
 const coverage = [...bands].filter((band) => idFor(band)).length;
-console.log(`\nAbdeckung: ${coverage}/${bands.size} Bands mit Spotify-ID`);
+console.log(
+  `\nAbdeckung: ${coverage}/${bands.size} Bands mit Spotify-ID${declinedNote} (${requests} Spotify-Abfragen)`
+);
 
-if (review.length > 0) {
-  console.log(`\n⚠ ${review.length} Treffer bitte kurz ansehen:`);
-  for (const { band, hit } of review) {
-    if (hit.viaCleanedName) {
-      console.log(`  - "${band}" wurde als "${cleanBandName(band)}" gefunden → ${hit.name} (${hit.id})`);
-    }
-    if (hit.ambiguous) {
-      console.log(`  - "${band}": mehrere gleichnamige Künstler, gewählt wurde ${hit.name} (${hit.followers} Follower)`);
-      for (const alt of hit.alternatives) console.log(`      auch möglich: ${alt}`);
-    }
+const depth = pages * PAGE_SIZE;
+const emptyNote = (n) =>
+  n === 1 ? '1 gleichnamiges Profil ohne Veröffentlichungen' : `${n} gleichnamige Profile ohne Veröffentlichungen`;
+const cleanedNote = (band, hit) =>
+  hit.viaCleanedName ? `      ⚠ gesucht als "${hit.query}" (Zusatz aus "${band}" entfernt)` : null;
+const MANUAL_HINT =
+  '  Von Hand eintragen: ID aus der Künstler-URL (open.spotify.com/artist/<ID>) –\n' +
+  '  im Veranstalter-Editor oder als "| spotify=<ID>" in der Running-Order-Textdatei.';
+/** Die Absage gibt es nur im Textformat – ein Timetable-JSON kennt sie nicht. */
+const DECLINE_HINT = isJson
+  ? ''
+  : `\n  Soll eine Band ohne Button bleiben: "| ${DECLINED}" anhängen, dann wird sie nicht mehr gesucht.`;
+
+if (adopted.length > 0) {
+  console.log(
+    `\n${adopted.length} ${dryRun ? 'würden zugeordnet' : 'zugeordnet'} – jeweils der einzige gleichnamige Künstler mit Veröffentlichungen\n` +
+      `unter den ersten ${depth} Suchergebnissen. Das beweist nicht, dass es die gemeinte Band ist\n` +
+      '(Follower oder Genres liefert Spotify nicht mehr): Passen die Titel zur Band?' +
+      (isJson
+        ? ' Sonst ID wieder entfernen.'
+        : `\nSonst die ID durch "${DECLINED}" ersetzen (oder durch die richtige) – nur löschen hilft nicht,\nder nächste Lauf trüge sie wieder ein.`)
+  );
+  for (const { band, hit } of adopted) {
+    console.log(`  - ${band} → ${hit.name} (${hit.id})`);
+    console.log(`      ${describeReleases(hit.releases)}`);
+    const note = cleanedNote(band, hit);
+    if (note) console.log(note);
+    if (hit.ignoredEmpty > 0) console.log(`      daneben ${emptyNote(hit.ignoredEmpty)}, nicht gewertet`);
+    const before = known.get(band);
+    if (before && before !== hit.id) console.log(`      ⚠ ersetzt die bisher eingetragene ID ${before}`);
   }
 }
 
+if (ambiguous.length > 0) {
+  console.log(
+    `\n⚠ ${ambiguous.length} mit mehreren gleichnamigen Künstlern – nichts übernommen, bitte von Hand entscheiden.\n` +
+      '  Die Reihenfolge ist die der Spotify-Suche und sagt nichts darüber, wer gemeint ist:'
+  );
+  for (const { band, hit } of ambiguous) {
+    const before = known.get(band);
+    console.log(`  - ${band}   https://open.spotify.com/search/${encodeURIComponent(hit.query)}`);
+    const note = cleanedNote(band, hit);
+    if (note) console.log(note);
+    for (const c of hit.candidates) {
+      console.log(
+        `      ${c.id}  ${c.name} · ${describeReleases(c.releases)}${c.id === before ? '   ← eingetragen' : ''}`
+      );
+    }
+    if (hit.ignoredEmpty > 0) console.log(`      (dazu ${emptyNote(hit.ignoredEmpty)})`);
+    if (hit.unchecked > 0) {
+      console.log(`      ${hit.unchecked} weitere gleichnamige Profile wurden nicht mehr nachgeschlagen (zu viele).`);
+    }
+    if (hit.open) console.log('      Weitere Namensvettern sind möglich – die Suche wurde hier nicht weiter verfolgt.');
+    if (before && !hit.candidates.some((c) => c.id === before)) {
+      console.log(`      eingetragen ist ${before} – nicht unter diesen Kandidaten, bleibt stehen`);
+    }
+  }
+  console.log(`\n${MANUAL_HINT}\n  Passt kein Kandidat sicher zur Band: ohne Button lassen.${DECLINE_HINT}`);
+}
+
 if (unresolved.length > 0) {
-  console.log(`\n${unresolved.length} ohne eindeutigen Treffer (bleiben ohne Button):`);
-  for (const band of unresolved) {
-    console.log(`  - ${band}   https://open.spotify.com/search/${encodeURIComponent(band)}`);
+  console.log(`\n${unresolved.length} ohne Treffer (bleiben ohne Button):`);
+  for (const { band, hit } of unresolved) {
+    const why =
+      hit.status === 'empty'
+        ? `   – nur ${emptyNote(hit.candidates.length)} (${hit.candidates.map((c) => c.id).join(', ')})`
+        : '';
+    console.log(`  - ${band}   https://open.spotify.com/search/${encodeURIComponent(band)}${why}`);
   }
   console.log(
-    '\n  Wer davon doch auf Spotify ist: ID aus der Künstler-URL kopieren\n' +
-      '  (open.spotify.com/artist/<ID>) und von Hand eintragen – im Veranstalter-\n' +
-      '  Editor oder als "| spotify=<ID>" in der Running-Order-Textdatei.'
+    `\n  Geprüft wurden je Name die ersten ${depth} Suchergebnisse. Bei Allerweltsnamen steht die Band\n` +
+      '  manchmal weiter hinten oder wird nur mit Zusatz gefunden („Seth black metal").\n' +
+      MANUAL_HINT +
+      DECLINE_HINT
   );
+}
+
+const unchecked = [...failed, ...skipped];
+if (unchecked.length > 0) {
+  console.log(`\n✗ ${unchecked.length} nicht geprüft (bleiben vorerst ohne Button):`);
+  for (const band of unchecked) console.log(`  - ${band}`);
+  if (locked) {
+    const until = new Date(Date.now() + locked.seconds * 1000).toLocaleString('de-DE', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+      timeZone: 'Europe/Berlin',
+    });
+    console.log(
+      `  Spotify sperrt die App bis etwa ${until} Uhr (Europe/Berlin)${locked.quota ? ' – Kontingent erschöpft' : ''}.\n` +
+        '  Das Kontingent gilt für das ganze Entwicklerkonto; bis dahin scheitert jeder Lauf.'
+    );
+  } else if (skipped.length > 0) {
+    console.log(
+      `  Das Budget von ${budget} Abfragen für diesen Lauf ist aufgebraucht (--budget). Es schützt das\n` +
+        '  Spotify-Kontingent: Ist das erschöpft, ist die App für rund einen Tag gesperrt.'
+    );
+  }
+  console.log('  Später erneut laufen lassen – eingetragene IDs bleiben stehen, gesucht wird nur, was fehlt.');
 }

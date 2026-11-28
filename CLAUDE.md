@@ -83,6 +83,10 @@ gesperrt – dann das sagen, statt drumherum zu arbeiten.
   Spotify) sind als Netzwerk-Secrets hinterlegt; der Proxy setzt sie
   ein. In den Variablen stehen höchstens Platzhalter – das ist richtig
   so, nicht nach den echten Werten suchen und nie im Chat danach fragen.
+- **Das Spotify-Kontingent ist knapp** – wenige hundert Abfragen, dann
+  sperrt Spotify die App für rund 24 Stunden, auch für den täglichen
+  Lineup-Watch-Lauf. `api.spotify.com` nicht in eigenen Schleifen
+  abfragen und `lineup:spotify` nicht zum Ausprobieren wiederholen.
 - **Die Datenbank ist von hier aus nicht erreichbar.** Alles, was
   `DATABASE_URL` braucht (`import:db`, `organizer`, `push:broadcast`),
   läuft nur beim Betreiber. Mach in dem Fall die Datei fertig, prüf sie

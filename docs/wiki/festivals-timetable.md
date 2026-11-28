@@ -95,6 +95,10 @@ steht damit „· 30 Bands announced" statt „· Lineup folgt".
 - **Nur angekündigte Bands:** ein `[announced]`-Abschnitt in der
   Running-Order-Textdatei, eine Band pro Zeile. `npm run lineup` sucht
   auch für diese Zeilen die Spotify-IDs und schreibt sie in `bands`.
+  Übernommen wird nur ein eindeutiger Treffer (gleicher Name, einziger
+  gleichnamiger Künstler mit Veröffentlichungen); bei mehreren nennt der
+  Bericht die Kandidaten mit Alben, und die ID kommt von Hand. Eine
+  Zeile mit `| spotify=-` bleibt bewusst ohne Button.
 - **Neue Ankündigungswellen:** die Lineup-Watch – ein geplanter Lauf, der
   die offiziellen Quellen aus `lineups/watch.json` prüft, neue Bands an
   `[announced]` anhängt und sie über `POST /api/operator/lineup` additiv

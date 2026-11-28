@@ -260,9 +260,25 @@ für Bands ohne Slot nötig.
 Band-Sheet und in der Lineup-Ansicht der „Auf Spotify anhören"-Button
 hängt. Ohne sie fehlt der
 Button; von Hand gepflegte Lineups starten immer bei null (der
-Wacken-Export bringt seine IDs mit). Das Script nimmt nur exakte
-Namenstreffer aus der Spotify-Suche und meldet mehrdeutige und nicht
-gefundene Bands zum Nachsehen. Zugangsdaten gibt es kostenlos über
+Wacken-Export bringt seine IDs mit). Spotify liefert zu Künstlern keine
+Follower, Genres oder Popularität mehr; das Script übernimmt deshalb nur
+den Fall, der ohne Raten auskommt: exakt derselbe Name und unter den
+ersten 20 Suchergebnissen der einzige gleichnamige Künstler mit
+Veröffentlichungen. Der Bericht nennt zu jeder Zuordnung die Alben –
+bitte lesen, denn auch ein einziger Namensvetter kann die falsche Band
+sein. Bei mehreren gleichnamigen Künstlern wird nichts übernommen; der
+Bericht listet die Kandidaten mit ID und Alben, und die richtige kommt
+von Hand als `| spotify=<ID>` an die Zeile. `| spotify=-` heißt „bewusst
+ohne Button" und nimmt die Band aus der Suche.
+
+Das Kontingent der Spotify-App ist knapp (Development Mode, pro
+Entwicklerkonto, Größe unbekannt): Rund 500 Abfragen in kurzer Zeit
+haben am 28.11.2026 für knapp 24 Stunden Sperre gereicht. Das Script
+beginnt deshalb nach 250 Abfragen keine weitere Band (`--budget`), sucht
+nur zwei Ergebnisseiten tief (`--pages`) und bricht bei einer Sperre
+sauber ab; was übrig bleibt, holt ein späterer Lauf nach.
+
+Zugangsdaten gibt es kostenlos über
 developer.spotify.com und gehören als `SPOTIFY_CLIENT_ID` /
 `SPOTIFY_CLIENT_SECRET` in die lokale `.env.local` – nur für dieses
 Script, nicht zur Laufzeit: die App selbst spricht nie mit Spotify, auf

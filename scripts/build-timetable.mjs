@@ -27,6 +27,7 @@
  *   [announced]
  *   Amon Amarth | spotify=6vg9BW5gHSjidGbypXQku2
  *   Sabaton
+ *   Lokale Vorband | spotify=-          (bewusst ohne Spotify-Button)
  *
  * Zeiten nach Mitternacht dürfen als 00:30 oder als 24:30 stehen – die App
  * rechnet Stunden vor 08:00 automatisch dem Vortag zu.
@@ -164,7 +165,8 @@ for (let i = 0; i < lines.length; i++) {
     const entry = { band, lineNo };
     for (const opt of parts) {
       const [key, value] = opt.split('=').map((p) => p.trim());
-      if (key === 'spotify') entry.spotifyArtistId = value;
+      // "spotify=-" heißt: bewusst ohne Button (siehe spotify-ids.mjs)
+      if (key === 'spotify') value === '-' || (entry.spotifyArtistId = value);
       else fail(`unbekannte Option "${opt}" – im [announced]-Block gibt es nur spotify=`, lineNo);
     }
     announced.push(entry);
@@ -184,7 +186,7 @@ for (let i = 0; i < lines.length; i++) {
   for (const opt of parts) {
     const [key, value] = opt.split('=').map((p) => p.trim());
     if (/^unbest(ae|ä)tigt$/i.test(key) || /^tba$/i.test(key)) entry.confirmed = false;
-    else if (key === 'spotify') entry.spotifyArtistId = value;
+    else if (key === 'spotify') value === '-' || (entry.spotifyArtistId = value);
     else if (key === 'id') entry.id = value;
     else fail(`unbekannte Option "${opt}"`, lineNo);
   }
