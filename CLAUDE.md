@@ -59,6 +59,10 @@ npm run festival:create -- --list                      # welche Festivals gibt e
 - Angelegt wird nur, was es noch nicht gibt. Bei einer bestehenden ID
   antwortet die App mit 409 und ändert nichts – ein Festival ersetzen
   kann dieser Weg nicht, und das ist Absicht.
+- Mindestens ein Festivaltag muss feststehen. Ein ganz leeres Gerüst
+  für einen Veranstalter, der alles selbst aufbaut (`"days": []`, siehe
+  `docs/wiki/veranstalter.md`), geht weiter nur per `import:db` – dort
+  braucht es die Datenbank ohnehin für den Veranstalter-Code.
 - Ein neues Festival hat noch keine Gruppen, es geht keine Mitteilung
   raus. Trotzdem ist es sofort für alle sichtbar, die eine Gruppe
   gründen: Name, Termin und Bandliste vorher zeigen und ein Okay holen.

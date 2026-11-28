@@ -62,7 +62,7 @@ export function parseNewFestival(body: unknown): Parsed {
   const edition = text(body.edition, 1, 120);
   if (!edition) return fail('"edition" (Datum/Ort) muss 1–120 Zeichen haben');
   const dataVersion = body.dataVersion === undefined ? '' : text(body.dataVersion, 0, 120);
-  if (dataVersion === null) return fail('"dataVersion" darf höchstens 120 Zeichen haben');
+  if (dataVersion === null) return fail('"dataVersion" muss Text mit höchstens 120 Zeichen sein');
 
   for (const key of ['days', 'stages', 'slots', 'bands'] as const) {
     if (body[key] !== undefined && !Array.isArray(body[key])) {

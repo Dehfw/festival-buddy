@@ -187,7 +187,9 @@ deshalb beim Import oben, mit dem Vergleich aus Schritt 3 davor – genau
 dort können Eintragungen verloren gehen, und genau dort soll ein Mensch
 hinschauen. Die App prüft die Datei beim Anlegen noch einmal selbst und
 ist dabei strenger als der Validator: Warnungen gibt es nicht, nur
-angenommen oder abgelehnt.
+angenommen oder abgelehnt. Mindestens ein Festivaltag muss drinstehen;
+ein ganz leeres Gerüst ohne Tage (für Veranstalter, die alles selbst im
+Editor aufbauen) nimmt nur der Import oben.
 
 Danach: `lineups/<festivalId>.txt` und `data/<festivalId>.json`
 committen, damit der nächste Import auf demselben Stand aufsetzt.

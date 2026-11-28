@@ -107,11 +107,15 @@ if (!args.festival || !/^[a-z0-9][a-z0-9-]{1,39}$/.test(args.festival)) {
 }
 
 const filePath = path.resolve(args.file ?? path.join('data', `${args.festival}.json`));
-const timetable = JSON.parse(
-  await readFile(filePath, 'utf8').catch(() =>
-    fail(`${filePath} nicht lesbar – erst npm run lineup laufen lassen`)
-  )
+const raw = await readFile(filePath, 'utf8').catch(() =>
+  fail(`${filePath} nicht lesbar – erst npm run lineup laufen lassen`)
 );
+let timetable;
+try {
+  timetable = JSON.parse(raw);
+} catch (err) {
+  fail(`${filePath} ist kein gültiges JSON: ${err.message}`);
+}
 
 const result = await call('POST', {
   festivalId: args.festival,
