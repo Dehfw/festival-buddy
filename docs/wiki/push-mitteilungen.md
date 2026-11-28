@@ -156,8 +156,10 @@ Was der Endpunkt garantiert:
   `pushFailed: true` – gespeichert ist ja alles, und ein Aufrufer, der
   wiederholt, fände nichts Neues. Nachgeholt wird ein verlorener Push
   nicht von selbst (`npm run push:broadcast` wäre der Handweg).
-  `lineup:announce` wartet bis zu 15 Minuten auf die Antwort und meldet
-  einen Timeout als „Status unklar“, nicht als Fehlschlag.
+  Bleibt die Antwort beim echten Versand aus – Nodes fetch gibt nach
+  5 Minuten ohne Antwort-Header auf, ein Proxy davor womöglich früher
+  (502/504) –, meldet `lineup:announce` das als „Status unklar, nicht
+  wiederholen“ statt als Fehlschlag.
 - Text: „Neu im Lineup: <Band>“ bzw. „N neue Bands im Lineup“, im Body
   die Namen in der Reihenfolge der Anfrage; passen nicht alle in die
   500 Zeichen, steht am Ende „… und 12 weitere Bands“

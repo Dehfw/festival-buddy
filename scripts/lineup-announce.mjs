@@ -123,12 +123,31 @@ async function inAnnouncementOrder(bands) {
 }
 
 /**
+ * Abfragen und Probeläufe antworten sofort – dort ein eigener Timeout.
  * Der echte Versand wartet serverseitig auf den Push-Fan-out an alle Abos
- * des Festivals – bei vielen Abos dauert das. Deshalb dort ein langer
- * Timeout; alles andere antwortet sofort.
+ * des Festivals und bekommt bewusst keinen eigenen: Nodes fetch (undici)
+ * gibt ohnehin nach 5 Minuten ohne Antwort-Header auf, länger ginge nur
+ * mit einem eigenen Dispatcher. Entscheidend ist, was das Ausbleiben der
+ * Antwort dann bedeutet – siehe statusUnclear().
  */
-const SEND_TIMEOUT_MS = 15 * 60_000;
 const QUICK_TIMEOUT_MS = 120_000;
+
+/**
+ * Die Anfrage ist raus, nur die Antwort fehlt. Die App speichert Bands und
+ * Mitteilung, BEVOR sie pusht – sehr wahrscheinlich ist also alles
+ * eingepflegt und der Versand läuft noch oder ist durch. Ein zweiter
+ * Aufruf fände "nichts Neues" und würde den Lauf in die Irre führen.
+ */
+function statusUnclear(what) {
+  fail(
+    `Keine Antwort von ${base} (${what}) – der Status ist unklar, nicht gescheitert.\n` +
+      '  Vermutlich sind die Bands eingepflegt und die Mitteilung ist angelegt. NICHT einfach\n' +
+      `  wiederholen, sondern prüfen: npm run lineup:announce -- --festival ${args.festival} --status`
+  );
+}
+
+/** undici-Fehler, bei denen die Anfrage ankam, die Antwort aber ausblieb */
+const NO_ANSWER_CODES = ['UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT', 'UND_ERR_SOCKET'];
 
 async function call(method, url, body) {
   const sending = method === 'POST' && body?.dryRun === false;
@@ -141,19 +160,14 @@ async function call(method, url, body) {
         ...(body ? { 'Content-Type': 'application/json' } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(sending ? SEND_TIMEOUT_MS : QUICK_TIMEOUT_MS),
+      ...(sending ? {} : { signal: AbortSignal.timeout(QUICK_TIMEOUT_MS) }),
     });
   } catch (err) {
-    if (sending && (err?.name === 'TimeoutError' || err?.name === 'AbortError')) {
-      // Die Anfrage ist raus, nur die Antwort fehlt: Die App speichert Bands
-      // und Mitteilung, BEVOR sie pusht – sehr wahrscheinlich ist also alles
-      // eingepflegt und der Versand läuft noch oder ist durch.
-      fail(
-        `Keine Antwort von ${base} nach ${SEND_TIMEOUT_MS / 60_000} Minuten – der Status ist unklar, nicht gescheitert.\n` +
-          '  Vermutlich sind die Bands eingepflegt und die Mitteilung ist angelegt. NICHT einfach\n' +
-          `  wiederholen, sondern prüfen: npm run lineup:announce -- --festival ${args.festival} --status`
-      );
-    }
+    const noAnswer =
+      err?.name === 'TimeoutError' ||
+      err?.name === 'AbortError' ||
+      NO_ANSWER_CODES.includes(err?.cause?.code);
+    if (sending && noAnswer) statusUnclear(err?.cause?.message ?? err?.message ?? err);
     fail(
       `${base} nicht erreichbar: ${err?.cause?.message ?? err?.message ?? err}\n` +
         '  In einer Cloud-Session muss der Host in der Umgebung freigegeben sein.'
@@ -165,6 +179,12 @@ async function call(method, url, body) {
     json = JSON.parse(text);
   } catch {
     // keine JSON-Antwort (Proxy-Fehlerseite, 404-HTML vor dem Deploy)
+  }
+  // 502/503/504 ohne JSON kommt nicht von der App, sondern von einem Proxy
+  // davor (Traefik, Cloud-Proxy), der die lange Verbindung aufgegeben hat –
+  // für den echten Versand dieselbe Lage wie eine ausgebliebene Antwort.
+  if (sending && json === null && [502, 503, 504].includes(res.status)) {
+    statusUnclear(`HTTP ${res.status} von einem Proxy vor der App`);
   }
   if (!res.ok) {
     const hints = {
