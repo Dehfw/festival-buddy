@@ -94,8 +94,9 @@ npm run festival:create -- --list                      # welche Festivals gibt e
   raus. Trotzdem ist es sofort für alle sichtbar, die eine Gruppe
   gründen: Name, Termin und Bandliste vorher zeigen und ein Okay holen.
 - Spotify-Treffer gegenprüfen, bevor etwas live geht (siehe Skill
-  `lineup-import`): Die Suche nimmt bei gleichnamigen Künstlern den
-  ersten Treffer.
+  `lineup-import`): Der Bericht nennt zu jeder Zuordnung die Alben. Bei
+  mehreren gleichnamigen Künstlern übernimmt die Suche nichts und
+  listet die Kandidaten – die ID kommt dann von Hand.
 - Danach `lineups/<id>.txt` und `data/<id>.json` committen – und das
   Festival bei Bedarf auf die Watchlist setzen.
 
