@@ -15,8 +15,10 @@ genannten Skill, bevor du loslegst – dort steht, was schiefgehen kann.
 | --- | --- |
 | „Trag diese Bands nach", Festival hat noch **keine** Running Order | Lineup-Ergänzung, siehe unten |
 | „Schau, ob Festival X neue Bands announced hat" | Skill `lineup-watch` |
+| Angekündigte Band heißt jetzt anders („benenn X um in Y") | `npm run lineup:rename`, siehe unten |
 | Festival soll automatisch beobachtet werden (oder nicht mehr) | Watchlist, siehe unten |
-| Neues Festival anlegen, Running Order mit Spielzeiten einspielen | Skill `lineup-import` (braucht `DATABASE_URL`) |
+| Neues Festival anlegen (mit oder ohne Running Order) | Skill `lineup-import`, dann `npm run festival:create` – siehe unten |
+| Running Order für ein Festival einspielen, das es **schon gibt** | Skill `lineup-import` (Voll-Import, braucht `DATABASE_URL`) |
 | Einzelne Zeit oder Bühne bei einem Festival ändern, das live ist | Veranstalter-Editor unter `/veranstalter`, kein Import |
 
 ### Neue Bands nachtragen
@@ -43,13 +45,67 @@ npm run lineup:announce -- --festival <id>                 # pflegt ein + Mittei
 - Hat das Festival schon eine Running Order, lehnt die App ab (409).
   Dann ist `lineup-import` bzw. der Editor zuständig.
 
+### Angekündigte Band umbenennen
+
+Die Quelle führt eine Band unter neuem Namen – die Lineup-Watch meldet
+das als „verdächtig ähnlich" und fasst es nicht an. Entscheidet der
+Betreiber, dass umbenannt wird:
+
+```bash
+npm run lineup:rename -- lineups/<id>.txt --festival <id> "Alter Name" "Neuer Name" --dry-run
+npm run lineup:rename -- lineups/<id>.txt --festival <id> "Alter Name" "Neuer Name"
+npm run lineup -- lineups/<id>.txt --festival <id>     # Importdatei neu bauen, dann committen
+```
+
+- Nie den Namen einfach in der Textdatei ändern: Das ergäbe einen neuen
+  Slug, und wer die Band gemerkt hat, verlöre die Merkung. Das Script
+  benennt zuerst in der App um – dort ziehen die Merkungen mit – und
+  passt danach die Datei an.
+- Es geht keine Mitteilung raus. Der Probelauf nennt, wie viele
+  Merkungen betroffen sind.
+- Die App merkt sich den alten Namen als Verweis. Bis die geänderte
+  Textdatei in `main` ist, wertet sie ihn deshalb nicht als neue Band,
+  und `lineup:announce --status` zeigt ihn als „in der App umbenannt".
+  Trotzdem zeitnah committen und nach `main` bringen.
+- Nur für Bands ohne Spielzeit und nur auf ausdrückliche Ansage: Ob es
+  dieselbe Band unter neuem Namen ist oder doch eine andere, entscheidet
+  ein Mensch. Zwei bestehende Einträge zusammenlegen kann der Weg nicht.
+
+### Neues Festival anlegen
+
+Datei bauen wie im Skill `lineup-import` beschrieben, dann ohne
+Datenbank-Zugang anlegen:
+
+```bash
+npm run lineup -- lineups/<id>.txt --festival <id>     # Spotify-IDs, data/<id>.json bauen, prüfen
+npm run festival:create -- --festival <id> --dry-run   # prüft die App: gültig, ID noch frei?
+npm run festival:create -- --festival <id>             # legt an
+npm run festival:create -- --list                      # welche Festivals gibt es schon?
+```
+
+- Angelegt wird nur, was es noch nicht gibt. Bei einer bestehenden ID
+  antwortet die App mit 409 und ändert nichts – ein Festival ersetzen
+  kann dieser Weg nicht, und das ist Absicht.
+- Mindestens ein Festivaltag muss feststehen. Ein ganz leeres Gerüst
+  für einen Veranstalter, der alles selbst aufbaut (`"days": []`, siehe
+  `docs/wiki/veranstalter.md`), geht weiter nur per `import:db` – dort
+  braucht es die Datenbank ohnehin für den Veranstalter-Code.
+- Ein neues Festival hat noch keine Gruppen, es geht keine Mitteilung
+  raus. Trotzdem ist es sofort für alle sichtbar, die eine Gruppe
+  gründen: Name, Termin und Bandliste vorher zeigen und ein Okay holen.
+- Spotify-Treffer gegenprüfen, bevor etwas live geht (siehe Skill
+  `lineup-import`): Die Suche nimmt bei gleichnamigen Künstlern den
+  ersten Treffer.
+- Danach `lineups/<id>.txt` und `data/<id>.json` committen – und das
+  Festival bei Bedarf auf die Watchlist setzen.
+
 ### Watchlist
 
 `lineups/watch.json` nennt die Festivals, die der tägliche Lauf
 „Lineup-Watch Festival Buddy" (geplante Aufgabe im Claude-Konto, 19:12
 Uhr Europe/Berlin) prüft. Ein Festival aufnehmen heißt:
 
-1. Es muss in der App existieren (Erstanlage per `lineup-import`).
+1. Es muss in der App existieren (anlegen wie oben beschrieben).
 2. Eintrag mit `id`, `lineup` und der offiziellen Quelle ergänzen. Ruf
    die Quelle einmal ab und halte in `notes` fest, wo die Bandliste
    steht – eine falsche URL fällt sonst erst im geplanten Lauf auf.
@@ -87,10 +143,15 @@ gesperrt – dann das sagen, statt drumherum zu arbeiten.
   sperrt Spotify die App für rund 24 Stunden, auch für den täglichen
   Lineup-Watch-Lauf. `api.spotify.com` nicht in eigenen Schleifen
   abfragen und `lineup:spotify` nicht zum Ausprobieren wiederholen.
+- Über die Betreiber-API der App (`/api/operator/*`) geht von hier
+  aus: ein neues Festival anlegen (`festival:create`), neue Bands
+  einpflegen (`lineup:announce`) und eine angekündigte Band umbenennen
+  (`lineup:rename`). Mehr nicht – insbesondere nichts löschen.
 - **Die Datenbank ist von hier aus nicht erreichbar.** Alles, was
   `DATABASE_URL` braucht (`import:db`, `organizer`, `push:broadcast`),
-  läuft nur beim Betreiber. Mach in dem Fall die Datei fertig, prüf sie
-  und sag, welches Kommando noch auszuführen ist.
+  läuft nur beim Betreiber – also auch jede Änderung an der Running
+  Order eines bestehenden Festivals. Mach in dem Fall die Datei fertig,
+  prüf sie und sag, welches Kommando noch auszuführen ist.
 
 ## Vor dem Commit
 

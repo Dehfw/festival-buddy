@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
-import { hasBearer } from '@/lib/bearer';
 import {
   addLineupBands,
+  getBandSlugAliases,
   getFestivalAudienceUserIds,
   getTimetableFresh,
+  renameLineupBand,
   type LineupBandInput,
 } from '@/lib/db';
 import { lineupAnnouncementText } from '@/lib/lineupNews';
+import { operatorGuard } from '@/lib/operatorAuth';
 import { sendPushToUsers, type PushFanoutResult } from '@/lib/push';
-import { clientIp, rateLimit } from '@/lib/ratelimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,9 +18,8 @@ export const dynamic = 'force-dynamic';
  * Festivals einpflegen und alle Mitglieder aller Gruppen dieses Festivals
  * darüber informieren (Mitteilung in der App + Push).
  *
- * Kein Nutzerkonto, sondern `Authorization: Bearer <LINEUP_API_SECRET>` –
- * der Endpunkt wird von einem geplanten Lauf aufgerufen, der selbst keinen
- * Datenbank-Zugang hat. Ohne die Variable bleibt die Route zu.
+ * Zugang über das Betreiber-Secret, siehe operatorGuard(). Ein neues
+ * Festival legt die Nachbar-Route /api/operator/festival an.
  */
 
 /**
@@ -30,28 +30,12 @@ export const dynamic = 'force-dynamic';
 const MAX_BANDS_PER_REQUEST = 2000;
 const DATA_VERSION_MAX = 120;
 
-function guard(req: Request): NextResponse | null {
-  const secret = process.env.LINEUP_API_SECRET;
-  if (!secret) {
-    return NextResponse.json({ error: 'LINEUP_API_SECRET nicht gesetzt' }, { status: 503 });
-  }
-  // Bremse fürs Durchprobieren; die Watch selbst braucht pro Lauf eine
-  // Handvoll Aufrufe.
-  if (!rateLimit(`lineup-api:${clientIp(req)}`, 60, 10 * 60_000)) {
-    return NextResponse.json({ error: 'Zu viele Anfragen' }, { status: 429 });
-  }
-  if (!hasBearer(req, secret)) {
-    return NextResponse.json({ error: 'Kein Zugriff' }, { status: 401 });
-  }
-  return null;
-}
-
 /**
  * Live-Stand des Band-Pools (?festival=…) – damit die Watch ohne
  * Datenbank-Zugang sieht, was schon eingepflegt ist.
  */
 export async function GET(req: Request) {
-  const denied = guard(req);
+  const denied = operatorGuard(req);
   if (denied) return denied;
   const festivalId = new URL(req.url).searchParams.get('festival') || '';
   if (!festivalId) {
@@ -69,6 +53,10 @@ export async function GET(req: Request) {
       dataVersion: timetable.dataVersion,
       hasTimetable: timetable.slots.length > 0,
       bands: timetable.bands,
+      // Früher umbenannte Bands (alter Slug -> aktueller Slug): Damit sieht
+      // der Aufrufer, dass ein Name aus seiner Datei nicht fehlt, sondern
+      // in der App inzwischen anders heißt.
+      renamed: await getBandSlugAliases(festivalId),
     },
     { headers: { 'Cache-Control': 'no-store' } }
   );
@@ -97,11 +85,12 @@ function parseBands(raw: unknown): LineupBandInput[] | string {
  *
  * Pflegt ein, was am Live-Stand gemessen neu ist, und benachrichtigt genau
  * über diese Bands. Bekannte Bands sind kein Fehler – die Watch darf immer
- * das komplette Lineup schicken. `dryRun` zeigt nur, was neu wäre;
+ * das komplette Lineup schicken. Ein Name, unter dem eine Band vor einer
+ * Umbenennung lief, gilt ebenfalls nicht als neu (Antwortfeld `renamed`). `dryRun` zeigt nur, was neu wäre;
  * `notify: false` pflegt still ein (Nachtrag ohne Mitteilung).
  */
 export async function POST(req: Request) {
-  const denied = guard(req);
+  const denied = operatorGuard(req);
   if (denied) return denied;
 
   const body = await req.json().catch(() => null);
@@ -165,9 +154,56 @@ export async function POST(req: Request) {
     festival: result.festival,
     added: result.added,
     enriched: result.enriched,
+    renamed: result.renamed,
     total: result.total,
     ...(result.announcement
       ? { announcement: result.announcement, audience, push, pushFailed }
       : {}),
+  });
+}
+
+/**
+ * { festivalId, from, to, spotifyArtistId?, dryRun? }
+ *
+ * Benennt eine Band im Lineup-Pool um und zieht die gemerkten Bands der
+ * Nutzer auf den neuen Namen mit (renameLineupBand). Keine Mitteilung, kein
+ * Push: Eine Umbenennung ist keine neue Band. `dryRun` zeigt, was passieren
+ * würde – inklusive der Zahl der Merkungen, die am alten Namen hängen.
+ */
+export async function PATCH(req: Request) {
+  const denied = operatorGuard(req);
+  if (denied) return denied;
+
+  const body = await req.json().catch(() => null);
+  const festivalId = typeof body?.festivalId === 'string' ? body.festivalId : '';
+  const from = typeof body?.from === 'string' ? body.from : '';
+  const to = typeof body?.to === 'string' ? body.to : '';
+  if (!festivalId) {
+    return NextResponse.json({ error: 'festivalId fehlt' }, { status: 400 });
+  }
+  if (!from.trim() || !to.trim()) {
+    return NextResponse.json({ error: 'from und to (alter und neuer Bandname) fehlen' }, { status: 400 });
+  }
+  const spotify = body?.spotifyArtistId;
+  if (spotify !== undefined && typeof spotify !== 'string') {
+    return NextResponse.json({ error: 'Ungültige Spotify-Artist-ID' }, { status: 400 });
+  }
+  const dryRun = body?.dryRun === true;
+
+  const result = await renameLineupBand(festivalId, from, to, {
+    spotifyArtistId: spotify || undefined,
+    dryRun,
+  });
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+  return NextResponse.json({
+    ok: true,
+    dryRun,
+    festival: result.festival,
+    from: result.from,
+    to: result.to,
+    slugChanged: result.slugChanged,
+    interests: result.interests,
   });
 }

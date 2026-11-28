@@ -292,6 +292,22 @@ Variablen haben weiterhin Vorrang.
 Der Ablauf samt Textformat ist als Skill hinterlegt:
 `.claude/skills/lineup-import/`.
 
+### Neues Festival ohne Datenbank-Zugang anlegen
+
+Für die Erstanlage braucht es die `DATABASE_URL` nicht – die Importdatei
+geht per HTTPS an die Betreiber-API der App:
+
+```bash
+npm run festival:create -- --festival psoa2027 --dry-run   # prüfen: Datei gültig, ID noch frei?
+npm run festival:create -- --festival psoa2027             # anlegen (data/psoa2027.json)
+npm run festival:create -- --list                          # alle Festivals der App
+```
+
+Das legt ausschließlich neu an. Gibt es die ID schon, antwortet die App
+mit 409 und ändert nichts; ein bestehendes Festival ersetzt weiterhin
+nur `import:db`. Gebraucht wird dasselbe `LINEUP_API_SECRET` wie für die
+Lineup-Watch.
+
 ### Lineup-Watch: neue Bands automatisch
 
 Für Festivals in `lineups/watch.json` prüft ein geplanter Claude-Lauf
@@ -306,6 +322,11 @@ npm run lineup -- lineups/sb2027.txt --festival sb2027             # Spotify, ba
 npm run lineup:announce -- --festival sb2027 --dry-run             # was wäre live neu?
 npm run lineup:announce -- --festival sb2027                       # einpflegen + Mitteilung + Push
 ```
+
+Heißt eine angekündigte Band inzwischen anders, benennt
+`npm run lineup:rename -- lineups/<id>.txt --festival <id> "Alt" "Neu"`
+sie in App und Textdatei um; die gemerkten Bands der Nutzer ziehen dabei
+auf den neuen Namen mit.
 
 `lineup:announce` spricht per HTTPS mit der App (`LINEUP_API_URL`,
 Default `https://festivalbuddy.app`) und braucht nur das
@@ -408,7 +429,9 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | `POST /api/selection`                | Band-Teilnahme setzen/entfernen (Session, `{ group, slotId, status }`) |
 | `POST /api/interest`                 | Band aus dem Lineup merken/vergessen (Session, `{ group, slug, interested }`) |
 | `POST /api/position`                 | ✕-Position setzen/löschen (Session, `{ group, slotId, x, y }`) |
+| `GET/POST /api/operator/festival`    | Betreiber-API: alle Festivals auflisten bzw. ein neues Festival anlegen – nie ein bestehendes ersetzen (Bearer `LINEUP_API_SECRET`) |
 | `GET/POST /api/operator/lineup`      | Lineup-Watch: Live-Band-Pool lesen bzw. neue Bands additiv einpflegen + Mitteilung/Push an alle Gruppen des Festivals (Bearer `LINEUP_API_SECRET`) |
+| `PATCH /api/operator/lineup`         | Angekündigte Band umbenennen (`{ festivalId, from, to }`); gemerkte Bands der Nutzer ziehen mit, kein Push (Bearer `LINEUP_API_SECRET`) |
 | `GET  /api/organizer/me`             | Meine Veranstalter-Festivals                 |
 | `POST /api/organizer/redeem`         | Veranstalter-Code einlösen (`{ code }`, rate-limited) |
 | `GET  /api/organizer/state?festival=…` | Editor-Datenstand: Timetable, Blueprints, Auswahl-Zähler pro Slot (nur Veranstalter des Festivals) |

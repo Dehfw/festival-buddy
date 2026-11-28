@@ -62,6 +62,12 @@ zueinander stehen.
 - **Hat bereits eine Running Order** → Festival überspringen und im
   Bericht vorschlagen, es aus der Watchlist zu nehmen. Ab da läuft alles
   über den Timetable (Skill `lineup-import`, Veranstalter-Editor).
+- **„In der App umbenannt"** → eine Band heißt in der App inzwischen
+  anders als in der Datei; die Umbenennung ist in `main` noch nicht
+  angekommen. Nicht mit `lineup:add` nachtragen (das ergäbe die Band
+  doppelt), sondern die Datei nachziehen:
+  `npm run lineup:rename -- lineups/<id>.txt --file-only "Alt" "Neu"`.
+  Die App wertet den alten Namen ohnehin nicht als neue Band.
 - **„Nur live" ist nicht leer** → die App kennt Bands, die der Datei
   fehlen. Meist liegt ein Lineup-Watch-PR eines früheren Laufs noch
   ungemergt herum. Trag diese Bands zuerst in exakt der Live-Schreibweise
@@ -116,7 +122,9 @@ die `dataVersion`. Lies den Bericht, bevor du weitermachst:
   einer Korrektur oder Umbenennung auf der Website („John 5" → „John 5
   And The Creatures"), nicht das einer neuen Band. Im Normalfall also
   nichts tun und im Bericht nennen – eine Umbenennung ändert den Slug
-  und ist eine Entscheidung für einen Menschen. Nur wenn du sicher bist,
+  und ist eine Entscheidung für einen Menschen. Fällt sie, gibt es
+  dafür `npm run lineup:rename` (zieht die gemerkten Bands der Nutzer
+  mit um, siehe `CLAUDE.md`); der geplante Lauf selbst benennt nie um. Nur wenn du sicher bist,
   dass es wirklich eine andere Band ist, einzeln nachtragen:
   `npm run lineup:add -- lineups/<id>.txt --force "Name"`.
 - **`−` fehlt in der Quelle** – nie selbst löschen. Eine Absage ist eine
@@ -252,7 +260,8 @@ mit dem Skill `lineup-import`.
 
 Ein Festival beobachten heißt: Eintrag in `lineups/watch.json` mit `id`,
 `lineup` und mindestens einer offiziellen Quelle. Das Festival muss in
-der App schon existieren (Erstanlage per `lineup-import`), und der Host
+der App schon existieren (anlegen per `lineup-import` und
+`npm run festival:create`), und der Host
 der Quelle muss in der Cloud-Umgebung der Watch freigegeben sein – sonst
 kann der geplante Lauf die Seite nicht abrufen. Sag das dazu, wenn du
 einen Eintrag ergänzt. Vergangene Festivals und solche mit Running Order

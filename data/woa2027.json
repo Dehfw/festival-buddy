@@ -1,7 +1,7 @@
 {
   "festival": "Wacken Open Air 2027",
   "edition": "04.–07.08.2027 · Wacken",
-  "dataVersion": "2026-08-20 (50 angekündigte Bands laut offiziellem W:O:A-Export)",
+  "dataVersion": "2026-11-28 (70 Bands angekündigt)",
   "days": [
     {
       "id": "wed",
@@ -56,6 +56,11 @@
       "spotifyArtistId": "4BMOQ1GSXhTvuv6a05wk7z"
     },
     {
+      "slug": "buelent-ceylan-band",
+      "name": "Bülent Ceylan & Band",
+      "spotifyArtistId": "6JlzKPy8g4gA8lj1TRrVVi"
+    },
+    {
       "slug": "carnifex",
       "name": "Carnifex",
       "spotifyArtistId": "4nqY8hkQNkHaDq4fdVxdYr"
@@ -66,9 +71,19 @@
       "spotifyArtistId": "7F1K4WlMshx23V2TTz4KwV"
     },
     {
+      "slug": "celestial-sanctuary",
+      "name": "Celestial Sanctuary",
+      "spotifyArtistId": "3XoDjY6V07YGHB3bw8ux1k"
+    },
+    {
       "slug": "children-of-bodom",
       "name": "Children Of Bodom",
       "spotifyArtistId": "1xUhNgw4eJDZfvumIpcz1B"
+    },
+    {
+      "slug": "cockney-rejects",
+      "name": "Cockney Rejects",
+      "spotifyArtistId": "4EfSXeVFbCEYIde3E9k4wr"
     },
     {
       "slug": "creeper",
@@ -91,6 +106,11 @@
       "spotifyArtistId": "7u12AuhJ5AaJIgZAZe0US8"
     },
     {
+      "slug": "donots",
+      "name": "Donots",
+      "spotifyArtistId": "2gRgzV2ooQwweEr4s7lwsg"
+    },
+    {
       "slug": "dragonforce",
       "name": "DragonForce",
       "spotifyArtistId": "2pH3wEn4eYlMMIIQyKPbVR"
@@ -106,6 +126,11 @@
       "spotifyArtistId": "1WNoKxsp715jez1Td4vthc"
     },
     {
+      "slug": "faetooth",
+      "name": "Faetooth",
+      "spotifyArtistId": "6bAM7jeIX4pI5lZ0QoSZjt"
+    },
+    {
       "slug": "feuerschwanz",
       "name": "Feuerschwanz",
       "spotifyArtistId": "2Ct54gNxKnYLnXk9HhviMI"
@@ -114,6 +139,11 @@
       "slug": "five-finger-death-punch",
       "name": "Five Finger Death Punch",
       "spotifyArtistId": "5t28BP42x2axFnqOOMg3CM"
+    },
+    {
+      "slug": "fulci",
+      "name": "Fulci",
+      "spotifyArtistId": "5rK5iEoGaC5LtoBCiXpCet"
     },
     {
       "slug": "gaerea",
@@ -155,6 +185,11 @@
       "spotifyArtistId": "7rqJQQxuUOCk052MK5kLsH"
     },
     {
+      "slug": "imperial-age",
+      "name": "Imperial Age",
+      "spotifyArtistId": "7jlDQREUVAlJR20Zug4MIV"
+    },
+    {
       "slug": "jinjer",
       "name": "Jinjer",
       "spotifyArtistId": "7o6cOczXTB8ioTAAJTbESf"
@@ -174,9 +209,29 @@
       "spotifyArtistId": "5VI8SBEX7uSvoHsdI5xNVJ"
     },
     {
+      "slug": "karen-dio",
+      "name": "Karen Dio",
+      "spotifyArtistId": "5VVMZArxuM1mO8Qny95inw"
+    },
+    {
+      "slug": "killswitch-engage",
+      "name": "Killswitch Engage",
+      "spotifyArtistId": "37394IP6uhnjIpsawpMu4l"
+    },
+    {
       "slug": "knocked-loose",
       "name": "Knocked Loose",
       "spotifyArtistId": "4qrHkx5cgWIslciLXUMrYw"
+    },
+    {
+      "slug": "left-to-suffer",
+      "name": "Left To Suffer",
+      "spotifyArtistId": "36d1uVy1ZuZWqfnsPxCUOk"
+    },
+    {
+      "slug": "limp-bizkit",
+      "name": "Limp Bizkit",
+      "spotifyArtistId": "165ZgPlLkK7bf5bDoFc6Sb"
     },
     {
       "slug": "make-them-suffer",
@@ -213,9 +268,19 @@
       "spotifyArtistId": "0NmYchKQ8JIR9QHYJA0FRe"
     },
     {
+      "slug": "primal-fear",
+      "name": "Primal Fear",
+      "spotifyArtistId": "1yfiDL3YUEJlQCgb5Pun6g"
+    },
+    {
       "slug": "primordial",
       "name": "Primordial",
       "spotifyArtistId": "0BZr6WHaejNA63uhZZZZek"
+    },
+    {
+      "slug": "rumkicks",
+      "name": "Rumkicks",
+      "spotifyArtistId": "0T5WHtmwuKkqfduvDMnWwt"
     },
     {
       "slug": "seven-blood",
@@ -226,6 +291,21 @@
       "slug": "shadow-of-intent",
       "name": "Shadow Of Intent",
       "spotifyArtistId": "76xrrejizyQpKukBIhnf3D"
+    },
+    {
+      "slug": "slash-feat-myles-kennedy-and-the-conspirators",
+      "name": "Slash feat. Myles Kennedy and The Conspirators",
+      "spotifyArtistId": "4Cqia9vrAbm7ANXbJGXsTE"
+    },
+    {
+      "slug": "slomosa",
+      "name": "Slomosa",
+      "spotifyArtistId": "0l7GXb53ndWn97ul8Hpfzd"
+    },
+    {
+      "slug": "south-arcade",
+      "name": "South Arcade",
+      "spotifyArtistId": "3vEL65ycUboLH76pgdtqlF"
     },
     {
       "slug": "sylosis",
@@ -241,6 +321,10 @@
       "slug": "the-browning",
       "name": "The Browning",
       "spotifyArtistId": "4DSNcg40nf6T3eNAObq1Lo"
+    },
+    {
+      "slug": "the-hebridean-sheep",
+      "name": "The Hebridean Sheep"
     },
     {
       "slug": "the-narrator",
@@ -267,14 +351,29 @@
       "spotifyArtistId": "2aWjaq32aRQo58dw0w8NM6"
     },
     {
+      "slug": "uk-subs",
+      "name": "UK Subs",
+      "spotifyArtistId": "4wsg78KGu80m8Xk37PY2uG"
+    },
+    {
       "slug": "victorius",
       "name": "Victorius",
       "spotifyArtistId": "2INeE2VBbawRQNI6ezc4lN"
     },
     {
+      "slug": "wargasm",
+      "name": "Wargasm",
+      "spotifyArtistId": "1NRudBLaT84LXxfsYdFMhB"
+    },
+    {
       "slug": "witch-club-satan",
       "name": "Witch Club Satan",
       "spotifyArtistId": "395rqoVSDgQIF7fzRfZIoy"
+    },
+    {
+      "slug": "witch-fever",
+      "name": "Witch Fever",
+      "spotifyArtistId": "1Zdd7fqk5jtuMUwE7agpS1"
     }
   ]
 }

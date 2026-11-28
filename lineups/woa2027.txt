@@ -9,7 +9,7 @@
 
 festival: Wacken Open Air 2027
 edition: 04.–07.08.2027 · Wacken
-dataVersion: 2026-08-20 (50 angekündigte Bands laut offiziellem W:O:A-Export)
+dataVersion: 2026-11-28 (70 Bands angekündigt)
 
 day: wed | 2027-08-04
 day: thu | 2027-08-05
@@ -81,3 +81,23 @@ Tyketto | spotify=0Yf2kOVTtWIw0lJsAkfE5s
 U.D.O. | spotify=2aWjaq32aRQo58dw0w8NM6
 Victorius | spotify=2INeE2VBbawRQNI6ezc4lN
 Witch Club Satan | spotify=395rqoVSDgQIF7fzRfZIoy
+Bülent Ceylan & Band | spotify=6JlzKPy8g4gA8lj1TRrVVi
+Celestial Sanctuary | spotify=3XoDjY6V07YGHB3bw8ux1k
+Cockney Rejects | spotify=4EfSXeVFbCEYIde3E9k4wr
+Donots | spotify=2gRgzV2ooQwweEr4s7lwsg
+Faetooth | spotify=6bAM7jeIX4pI5lZ0QoSZjt
+Fulci | spotify=5rK5iEoGaC5LtoBCiXpCet
+Imperial Age | spotify=7jlDQREUVAlJR20Zug4MIV
+Karen Dio | spotify=5VVMZArxuM1mO8Qny95inw
+Killswitch Engage | spotify=37394IP6uhnjIpsawpMu4l
+Left To Suffer | spotify=36d1uVy1ZuZWqfnsPxCUOk
+Limp Bizkit | spotify=165ZgPlLkK7bf5bDoFc6Sb
+Primal Fear | spotify=1yfiDL3YUEJlQCgb5Pun6g
+Rumkicks | spotify=0T5WHtmwuKkqfduvDMnWwt
+Slash feat. Myles Kennedy and The Conspirators | spotify=4Cqia9vrAbm7ANXbJGXsTE
+Slomosa | spotify=0l7GXb53ndWn97ul8Hpfzd
+South Arcade | spotify=3vEL65ycUboLH76pgdtqlF
+The Hebridean Sheep
+UK Subs | spotify=4wsg78KGu80m8Xk37PY2uG
+Wargasm | spotify=1NRudBLaT84LXxfsYdFMhB
+Witch Fever | spotify=1Zdd7fqk5jtuMUwE7agpS1

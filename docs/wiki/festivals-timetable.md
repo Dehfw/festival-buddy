@@ -85,6 +85,79 @@ denselben Bands gibt.
 `bandCount` (wie viele Bands stehen im Pool?). Bei der Gruppengründung
 steht damit „· 30 Bands announced" statt „· Lineup folgt".
 
+## Schreibwege im Überblick
+
+Vier Wege ändern die Festival-Zeile, mit sehr unterschiedlicher
+Reichweite:
+
+| Weg | Was er darf | Zugang |
+| --- | --- | --- |
+| `scripts/import-festival.mjs` (`npm run import:db`) | Festival anlegen **oder komplett ersetzen** – der einzige Weg, bei dem Slot-IDs verschwinden können | `DATABASE_URL` |
+| Veranstalter-Editor | Einzelne Tage, Bühnen, Slots ändern; IDs bleiben stabil | Veranstalter-Konto |
+| `POST /api/operator/festival` (`npm run festival:create`) | Ein Festival **neu anlegen** – existiert die ID, 409 und keine Änderung | `LINEUP_API_SECRET` |
+| `POST /api/operator/lineup` (`npm run lineup:announce`) | Bands **hinzufügen**, nur ohne Running Order; mit Mitteilung und Push | `LINEUP_API_SECRET` |
+| `PATCH /api/operator/lineup` (`npm run lineup:rename`) | Eine angekündigte Band **umbenennen**, nur ohne Running Order; Merkungen ziehen mit, kein Push | `LINEUP_API_SECRET` |
+
+Die Betreiber-Endpunkte sind für Claude-Sessions ohne
+Datenbank-Zugang gedacht und bewusst so geschnitten, dass sie nichts
+zerstören können: Der eine legt nur an, was es nicht gibt (ein neues
+Festival hat keine Gruppen, also keine Eintragungen), der zweite fügt
+nur hinzu, der dritte ändert einen Namen und nimmt alles mit, was daran
+hängt. `createFestival` nutzt dafür `INSERT … ON CONFLICT DO
+NOTHING`; die Anlage wird vorher von `parseNewFestival`
+(`src/lib/festivalCreate.ts`) geprüft und bereinigt – dieselben Regeln
+wie `validate-timetable.mjs`, nur ohne Warnstufe, und die Band-Slugs
+berechnet der Server selbst.
+
+### Umbenennen ohne Verlust
+
+Der Band-Slug ist die Kennung, an der `band_interests` hängt – und er
+entsteht aus dem Namen. Ein neuer Name ist deshalb normalerweise eine
+neue Band, und die Merkungen der alten wären weg. `renameLineupBand`
+(`src/lib/db.ts`) löst das für den einen Fall, in dem es wirklich
+dieselbe Band ist. In einer Transaktion, unter `FOR UPDATE` auf der
+Festival-Zeile:
+
+1. Der Pool-Eintrag wird ersetzt.
+2. Alle Merkungen ziehen vom alten auf den neuen Slug um – in einem
+   einzigen Statement, damit zwischendrin nichts verloren geht. Wer
+   schon beide Slugs gemerkt hatte, behält genau eine Merkung.
+3. Der alte Slug bleibt als Verweis in `band_slug_aliases` stehen
+   (alter Slug → aktueller Slug, nie als Kette: Frühere Verweise werden
+   auf den neuen Namen umgebogen).
+
+Ändert sich nur die Schreibweise und der Slug bleibt
+(Groß-/Kleinschreibung, Satzzeichen), entfallen 2 und 3.
+
+Der Verweis ist der Teil, der die Umbenennung gegen den Rest des Systems
+absichert, denn der alte Name ist danach noch überall unterwegs:
+
+- **In Clients.** Ein Tab, der seit der Umbenennung nicht gepollt hat,
+  oder die Offline-Warteschlange schickt Merk-Aktionen noch mit dem alten
+  Slug. `setBandInterest` löst ihn über den Verweis auf die aktuelle
+  Band auf – beim Merken wie beim Entfernen. Ohne das käme ein Entfernen
+  als wirkungsloses „ok" zurück und ein Merken als „Unbekannte Band".
+- **In Dateien.** Die Textdatei im Repo, ein alter Branch, ein Lauf von
+  `main`, bevor die Umbenennung dort angekommen ist: `addLineupBands`
+  wertet einen Namen, auf den ein Verweis zeigt, nicht als neue Band
+  (Antwortfeld `renamed`). Sonst ginge über den alten Namen ein Push
+  „neu im Lineup" raus, und die Band stünde doppelt im Pool.
+  `lineup:announce --status` zeigt solche Namen als „in der App
+  umbenannt"; nachgezogen wird die Datei mit
+  `lineup:rename --file-only`.
+
+Damit Merken und Umbenennen sich nicht in die Quere kommen, prüft und
+schreibt `setBandInterest` in einer eigenen Transaktion gegen den
+Live-Stand (nicht gegen den 15-s-Cache) und liest die Festival-Zeile
+dafür mit `FOR KEY SHARE`: Das wartet auf eine laufende Umbenennung und
+sieht danach den neuen Pool. Viele Nutzer, die gleichzeitig merken,
+blockieren sich dabei nicht.
+
+Abgelehnt wird, was eine andere Entscheidung wäre: ein Zielname, den es
+im Pool schon gibt (das wäre Zusammenlegen), und Festivals mit Running
+Order (dort steckt der Name auch in den Slot-IDs; der Editor hält sie
+beim Umbenennen eines Slots stabil).
+
 ## Woher kommen die Daten?
 
 - **Wacken:** offizieller W:O:A-Datenexport (`wackenlineup.json`),

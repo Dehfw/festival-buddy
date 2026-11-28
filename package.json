@@ -20,6 +20,8 @@
     "lineup:spotify": "node scripts/spotify-ids.mjs",
     "lineup:add": "node scripts/lineup-add.mjs",
     "lineup:announce": "node scripts/lineup-announce.mjs",
+    "lineup:rename": "node scripts/lineup-rename.mjs",
+    "festival:create": "node scripts/festival-create.mjs",
     "organizer": "node scripts/organizer-code.mjs",
     "push:broadcast": "node scripts/push-broadcast.mjs"
   },

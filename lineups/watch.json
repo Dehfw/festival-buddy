@@ -16,6 +16,14 @@
         "https://www.summer-breeze.de/de/bands/"
       ],
       "notes": "Die Bandnamen stehen als Überschriften im HTML der Seite, in Versalien – neue Bands in normaler Groß-/Kleinschreibung übernehmen (siehe Kopf der Textdatei)."
+    },
+    {
+      "id": "psoa2027",
+      "lineup": "lineups/psoa2027.txt",
+      "sources": [
+        "https://www.party-san.de/bands-2027"
+      ],
+      "notes": "Die Bandnamen stehen im HTML als Linktexte der Links auf /banddetail/2027-…, in Versalien – neue Bands in normaler Groß-/Kleinschreibung übernehmen. Schreibweisen der Seite beibehalten (\"Mgla\", \"PeelingFlesh\", siehe Kopf der Textdatei). Die Seite listet die neuesten Bands zuerst; die Ankündigungsreihenfolge steht im \"Billing 2027\" der Startseite. Die Spotify-Suche liefert keine Follower-Zahlen mehr und nimmt bei gleichnamigen Künstlern den ersten Treffer – bei den vielen Underground-Bands hier jede neue Zuordnung im Bericht nennen."
     }
   ]
 }
