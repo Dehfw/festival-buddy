@@ -230,8 +230,12 @@ const MAX_RATE_LIMIT_WAIT_S = 60;
 const PAUSE_MS = 150;
 
 let requests = 0;
+/** Abfragen, auf die Spotify überhaupt geantwortet hat (egal mit welchem Status) */
+let answered = 0;
 /** Gesetzt, sobald Spotify sperrt: { seconds, quota } – danach geht keine Abfrage mehr raus. */
 let locked = null;
+/** Gesetzt, wenn die Verbindung mitten im Lauf wegbricht (Grund als Text) – dito. */
+let offline = null;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -243,7 +247,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  */
 async function spotifyGet(url, what) {
   for (let attempt = 0; ; attempt++) {
-    if (locked) return null;
+    if (locked || offline) return null;
     if (requests > 0) await sleep(PAUSE_MS);
     requests++;
     let res;
@@ -257,10 +261,17 @@ async function spotifyGet(url, what) {
         await sleep(1000 * (attempt + 1));
         continue;
       }
-      fail(
-        `Spotify nicht erreichbar (api.spotify.com): ${err?.cause?.message ?? err?.message ?? err}\n${CLOUD_HINT}`
-      );
+      const reason = err?.cause?.message ?? err?.message ?? err;
+      // Kam noch nie eine Antwort, ist der Host gesperrt oder das Netz
+      // weg – dann gibt es nichts zu retten. Bricht die Verbindung erst
+      // mitten im Lauf ab, bleiben die Treffer bis hierher gültig: Das
+      // Kontingent dafür ist verbraucht, also werden sie auch geschrieben.
+      if (answered === 0) fail(`Spotify nicht erreichbar (api.spotify.com): ${reason}\n${CLOUD_HINT}`);
+      offline = String(reason);
+      console.warn(`  ⚠ Spotify nicht mehr erreichbar (${offline}) – der Rest bleibt ungeprüft`);
+      return null;
     }
+    answered++;
     if (res.status === 429) {
       const wait = Number(res.headers.get('retry-after')) || 2;
       const body = await res.text().catch(() => '');
@@ -441,6 +452,21 @@ const declined = new Set();
 /** So steht die Absage in der Textdatei */
 const DECLINED = 'spotify=-';
 
+/**
+ * Wert der spotify-Option einer Bandzeile ("-" = Absage) oder null, wenn
+ * sie keine hat. Gelesen wie in build-timetable.mjs – am "=" geteilt und
+ * getrimmt –, damit "spotify= -" hier nicht als ID durchgeht und dort
+ * als Absage.
+ */
+const SPOTIFY_OPTION = /^spotify\s*=\s*(.*)$/;
+function spotifyOption(parts) {
+  for (const part of parts) {
+    const m = SPOTIFY_OPTION.exec(part);
+    if (m) return m[1].trim();
+  }
+  return null;
+}
+
 if (isJson) {
   const timetable = JSON.parse(source);
   if (!Array.isArray(timetable.slots)) fail(`${file}: kein Timetable-JSON (Feld "slots" fehlt)`);
@@ -469,9 +495,9 @@ if (isJson) {
     const band = parts.shift();
     if (!band) continue;
     bands.add(band);
-    const existing = parts.find((p) => p.startsWith('spotify='));
-    if (existing === DECLINED) declined.add(band);
-    else if (existing && !known.has(band)) known.set(band, existing.slice('spotify='.length));
+    const existing = spotifyOption(parts);
+    if (existing === '-') declined.add(band);
+    else if (existing && !known.has(band)) known.set(band, existing);
   }
 }
 
@@ -500,7 +526,7 @@ const failed = [];
 const skipped = [];
 
 for (const band of todo) {
-  if (locked || requests >= budget) {
+  if (locked || offline || requests >= budget) {
     skipped.push(band);
     continue;
   }
@@ -579,8 +605,8 @@ if (isJson) {
       const band = parts.shift();
       if (!band) return line;
       const id = idFor(band);
-      if (!id || parts.includes(DECLINED)) return line;
-      const options = parts.filter((p) => !p.startsWith('spotify='));
+      if (!id || spotifyOption(parts) === '-') return line;
+      const options = parts.filter((p) => !SPOTIFY_OPTION.test(p));
       if (parts.length !== options.length && known.get(band) === id && !force) return line;
       patched++;
       const indent = line.slice(0, line.length - line.trimStart().length);
@@ -627,7 +653,7 @@ if (adopted.length > 0) {
       `unter den ersten ${depth} Suchergebnissen. Das beweist nicht, dass es die gemeinte Band ist\n` +
       '(Follower oder Genres liefert Spotify nicht mehr): Passen die Titel zur Band?' +
       (isJson
-        ? ' Sonst ID wieder entfernen.'
+        ? '\nSonst die ID wieder entfernen und die Suche nicht noch einmal über dieselbe Datei laufen lassen –\nsie trüge sie wieder ein. Dauerhaft ablehnen lässt sich ein Treffer nur in der Textdatei ("spotify=-").'
         : `\nSonst die ID durch "${DECLINED}" ersetzen (oder durch die richtige) – nur löschen hilft nicht,\nder nächste Lauf trüge sie wieder ein.`)
   );
   for (const { band, hit } of adopted) {
@@ -699,6 +725,8 @@ if (unchecked.length > 0) {
       `  Spotify sperrt die App bis etwa ${until} Uhr (Europe/Berlin)${locked.quota ? ' – Kontingent erschöpft' : ''}.\n` +
         '  Das Kontingent gilt für das ganze Entwicklerkonto; bis dahin scheitert jeder Lauf.'
     );
+  } else if (offline) {
+    console.log(`  Die Verbindung zu Spotify ist mitten im Lauf abgebrochen (${offline}).`);
   } else if (skipped.length > 0) {
     console.log(
       `  Das Budget von ${budget} Abfragen für diesen Lauf ist aufgebraucht (--budget). Es schützt das\n` +

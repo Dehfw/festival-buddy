@@ -182,7 +182,13 @@ an der du prüfst, bevor etwas live geht (Details im Skill
 Geh sparsam mit Spotify um: Das Kontingent der App reicht nur für
 wenige hundert Abfragen am Tag, danach ist sie rund 24 Stunden gesperrt.
 Lass die Strecke pro Festival nicht öfter laufen als nötig und ruf die
-Spotify-API nicht selbst in Schleifen ab.
+Spotify-API nicht selbst in Schleifen ab. Das Budget von 250 Abfragen
+gilt je Aufruf, nicht je Tag – der Bericht nennt am Ende, wie viele ein
+Lauf gebraucht hat. Kommen über mehrere Festivals mehr als etwa 300
+zusammen, bau die übrigen mit `--no-spotify` und sag das im Bericht.
+Bands, die ohne ID und ohne `spotify=-` in der Datei stehen, werden bei
+jedem Lauf dieses Festivals wieder gesucht; das ist gewollt, solange
+niemand entschieden hat, kostet aber jedes Mal ein paar Abfragen.
 
 Scheitert der Spotify-Schritt ganz (Secret fehlt, Host gesperrt,
 Kontingent erschöpft), läuft die Strecke ohne ihn weiter: Die Bands
