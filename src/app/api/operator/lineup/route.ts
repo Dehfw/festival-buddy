@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import {
   addLineupBands,
+  getBandSlugAliases,
   getFestivalAudienceUserIds,
   getTimetableFresh,
   renameLineupBand,
@@ -52,6 +53,10 @@ export async function GET(req: Request) {
       dataVersion: timetable.dataVersion,
       hasTimetable: timetable.slots.length > 0,
       bands: timetable.bands,
+      // Früher umbenannte Bands (alter Slug -> aktueller Slug): Damit sieht
+      // der Aufrufer, dass ein Name aus seiner Datei nicht fehlt, sondern
+      // in der App inzwischen anders heißt.
+      renamed: await getBandSlugAliases(festivalId),
     },
     { headers: { 'Cache-Control': 'no-store' } }
   );
@@ -80,7 +85,8 @@ function parseBands(raw: unknown): LineupBandInput[] | string {
  *
  * Pflegt ein, was am Live-Stand gemessen neu ist, und benachrichtigt genau
  * über diese Bands. Bekannte Bands sind kein Fehler – die Watch darf immer
- * das komplette Lineup schicken. `dryRun` zeigt nur, was neu wäre;
+ * das komplette Lineup schicken. Ein Name, unter dem eine Band vor einer
+ * Umbenennung lief, gilt ebenfalls nicht als neu (Antwortfeld `renamed`). `dryRun` zeigt nur, was neu wäre;
  * `notify: false` pflegt still ein (Nachtrag ohne Mitteilung).
  */
 export async function POST(req: Request) {
@@ -148,6 +154,7 @@ export async function POST(req: Request) {
     festival: result.festival,
     added: result.added,
     enriched: result.enriched,
+    renamed: result.renamed,
     total: result.total,
     ...(result.announcement
       ? { announcement: result.announcement, audience, push, pushFailed }
