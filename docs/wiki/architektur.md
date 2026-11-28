@@ -37,6 +37,7 @@ Payload schlicht nicht auf – Details in [Gruppen](gruppen.md).
 | `group_members` | `(group_id, user_id)` | Rolle (`owner`/`admin`/`member`) + Beitrittszeit; CASCADE zu Gruppe und Nutzer |
 | `selections` | `(user_id, festival_id, slot_id)` | Band-Teilnahme mit Status `going`/`interested`; CASCADE am Nutzer |
 | `band_interests` | `(user_id, festival_id, band_slug)` | Gemerkte Band aus der Lineup-Ansicht – am **Band-Slug** statt an einer Slot-ID, damit sie den Timetable-Import überlebt; CASCADE am Nutzer |
+| `band_slug_aliases` | `(festival_id, from_slug)` → `to_slug` | Umbenannte Bands: alter Slug zeigt auf den aktuellen. Darüber erreichen Merk-Aktionen mit altem Namen die Band, und eine Importdatei mit altem Namen gilt nicht als neue Band; CASCADE am Festival |
 | `positions` | `(user_id, festival_id, slot_id)` | ✕-Marker (Prozent-Koordinaten) + `updated_at`; CASCADE am Nutzer |
 | `blueprints` | `(festival_id, stage_id)` | Bühnen-Grundriss + POIs als JSONB |
 | `festival_organizers` | `(festival_id, user_id)` | Veranstalter-Zuweisung; CASCADE zu Festival und Nutzer |

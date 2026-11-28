@@ -62,6 +62,12 @@ zueinander stehen.
 - **Hat bereits eine Running Order** → Festival überspringen und im
   Bericht vorschlagen, es aus der Watchlist zu nehmen. Ab da läuft alles
   über den Timetable (Skill `lineup-import`, Veranstalter-Editor).
+- **„In der App umbenannt"** → eine Band heißt in der App inzwischen
+  anders als in der Datei; die Umbenennung ist in `main` noch nicht
+  angekommen. Nicht mit `lineup:add` nachtragen (das ergäbe die Band
+  doppelt), sondern die Datei nachziehen:
+  `npm run lineup:rename -- lineups/<id>.txt --file-only "Alt" "Neu"`.
+  Die App wertet den alten Namen ohnehin nicht als neue Band.
 - **„Nur live" ist nicht leer** → die App kennt Bands, die der Datei
   fehlen. Meist liegt ein Lineup-Watch-PR eines früheren Laufs noch
   ungemergt herum. Trag diese Bands zuerst in exakt der Live-Schreibweise

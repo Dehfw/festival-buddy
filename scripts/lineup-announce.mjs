@@ -201,19 +201,44 @@ async function call(method, url, body) {
   return json;
 }
 
+/**
+ * Bands der Datei, die in der App inzwischen anders heißen: Der Slug steht
+ * nicht mehr im Pool, die App kennt ihn aber als früheren Namen einer
+ * Band, die es dort gibt. Nicht "neu" und nicht "fehlt" – nur die Datei
+ * hinkt der Umbenennung hinterher.
+ */
+function renamedInApp(live, fileBands) {
+  const liveBySlug = new Map(live.bands.map((b) => [b.slug, b]));
+  const alias = new Map((live.renamed ?? []).map((r) => [r.from, r.to]));
+  return fileBands
+    .filter((b) => !liveBySlug.has(b.slug) && liveBySlug.has(alias.get(b.slug)))
+    .map((b) => ({ file: b, now: liveBySlug.get(alias.get(b.slug)) }));
+}
+
 if (args.status) {
   const live = await call('GET', `${endpoint}?festival=${encodeURIComponent(args.festival)}`);
   const liveSlugs = new Set(live.bands.map((b) => b.slug));
   const fileSlugs = new Set(timetable.bands.map((b) => b.slug));
-  const onlyFile = timetable.bands.filter((b) => !liveSlugs.has(b.slug));
-  const onlyLive = live.bands.filter((b) => !fileSlugs.has(b.slug));
+  const renamed = renamedInApp(live, timetable.bands);
+  const renamedFrom = new Set(renamed.map((r) => r.file.slug));
+  const renamedTo = new Set(renamed.map((r) => r.now.slug));
+  const onlyFile = timetable.bands.filter((b) => !liveSlugs.has(b.slug) && !renamedFrom.has(b.slug));
+  const onlyLive = live.bands.filter((b) => !fileSlugs.has(b.slug) && !renamedTo.has(b.slug));
   console.log(`${live.festival} (${args.festival}) – live: ${live.bands.length} Bands, Stand "${live.dataVersion}"`);
   if (live.hasTimetable) console.log('  Hat bereits eine Running Order – die Lineup-Ergänzung nimmt hier nichts mehr an.');
   console.log(`  Nur in der Datei (würde ergänzt): ${onlyFile.length}`);
   for (const b of onlyFile) console.log(`    + ${b.name}`);
   console.log(`  Nur live (fehlt in der Datei – beim nächsten Voll-Import verschwände sie): ${onlyLive.length}`);
   for (const b of onlyLive) console.log(`    − ${b.name}`);
-  console.log(`RESULT ${JSON.stringify({ live: live.bands.length, onlyFile: onlyFile.map((b) => b.name), onlyLive: onlyLive.map((b) => b.name), hasTimetable: live.hasTimetable })}`);
+  if (renamed.length > 0) {
+    console.log(`  In der App umbenannt, Datei noch nicht nachgezogen: ${renamed.length}`);
+    for (const r of renamed) console.log(`    ~ ${r.file.name}  →  ${r.now.name}`);
+    console.log(
+      '    Datei nachziehen (nicht mit lineup:add nachtragen – das ergäbe die Band doppelt):\n' +
+        '    npm run lineup:rename -- lineups/<id>.txt --file-only "Alter Name" "Neuer Name"'
+    );
+  }
+  console.log(`RESULT ${JSON.stringify({ live: live.bands.length, onlyFile: onlyFile.map((b) => b.name), onlyLive: onlyLive.map((b) => b.name), renamed: renamed.map((r) => ({ from: r.file.name, to: r.now.name })), hasTimetable: live.hasTimetable })}`);
   process.exit(0);
 }
 
@@ -229,6 +254,14 @@ const result = await call('POST', endpoint, {
 });
 
 const added = result.added ?? [];
+// Namen der Datei, unter denen die App eine Band früher geführt hat: nicht
+// eingepflegt und nicht gemeldet. Nur die Datei muss nachgezogen werden.
+const stale = result.renamed ?? [];
+if (stale.length > 0) {
+  console.log(`  In der App umbenannt – nicht als neu gewertet (${stale.length}):`);
+  for (const r of stale) console.log(`    ~ ${r.name}  →  ${r.now.name}`);
+  console.log('    Datei nachziehen: npm run lineup:rename -- lineups/<id>.txt --file-only "Alt" "Neu"');
+}
 if (added.length === 0) {
   console.log(
     `✓ ${result.festival}: nichts Neues – alle ${timetable.bands.length} Bands der Datei sind schon live` +
@@ -261,5 +294,5 @@ if (added.length === 0) {
   }
 }
 console.log(
-  `RESULT ${JSON.stringify({ dryRun: args.dryRun, added: added.map((b) => b.name), total: result.total, announcementId: result.announcement?.id ?? null, push: result.push ?? null, pushFailed: result.pushFailed ?? false, audience: result.audience ?? null })}`
+  `RESULT ${JSON.stringify({ dryRun: args.dryRun, added: added.map((b) => b.name), renamed: stale.map((r) => ({ from: r.name, to: r.now.name })), total: result.total, announcementId: result.announcement?.id ?? null, push: result.push ?? null, pushFailed: result.pushFailed ?? false, audience: result.audience ?? null })}`
 );

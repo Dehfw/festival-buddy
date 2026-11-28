@@ -63,6 +63,10 @@ npm run lineup -- lineups/<id>.txt --festival <id>     # Importdatei neu bauen, 
   passt danach die Datei an.
 - Es geht keine Mitteilung raus. Der Probelauf nennt, wie viele
   Merkungen betroffen sind.
+- Die App merkt sich den alten Namen als Verweis. Bis die geänderte
+  Textdatei in `main` ist, wertet sie ihn deshalb nicht als neue Band,
+  und `lineup:announce --status` zeigt ihn als „in der App umbenannt".
+  Trotzdem zeitnah committen und nach `main` bringen.
 - Nur für Bands ohne Spielzeit und nur auf ausdrückliche Ansage: Ob es
   dieselbe Band unter neuem Namen ist oder doch eine andere, entscheidet
   ein Mensch. Zwei bestehende Einträge zusammenlegen kann der Weg nicht.

@@ -115,12 +115,43 @@ Der Band-Slug ist die Kennung, an der `band_interests` hängt – und er
 entsteht aus dem Namen. Ein neuer Name ist deshalb normalerweise eine
 neue Band, und die Merkungen der alten wären weg. `renameLineupBand`
 (`src/lib/db.ts`) löst das für den einen Fall, in dem es wirklich
-dieselbe Band ist: Unter dem Zeilen-Lock des Festivals ersetzt es den
-Pool-Eintrag und hängt in derselben Transaktion alle Merkungen vom
-alten auf den neuen Slug um. Wer schon beide Slugs gemerkt hatte,
-behält genau eine Merkung. Ändert sich nur die Schreibweise und der
-Slug bleibt (Groß-/Kleinschreibung, Satzzeichen), ist nichts
-umzuhängen.
+dieselbe Band ist. In einer Transaktion, unter `FOR UPDATE` auf der
+Festival-Zeile:
+
+1. Der Pool-Eintrag wird ersetzt.
+2. Alle Merkungen ziehen vom alten auf den neuen Slug um – in einem
+   einzigen Statement, damit zwischendrin nichts verloren geht. Wer
+   schon beide Slugs gemerkt hatte, behält genau eine Merkung.
+3. Der alte Slug bleibt als Verweis in `band_slug_aliases` stehen
+   (alter Slug → aktueller Slug, nie als Kette: Frühere Verweise werden
+   auf den neuen Namen umgebogen).
+
+Ändert sich nur die Schreibweise und der Slug bleibt
+(Groß-/Kleinschreibung, Satzzeichen), entfallen 2 und 3.
+
+Der Verweis ist der Teil, der die Umbenennung gegen den Rest des Systems
+absichert, denn der alte Name ist danach noch überall unterwegs:
+
+- **In Clients.** Ein Tab, der seit der Umbenennung nicht gepollt hat,
+  oder die Offline-Warteschlange schickt Merk-Aktionen noch mit dem alten
+  Slug. `setBandInterest` löst ihn über den Verweis auf die aktuelle
+  Band auf – beim Merken wie beim Entfernen. Ohne das käme ein Entfernen
+  als wirkungsloses „ok" zurück und ein Merken als „Unbekannte Band".
+- **In Dateien.** Die Textdatei im Repo, ein alter Branch, ein Lauf von
+  `main`, bevor die Umbenennung dort angekommen ist: `addLineupBands`
+  wertet einen Namen, auf den ein Verweis zeigt, nicht als neue Band
+  (Antwortfeld `renamed`). Sonst ginge über den alten Namen ein Push
+  „neu im Lineup" raus, und die Band stünde doppelt im Pool.
+  `lineup:announce --status` zeigt solche Namen als „in der App
+  umbenannt"; nachgezogen wird die Datei mit
+  `lineup:rename --file-only`.
+
+Damit Merken und Umbenennen sich nicht in die Quere kommen, prüft und
+schreibt `setBandInterest` in einer eigenen Transaktion gegen den
+Live-Stand (nicht gegen den 15-s-Cache) und liest die Festival-Zeile
+dafür mit `FOR KEY SHARE`: Das wartet auf eine laufende Umbenennung und
+sieht danach den neuen Pool. Viele Nutzer, die gleichzeitig merken,
+blockieren sich dabei nicht.
 
 Abgelehnt wird, was eine andere Entscheidung wäre: ein Zielname, den es
 im Pool schon gibt (das wäre Zusammenlegen), und Festivals mit Running

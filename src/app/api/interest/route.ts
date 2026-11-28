@@ -3,7 +3,6 @@ import { readSessionUserId } from '@/lib/auth';
 import {
   getFirstGroupIdForUser,
   getGroupContextForUser,
-  getTimetable,
   setBandInterest,
 } from '@/lib/db';
 
@@ -41,25 +40,14 @@ export async function POST(req: Request) {
   if (!ctx) {
     return NextResponse.json({ error: 'Kein Mitglied dieser Gruppe' }, { status: 403 });
   }
-  // Merken nur für Bands aus dem Pool des Gruppen-Festivals – sonst
-  // sammelt die Tabelle Slugs, zu denen es nie eine Band gab (Tippfehler,
-  // Alt-Client nach einem Lineup-Update).
-  //
-  // Das Entfernen wird bewusst NICHT geprüft: Fliegt eine Band aus dem
-  // Lineup oder ändert sich ihre Schreibweise, käme sonst niemand mehr
-  // aus seiner Merkung heraus. Die Zeile bliebe für immer stehen – und
-  // sobald der alte Slug zurückkehrt (Re-Import mit alter Schreibweise),
-  // wäre die Band plötzlich wieder gemerkt. Ein DELETE mit unbekanntem
-  // Slug löscht dagegen einfach nichts.
-  if (interested) {
-    const timetable = await getTimetable(ctx.festivalId);
-    if (!timetable?.bands.some((b) => b.slug === slug)) {
-      return NextResponse.json({ error: 'Unbekannte Band' }, { status: 404 });
-    }
+  // Ob es die Band gibt, entscheidet setBandInterest am Live-Stand des
+  // Festivals (nicht am Cache) – und leitet einen inzwischen umbenannten
+  // Namen auf die aktuelle Band um. Details dort.
+  const result = await setBandInterest(userId, ctx.festivalId, slug, interested);
+  if (result === 'unknown-band') {
+    return NextResponse.json({ error: 'Unbekannte Band' }, { status: 404 });
   }
-
-  const ok = await setBandInterest(userId, ctx.festivalId, slug, interested);
-  if (!ok) {
+  if (result === 'unknown-user') {
     return NextResponse.json({ error: 'Unbekannter Nutzer' }, { status: 404 });
   }
   return NextResponse.json({ ok: true });
