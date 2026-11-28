@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { hasBearer } from '@/lib/bearer';
 import {
   addLineupBands,
   getFestivalAudienceUserIds,
@@ -7,8 +6,8 @@ import {
   type LineupBandInput,
 } from '@/lib/db';
 import { lineupAnnouncementText } from '@/lib/lineupNews';
+import { operatorGuard } from '@/lib/operatorAuth';
 import { sendPushToUsers, type PushFanoutResult } from '@/lib/push';
-import { clientIp, rateLimit } from '@/lib/ratelimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,9 +16,8 @@ export const dynamic = 'force-dynamic';
  * Festivals einpflegen und alle Mitglieder aller Gruppen dieses Festivals
  * darüber informieren (Mitteilung in der App + Push).
  *
- * Kein Nutzerkonto, sondern `Authorization: Bearer <LINEUP_API_SECRET>` –
- * der Endpunkt wird von einem geplanten Lauf aufgerufen, der selbst keinen
- * Datenbank-Zugang hat. Ohne die Variable bleibt die Route zu.
+ * Zugang über das Betreiber-Secret, siehe operatorGuard(). Ein neues
+ * Festival legt die Nachbar-Route /api/operator/festival an.
  */
 
 /**
@@ -30,28 +28,12 @@ export const dynamic = 'force-dynamic';
 const MAX_BANDS_PER_REQUEST = 2000;
 const DATA_VERSION_MAX = 120;
 
-function guard(req: Request): NextResponse | null {
-  const secret = process.env.LINEUP_API_SECRET;
-  if (!secret) {
-    return NextResponse.json({ error: 'LINEUP_API_SECRET nicht gesetzt' }, { status: 503 });
-  }
-  // Bremse fürs Durchprobieren; die Watch selbst braucht pro Lauf eine
-  // Handvoll Aufrufe.
-  if (!rateLimit(`lineup-api:${clientIp(req)}`, 60, 10 * 60_000)) {
-    return NextResponse.json({ error: 'Zu viele Anfragen' }, { status: 429 });
-  }
-  if (!hasBearer(req, secret)) {
-    return NextResponse.json({ error: 'Kein Zugriff' }, { status: 401 });
-  }
-  return null;
-}
-
 /**
  * Live-Stand des Band-Pools (?festival=…) – damit die Watch ohne
  * Datenbank-Zugang sieht, was schon eingepflegt ist.
  */
 export async function GET(req: Request) {
-  const denied = guard(req);
+  const denied = operatorGuard(req);
   if (denied) return denied;
   const festivalId = new URL(req.url).searchParams.get('festival') || '';
   if (!festivalId) {
@@ -101,7 +83,7 @@ function parseBands(raw: unknown): LineupBandInput[] | string {
  * `notify: false` pflegt still ein (Nachtrag ohne Mitteilung).
  */
 export async function POST(req: Request) {
-  const denied = guard(req);
+  const denied = operatorGuard(req);
   if (denied) return denied;
 
   const body = await req.json().catch(() => null);

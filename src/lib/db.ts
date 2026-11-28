@@ -2228,6 +2228,58 @@ async function mutateTimetable(
 }
 
 /* ------------------------------------------------------------------ */
+/* Festival-Anlage (Betreiber-API)                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Neues Festival anlegen – und nur das: Gibt es die ID schon, passiert
+ * nichts (false). Ein bestehendes Festival wird auf diesem Weg nie
+ * überschrieben; an dessen Slot-IDs und Band-Slugs hängt die Planung
+ * echter Nutzer, und ein Ersetzen ist Sache des Voll-Imports mit einem
+ * Menschen davor. Ein frisch angelegtes Festival hat dagegen noch keine
+ * Gruppen und damit nichts, was verloren gehen könnte.
+ *
+ * `festival` muss bereits geprüft sein (parseNewFestival).
+ */
+export async function createFestival(
+  festivalId: string,
+  festival: {
+    name: string;
+    edition: string;
+    dataVersion: string;
+    days: FestivalDay[];
+    stages: Stage[];
+    slots: Slot[];
+    bands: FestivalBand[];
+  }
+): Promise<boolean> {
+  const res = await query<{ id: string }>(
+    `INSERT INTO festivals (id, name, edition, data_version, timetable)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (id) DO NOTHING
+     RETURNING id`,
+    [
+      festivalId,
+      festival.name,
+      festival.edition,
+      festival.dataVersion,
+      JSON.stringify({
+        days: festival.days,
+        stages: festival.stages,
+        slots: festival.slots,
+        bands: festival.bands,
+      }),
+    ]
+  );
+  if (res.rows.length === 0) return false;
+  timetableCache.delete(festivalId);
+  // Die Festival-Auswahl bei der Gruppengründung fragt ohnehin frisch ab;
+  // der Bump hält nur das Protokoll "jede Mutation erhöht die Revision".
+  await bumpRev();
+  return true;
+}
+
+/* ------------------------------------------------------------------ */
 /* Lineup-Ergänzung (Betreiber-API)                                    */
 /* ------------------------------------------------------------------ */
 

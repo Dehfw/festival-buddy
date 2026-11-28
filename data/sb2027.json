@@ -1,7 +1,7 @@
 {
   "festival": "Summer Breeze Open Air 2027",
   "edition": "18.–21.08.2027 · Dinkelsbühl · 30. Jubiläum",
-  "dataVersion": "2026-08-21 (61 Bands der ersten Ankündigungswelle)",
+  "dataVersion": "2026-11-28 (63 Bands angekündigt)",
   "days": [
     {
       "id": "wed",
@@ -72,6 +72,11 @@
       "spotifyArtistId": "3LkSiHbjqOHCKCqBfEZOTv"
     },
     {
+      "slug": "blue-medusa",
+      "name": "Blue Medusa",
+      "spotifyArtistId": "4BMOQ1GSXhTvuv6a05wk7z"
+    },
+    {
       "slug": "burning-witches",
       "name": "Burning Witches",
       "spotifyArtistId": "0eNuNAhL4dW2nvKbSe2mS8"
@@ -80,6 +85,11 @@
       "slug": "capacopter",
       "name": "Capacopter",
       "spotifyArtistId": "72SRvs1RAnSZxYtkk8CTZk"
+    },
+    {
+      "slug": "carnifex",
+      "name": "Carnifex",
+      "spotifyArtistId": "4nqY8hkQNkHaDq4fdVxdYr"
     },
     {
       "slug": "children-of-bodom",

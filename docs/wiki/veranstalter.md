@@ -121,7 +121,11 @@ einen Default (`defaultBlueprint()` in `src/lib/db.ts`).
 ## Neues Festival aufsetzen (Betreiber)
 
 Festivals entstehen weiterhin per Skript – für ein leeres Festival
-reicht ein Skelett-JSON:
+reicht ein Skelett-JSON. (Stehen Termin oder Bands schon fest, geht die
+Anlage auch ohne Datenbank-Zugang über `npm run festival:create`, siehe
+[Festivals & Timetable](festivals-timetable.md#schreibwege-im-überblick);
+ein Gerüst ganz ohne Tage nimmt dieser Weg aber nicht, und der
+Veranstalter-Code braucht die Datenbank so oder so.)
 
 ```bash
 echo '{ "festival": "Mein Festival", "edition": "2027", "dataVersion": "",

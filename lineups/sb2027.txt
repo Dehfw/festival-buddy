@@ -8,7 +8,7 @@
 
 festival: Summer Breeze Open Air 2027
 edition: 18.–21.08.2027 · Dinkelsbühl · 30. Jubiläum
-dataVersion: 2026-08-21 (61 Bands der ersten Ankündigungswelle)
+dataVersion: 2026-11-28 (63 Bands angekündigt)
 
 day: wed | 2027-08-18
 day: thu | 2027-08-19
@@ -89,3 +89,5 @@ The Night Eternal | spotify=1psvDRjOvOPm4OthS5Fdwr
 Defiance HC | spotify=2qEVGA1XwIL1KZ87NlWzxw
 Regarde Les Hommes Tomber | spotify=4sAFcrI2hgMwNT9Sz2XTjv
 Capacopter | spotify=72SRvs1RAnSZxYtkk8CTZk
+Blue Medusa | spotify=4BMOQ1GSXhTvuv6a05wk7z
+Carnifex | spotify=4nqY8hkQNkHaDq4fdVxdYr

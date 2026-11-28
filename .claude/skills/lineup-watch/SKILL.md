@@ -221,7 +221,8 @@ mit dem Skill `lineup-import`.
 
 Ein Festival beobachten heißt: Eintrag in `lineups/watch.json` mit `id`,
 `lineup` und mindestens einer offiziellen Quelle. Das Festival muss in
-der App schon existieren (Erstanlage per `lineup-import`), und der Host
+der App schon existieren (anlegen per `lineup-import` und
+`npm run festival:create`), und der Host
 der Quelle muss in der Cloud-Umgebung der Watch freigegeben sein – sonst
 kann der geplante Lauf die Seite nicht abrufen. Sag das dazu, wenn du
 einen Eintrag ergänzt. Vergangene Festivals und solche mit Running Order
