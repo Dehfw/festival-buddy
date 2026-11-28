@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -15,10 +16,17 @@ export type Locale = 'de' | 'en';
 
 const STORAGE_KEY = 'festival-buddy-language';
 
-const PAGE_METADATA: Record<
-  string,
-  { de: { title: string; description?: string }; en: { title: string; description?: string } }
-> = {
+type PageMeta = { title: string; description?: string };
+
+/**
+ * Seiten, deren Titel und Beschreibung eingesetzte Werte enthalten, können
+ * hier nicht als feste Texte stehen. Für sie bleibt Deutsch, was der Server
+ * ausgeliefert hat; `english` erkennt diese Fassung und liefert die englische
+ * (undefined für jeden anderen Text).
+ */
+type ServerPageMeta = { english: (german: string) => string | undefined };
+
+const PAGE_METADATA: Record<string, { de: PageMeta; en: PageMeta } | ServerPageMeta> = {
   '/': {
     de: {
       title: 'Festival Buddy – Wer geht zu welcher Band? | DEFƎKT',
@@ -39,6 +47,9 @@ const PAGE_METADATA: Record<
       description: 'Festival Buddy for organisers and their festival teams.',
     },
   },
+  // Jahr und Bandzahl (aus data/psoa<Jahr>.json) stehen in Titel und
+  // Beschreibung – siehe PARTYSAN_PATTERNS.
+  '/partysan': { english: partysanEnglish },
   '/impressum': {
     de: { title: 'Impressum – DEFƎKT Festival Buddy' },
     en: { title: 'Legal notice – DEFƎKT Festival Buddy' },
@@ -467,6 +478,39 @@ const EN: Record<string, string> = {
   'Festival Push Mitteilungen': 'Festival push notifications',
   'Bühnenplan App': 'Stage map app',
 
+  // Party.San-Landingpage (/partysan). Sätze mit Jahr oder Bandzahl stehen
+  // unten in PARTYSAN_PATTERNS; Bandnamen und „Party.San" bleiben unübersetzt.
+  'Festival Buddy ist der Timetable-Planer für deine Party.San-Crew. Jetzt schon das Lineup durchhören und Bands merken – und im August keinen Auftritt verpassen und wissen, wo sich alle treffen. 🤘':
+    'Festival Buddy is the timetable planner for your Party.San crew. Listen through the line-up and save your bands now – then in August never miss a show and always know where everyone is meeting. 🤘',
+  'Party.San-Crew starten': 'Start your Party.San crew',
+  'Lineup jetzt, Running Order später': 'Line-up now, running order later',
+  'Alle angekündigten Bands durchhören und merken. Steht die Running Order, kommt sie als saubere Bühnen-Ansicht dazu – deine gemerkten Bands bleiben.':
+    'Listen through every announced band and save your favourites. Once the running order is out, it arrives as a clean stage view – your saved bands stay.',
+  'Jeder markiert seine Bands. Du siehst sofort, wer mit vorne dabei ist – und findest deine Leute, statt sie zu suchen.':
+    'Everyone picks their bands. You instantly see who is joining you up front – and find your people instead of searching for them.',
+  'Einmal geöffnet, läuft alles auch ohne Netz weiter – genau richtig fürs Funkloch auf dem Flugplatz.':
+    'Once opened, everything keeps working without reception – perfect for the dead zone on the airfield.',
+  'Eine Gruppe für die Crew': 'One group for the crew',
+  'Gruppe gründen, Code oder Link teilen, fertig. Deine Leute sind in Sekunden drin – ganz ohne Login-Wirrwarr.':
+    'Create a group, share the code or link, done. Your crew is in within seconds – no login confusion.',
+  'Login, wie du willst': 'Sign in your way',
+  'Per Passkey (Face ID / Fingerabdruck) oder klassisch mit E-Mail & Passwort – beides geht, ganz ohne Gedöns.':
+    'With a passkey (Face ID / fingerprint) or the classic way with email & password – both work, no fuss.',
+  Reinkommen: 'Get in',
+  'Name eintippen, dann Passkey (Face ID / Fingerabdruck) oder E-Mail & Passwort – schon bist du drin.':
+    'Enter your name, then use a passkey (Face ID / fingerprint) or email & password – and you are in.',
+  'Crew gründen': 'Start your crew',
+  // Eigener Eintrag, sonst greift unten das Muster „<Band> merken".
+  'Bands merken': 'Save your bands',
+  'Deine Bands antippen. Alle sehen, wer auf wen Bock hat – und mit der Running Order dann, wer wohin geht und wo sich die Crew vor der Bühne trifft.':
+    'Tap your bands. Everyone sees who is up for whom – and once the running order is out, who is going where and where the crew meets in front of the stage.',
+  'Drei Tage Vollgas auf dem Flugplatz – und deine Crew weiß immer, wer wo steht. Hol deine Leute an Bord.':
+    'Three days at full throttle on the airfield – and your crew always knows who is where. Get your people on board.',
+  'Jetzt Crew gründen': 'Start your crew now',
+  'Ich hab schon einen Code': 'I already have a code',
+  'Festival Buddy · Timetable-Planer für deine Party.San-Crew.':
+    'Festival Buddy · The timetable planner for your Party.San crew.',
+
   // Remaining app, login and settings copy
   '! 🤘 Fast geschafft – du brauchst noch eine Crew: Gründe eine Gruppe oder tritt mit einem Einladungscode bei.':
     '! 🤘 Almost there – you still need a crew. Create a group or join one with an invitation code.',
@@ -697,6 +741,69 @@ const EN: Record<string, string> = {
   'Lade …': 'Loading…',
 };
 
+const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const bands = (count: string) => `${count} band${count === '1' ? '' : 's'}`;
+
+/**
+ * Party.San-Landingpage (/partysan): Texte mit eingesetzten Werten. Jahr und
+ * Bandzahl ändern sich – die Zahl mit jeder Lineup-Welle von selbst –, ein
+ * wortgleicher Katalogeintrag würde dann stillschweigend nicht mehr greifen.
+ * Zugeordnet wird immer ein ganzer Textknoten; die Seite setzt diese Sätze
+ * deshalb als je einen String ins Markup (siehe src/app/partysan/page.tsx).
+ * Titel und Beschreibung der Seite laufen über dieselben Muster.
+ */
+const PARTYSAN_PATTERNS: [RegExp, (match: RegExpMatchArray) => string][] = [
+  [
+    /^(\d{2})\.–(\d{2})\.(\d{2})\.(\d{4}) · Flugplatz Obermehler-Schlotheim$/,
+    (m) =>
+      `${Number(m[1])}–${Number(m[2])} ${MONTHS_EN[Number(m[3]) - 1] ?? m[3]} ${m[4]} · Obermehler-Schlotheim airfield`,
+  ],
+  [
+    /^Beim Gruppengründen ist das Party\.San (\d{4}) schon ausgewählt – kein Festival-Gesuche\. (\d+) angekündigte Bands sind schon drin\.$/,
+    (m) =>
+      `Party.San ${m[1]} is already selected when you create your group – no searching for the festival. ${m[2]} announced band${m[2] === '1' ? ' is' : 's are'} already in.`,
+  ],
+  [
+    /^Lineup (\d{4}) – (\d+) Bands angekündigt$/,
+    (m) => `Line-up ${m[1]} – ${bands(m[2])} announced`,
+  ],
+  [
+    /^(?:… und (\d+) weitere Bands – alle|Alle) schon in der App zum Durchhören und Merken\. Die Running Order folgt, sobald das Party\.San sie veröffentlicht\.$/,
+    (m) =>
+      `${m[1] ? `… and ${m[1]} more band${m[1] === '1' ? '' : 's'} – all` : 'All'} already in the app to listen through and save. The running order follows as soon as Party.San publishes it.`,
+  ],
+  [
+    /^Das Party\.San (\d{4}) ist schon vorausgewählt – nur noch Gruppenname eintippen und den Einladungslink an deine Leute schicken\.$/,
+    (m) =>
+      `Party.San ${m[1]} is already preselected – just enter a group name and send the invite link to your crew.`,
+  ],
+  [
+    /^Festival Buddy fürs Party\.San Metal Open Air (\d{4})$/,
+    (m) => `Festival Buddy for Party.San Metal Open Air ${m[1]}`,
+  ],
+  [
+    /^Der Timetable-Planer für deine Party\.San-Crew: Wer geht zu welcher Band\? Die ersten (\d+) Bands für (\d{4}) sind schon drin – von (.+) bis (.+)\. Gruppe gründen, durchhören, Bands merken; die Running Order kommt in die App, sobald sie steht\.$/,
+    (m) =>
+      `The timetable planner for your Party.San crew: who is going to which band? The first ${bands(m[1])} for ${m[2]} ${m[1] === '1' ? 'is' : 'are'} already in – from ${m[3]} to ${m[4]}. Create a group, listen through the line-up and save your bands; the running order lands in the app as soon as it is out.`,
+  ],
+];
+
+function partysanEnglish(german: string): string | undefined {
+  for (const [pattern, english] of PARTYSAN_PATTERNS) {
+    const match = german.match(pattern);
+    if (match) return english(match);
+  }
+  return undefined;
+}
+
+/** Meta-Tags, die die Seitenbeschreibung tragen */
+const DESCRIPTION_SELECTORS = [
+  'meta[name="description"]',
+  'meta[property="og:description"]',
+  'meta[name="twitter:description"]',
+];
+
 const LocaleContext = createContext<{
   locale: Locale;
   setLocale: (locale: Locale) => void;
@@ -713,6 +820,9 @@ function translated(value: string): string {
     `${/^\s/.test(value) ? ' ' : ''}${result}${/\s$/.test(value) ? ' ' : ''}`;
   const direct = EN[key];
   if (direct !== undefined) return spaced(direct);
+
+  const partysan = partysanEnglish(key);
+  if (partysan !== undefined) return spaced(partysan);
 
   const pending = key.match(/^OFFLINE · (\d+) ausstehend$/);
   if (pending) return spaced(`OFFLINE · ${pending[1]} pending`);
@@ -872,6 +982,8 @@ declare global {
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>('de');
   const pathname = usePathname();
+  // Deutsche Originale von Titel/Beschreibung je Pfad (nur ServerPageMeta)
+  const serverMetadata = useRef(new Map<string, { title?: string; description?: string }>());
 
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
@@ -907,17 +1019,66 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [locale]);
 
   useEffect(() => {
-    const metadata = PAGE_METADATA[pathname]?.[locale];
-    if (!metadata) return;
-    document.title = metadata.title;
-    if (!metadata.description) return;
-    for (const selector of [
-      'meta[name="description"]',
-      'meta[property="og:description"]',
-      'meta[name="twitter:description"]',
-    ]) {
-      document.head.querySelector(selector)?.setAttribute('content', metadata.description);
+    const page = PAGE_METADATA[pathname];
+    if (!page) return;
+
+    if (!('english' in page)) {
+      const metadata = page[locale];
+      document.title = metadata.title;
+      if (!metadata.description) return;
+      for (const selector of DESCRIPTION_SELECTORS) {
+        document.head.querySelector(selector)?.setAttribute('content', metadata.description);
+      }
+      return;
     }
+
+    // Titel und Beschreibung kommen vom Server. Nach Client-Navigationen
+    // stehen im <head> mitunter mehrere <title>- und Beschreibungs-Tags, auch
+    // liegengebliebene anderer Seiten – als deutsches Original gilt deshalb
+    // nur, was `english` erkennt. Gemerkt wird es je Seite, damit es nach dem
+    // Überschreiben mit der englischen Fassung wieder auffindbar ist.
+    let german = serverMetadata.current.get(pathname);
+    if (!german) serverMetadata.current.set(pathname, (german = {}));
+    const original = german;
+    const fresh = (values: string[]) => values.find((value) => page.english(value) !== undefined);
+    const localised = (value: string) => (locale === 'en' ? (page.english(value) ?? value) : value);
+    const apply = () => {
+      original.title =
+        fresh(Array.from(document.head.querySelectorAll('title'), (el) => el.textContent ?? '')) ??
+        original.title;
+      original.description =
+        fresh(
+          Array.from(
+            document.head.querySelectorAll(DESCRIPTION_SELECTORS.join(',')),
+            (el) => el.getAttribute('content') ?? '',
+          ),
+        ) ?? original.description;
+      if (original.title !== undefined) {
+        const title = localised(original.title);
+        if (document.title !== title) document.title = title;
+      }
+      if (original.description !== undefined) {
+        const description = localised(original.description);
+        for (const selector of DESCRIPTION_SELECTORS) {
+          const element = document.head.querySelector(selector);
+          if (element && element.getAttribute('content') !== description) {
+            element.setAttribute('content', description);
+          }
+        }
+      }
+    };
+    apply();
+    // Bei einer Client-Navigation setzt Next die Metadaten womöglich erst
+    // nach diesem Effekt – dann zieht der Observer nach.
+    const observer = new MutationObserver(apply);
+    observer.observe(document.head, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['content'],
+    });
+    return () => observer.disconnect();
   }, [locale, pathname]);
 
   const value = useMemo(

@@ -37,6 +37,22 @@ const TEASER_MORE = [
 ].filter((n) => ANNOUNCED.has(n));
 const TEASER_REST = BAND_COUNT - TEASER_TOP.length - TEASER_MORE.length;
 
+/**
+ * Sätze mit eingesetzter Bandzahl stehen als EIN String im Markup. Die
+ * englische Fassung (PARTYSAN_PATTERNS in src/lib/client/i18n.tsx) ordnet
+ * ganze Textknoten zu – `{BAND_COUNT} Bands …` direkt im JSX ergäbe drei
+ * Knoten, und der Satz bliebe halb deutsch. Wer hier einen Wortlaut
+ * ändert, zieht das Muster dort nach.
+ */
+const PRESELECT_HINT =
+  'Beim Gruppengründen ist das Party.San 2027 schon ausgewählt – kein ' +
+  `Festival-Gesuche. ${BAND_COUNT} angekündigte Bands sind schon drin.`;
+const LINEUP_LABEL = `Lineup 2027 – ${BAND_COUNT} Bands angekündigt`;
+const TEASER_NOTE =
+  (TEASER_REST > 0 ? `… und ${TEASER_REST} weitere Bands – alle` : 'Alle') +
+  ' schon in der App zum Durchhören und Merken. Die Running Order folgt, ' +
+  'sobald das Party.San sie veröffentlicht.';
+
 const TITLE = 'Festival Buddy fürs Party.San Metal Open Air 2027';
 const DESCRIPTION =
   'Der Timetable-Planer für deine Party.San-Crew: Wer geht zu welcher Band? ' +
@@ -238,10 +254,7 @@ export default function PartySanLandingPage() {
               So geht&apos;s
             </a>
           </div>
-          <p className="mt-4 text-xs text-ash/70">
-            Beim Gruppengründen ist das Party.San 2027 schon ausgewählt – kein
-            Festival-Gesuche. {BAND_COUNT} angekündigte Bands sind schon drin.
-          </p>
+          <p className="mt-4 text-xs text-ash/70">{PRESELECT_HINT}</p>
         </div>
       </section>
 
@@ -249,20 +262,22 @@ export default function PartySanLandingPage() {
       <section className="border-t border-rivet/40">
         <div className="mx-auto max-w-5xl px-6 py-14 text-center">
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#f0d860]/80">
-            <span className="opacity-50">//</span> Lineup 2027 – {BAND_COUNT}{' '}
-            Bands angekündigt
+            <span className="opacity-50">//</span> {LINEUP_LABEL}
           </p>
-          <p className="mt-6 font-metal text-3xl uppercase leading-snug text-bone sm:text-4xl">
+          {/* Bandnamen bleiben in jeder Sprache, wie sie sind */}
+          <p
+            data-no-i18n
+            className="mt-6 font-metal text-3xl uppercase leading-snug text-bone sm:text-4xl"
+          >
             {TEASER_TOP.join(' · ')}
           </p>
-          <p className="mt-3 font-metal text-lg uppercase leading-relaxed text-ash sm:text-xl">
+          <p
+            data-no-i18n
+            className="mt-3 font-metal text-lg uppercase leading-relaxed text-ash sm:text-xl"
+          >
             {TEASER_MORE.join(' · ')}
           </p>
-          <p className="mt-4 text-xs text-ash/70">
-            {TEASER_REST > 0 ? `… und ${TEASER_REST} weitere Bands – alle` : 'Alle'}{' '}
-            schon in der App zum Durchhören und Merken. Die Running Order
-            folgt, sobald das Party.San sie veröffentlicht.
-          </p>
+          <p className="mt-4 text-xs text-ash/70">{TEASER_NOTE}</p>
         </div>
       </section>
 
