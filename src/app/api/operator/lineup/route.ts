@@ -22,8 +22,12 @@ export const dynamic = 'force-dynamic';
  * Datenbank-Zugang hat. Ohne die Variable bleibt die Route zu.
  */
 
-/** So viele Bands pro Anfrage – eine ganze Ankündigungswelle passt locker. */
-const MAX_BANDS_PER_REQUEST = 500;
+/**
+ * So viele Bands pro Anfrage – dasselbe Limit wie der Pool selbst
+ * (MAX_BANDS in src/lib/db.ts): Die Watch schickt immer das komplette
+ * Lineup, ein kleineres Limit hier würde sie bei großen Festivals blockieren.
+ */
+const MAX_BANDS_PER_REQUEST = 2000;
 const DATA_VERSION_MAX = 120;
 
 function guard(req: Request): NextResponse | null {
@@ -131,18 +135,28 @@ export async function POST(req: Request) {
 
   // Versand vor der Antwort komplett abwarten: Der Aufrufer ist ein Script,
   // das ehrlich berichten soll, wen die Nachricht erreicht hat.
+  // Ab hier ist alles gespeichert (Bands + Mitteilung). Scheitert der Versand
+  // als Ganzes, darf die Antwort deshalb kein Fehler sein – ein Aufrufer, der
+  // daraufhin wiederholt, fände "nichts Neues" und wüsste nicht, dass die
+  // Bands längst live sind. Stattdessen: ok + pushFailed.
   let push: PushFanoutResult | undefined;
   let audience: number | undefined;
+  let pushFailed = false;
   if (result.announcement) {
-    const userIds = await getFestivalAudienceUserIds(festivalId);
-    audience = userIds.length;
-    push = await sendPushToUsers(userIds, {
-      type: 'announcement',
-      title: `${result.festival}: ${result.announcement.title}`,
-      body: result.announcement.body,
-      url: `/app?announcement=${result.announcement.id}`,
-      tag: result.announcement.id,
-    });
+    try {
+      const userIds = await getFestivalAudienceUserIds(festivalId);
+      audience = userIds.length;
+      push = await sendPushToUsers(userIds, {
+        type: 'announcement',
+        title: `${result.festival}: ${result.announcement.title}`,
+        body: result.announcement.body,
+        url: `/app?announcement=${result.announcement.id}`,
+        tag: result.announcement.id,
+      });
+    } catch (err) {
+      pushFailed = true;
+      console.error('Lineup-Mitteilung: Push-Versand fehlgeschlagen', err);
+    }
   }
 
   return NextResponse.json({
@@ -152,6 +166,8 @@ export async function POST(req: Request) {
     added: result.added,
     enriched: result.enriched,
     total: result.total,
-    ...(result.announcement ? { announcement: result.announcement, audience, push } : {}),
+    ...(result.announcement
+      ? { announcement: result.announcement, audience, push, pushFailed }
+      : {}),
   });
 }

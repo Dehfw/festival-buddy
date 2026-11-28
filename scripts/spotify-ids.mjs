@@ -193,7 +193,17 @@ const token = await getToken();
 async function searchArtists(query) {
   const url = `https://api.spotify.com/v1/search?type=artist&limit=10&q=${encodeURIComponent(query)}`;
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    let res;
+    try {
+      res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(30_000),
+      });
+    } catch (err) {
+      fail(
+        `Spotify-Suche nicht erreichbar (api.spotify.com): ${err?.cause?.message ?? err?.message ?? err}\n${CLOUD_HINT}`
+      );
+    }
     if (res.status === 429 && attempt < 5) {
       const wait = (Number(res.headers.get('retry-after')) || 2) * 1000;
       console.log(`  … Rate-Limit, warte ${wait / 1000}s`);

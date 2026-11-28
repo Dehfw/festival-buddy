@@ -4,8 +4,11 @@ import type { FestivalBand } from './types';
 /**
  * Text der Mitteilung „neue Bands im Lineup" – dieselben Limits wie jede
  * andere Mitteilung, weil sie 1:1 als Push rausgeht. Die Reihenfolge der
- * Bands bleibt die der Ankündigung (Headliner stehen dort vorn); passt die
- * Liste nicht in den Text, wird hinten gekürzt und der Rest gezählt.
+ * Bands ist die der Anfrage; passt die Liste nicht in den Text, wird hinten
+ * gekürzt und der Rest gezählt. Damit dabei nicht ausgerechnet die
+ * Headliner wegfallen, schickt scripts/lineup-announce.mjs die Bands in
+ * der Reihenfolge der Textdatei (Ankündigungsreihenfolge) statt in der
+ * alphabetischen der Importdatei.
  */
 
 const CALL_TO_ACTION = 'Hör rein und merk dir, wen du sehen willst!';

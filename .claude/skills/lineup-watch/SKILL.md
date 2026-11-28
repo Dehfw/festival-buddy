@@ -66,7 +66,11 @@ zueinander stehen.
   fehlen. Meist liegt ein Lineup-Watch-PR eines früheren Laufs noch
   ungemergt herum. Trag diese Bands zuerst in exakt der Live-Schreibweise
   nach (`npm run lineup:add -- lineups/<id>.txt --force "Name" …`), damit
-  die Datei wieder alles enthält, was live ist.
+  die Datei wieder alles enthält, was live ist. Meldet das Script dabei
+  „andere Schreibweise" (`=`), führen Datei und App dieselbe Band unter
+  zwei Schreibweisen, also zwei Slugs – die App würde die Schreibweise
+  der Datei als neue Band einpflegen und pushen. Das löst kein Script:
+  für dieses Festival heute nichts senden und den Fall berichten.
 
 ### 2. Quelle lesen
 
@@ -140,9 +144,11 @@ die echten Zugangsdaten setzt der Proxy für `accounts.spotify.com` ein.
 Übernommen wird nur, was exakt auf den Bandnamen passt. Meldet das
 Script **mehrere gleichnamige Künstler**, hat es den mit den meisten
 Followern genommen – nenn diese Bands im Bericht, damit jemand
-gegenprüfen kann; eine falsche Zuordnung lässt sich später in der
-Textdatei korrigieren, ohne dass etwas verloren geht. Bands **ohne
-Treffer** bleiben ohne Button, auch das gehört in den Bericht.
+gegenprüfen kann. Eine falsche Zuordnung lässt sich in der Textdatei
+korrigieren, live kommt die Korrektur aber erst mit dem nächsten
+Voll-Import an: Die Lineup-Ergänzung trägt nur fehlende IDs nach und
+überschreibt keine vorhandene. Bands **ohne Treffer** bleiben ohne
+Button, auch das gehört in den Bericht.
 
 Scheitert der Spotify-Schritt ganz (Secret fehlt, Host gesperrt), läuft
 die Strecke ohne ihn weiter: Die Bands kommen dann ohne „Auf Spotify
@@ -170,6 +176,12 @@ npm run lineup:announce -- --festival <id>
 Die Ausgabe sagt, welche Mitteilung rausging und wie viele
 Gruppenmitglieder der Push erreicht hat. Wer kein Push aktiviert hat,
 sieht die Mitteilung in der App.
+
+Endet der Aufruf mit „Status unklar" (keine Antwort) oder meldet er
+einen gescheiterten Push-Versand, dann **nicht wiederholen**: Die App
+speichert Bands und Mitteilung, bevor sie pusht, ein zweiter Aufruf
+fände nichts Neues. Mit `--status` prüfen, ob die Bands live sind, und
+den Fall berichten.
 
 ### 6. Stand ins Repo bringen
 

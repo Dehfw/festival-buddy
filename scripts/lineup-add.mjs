@@ -29,6 +29,12 @@
  * Führt die Quelle beide nebeneinander ("Death" und "Death Angel"), sind es
  * zwei Bands, und die neue wird ganz normal übernommen.
  *
+ * Ob die bekannte Band "nicht mehr in der Liste steht", lässt sich nur
+ * beurteilen, wenn die Liste das ganze Lineup ist. Die Erkennung von
+ * Namenserweiterungen greift deshalb nur mit --complete; wer von Hand
+ * einzelne Namen übergibt ("Death Angel", obwohl die Datei "Death" kennt),
+ * meint, was er schreibt. Der Tippfehler-Abstand wird dagegen immer geprüft.
+ *
  * Eine Zeile der Liste darf die Spotify-ID mitbringen, wenn die Quelle sie
  * liefert: `Avatar | spotify=4jpaXieuls7LVzG1uma5Rs`.
  *
@@ -37,7 +43,9 @@
  * Quelle fehlen – das ist ein Hinweis für einen Menschen, keine Absage.
  *
  *   --dry-run   nur berichten, Datei nicht anfassen
- *   --force     auch verdächtig ähnliche Namen übernehmen
+ *   --force     auch verdächtig ähnliche Namen übernehmen. Eine andere
+ *               Schreibweise einer bekannten Band übernimmt auch --force
+ *               nicht: Das ergäbe dieselbe Band zweimal, mit zwei Slugs.
  *
  * Exit-Code 0, auch wenn nichts neu ist. Die letzte Zeile der Ausgabe ist
  * maschinenlesbar: `RESULT {"added":[…],"variants":[…],"similar":[…],…}`.
@@ -273,7 +281,7 @@ for (const name of candidates) {
   const lookalike = before.find(
     (other) =>
       !inSource(other) &&
-      (isExtension(nameWords, words(other)) ||
+      ((args.complete && isExtension(nameWords, words(other))) ||
         [...looseKeys(other)].some((o) => [...keys].some((k) => isSimilar(k, o))))
   );
   if (lookalike && !args.force) {

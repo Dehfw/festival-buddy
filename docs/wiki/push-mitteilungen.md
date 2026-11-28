@@ -150,10 +150,20 @@ Was der Endpunkt garantiert:
   zusammen mit den neuen Bands. Danach geht derselbe Text als Push an
   `getFestivalAudienceUserIds()` – dieselbe Zielgruppe wie eine
   Veranstalter-Durchsage. Wer kein Push hat, sieht sie in der Glocke.
+- **Der Push selbst gehört nicht zur Transaktion.** Er läuft nach dem
+  Commit und wird vor der Antwort abgewartet (ehrliche Zähler). Scheitert
+  er als Ganzes, antwortet der Endpunkt trotzdem `ok` mit
+  `pushFailed: true` – gespeichert ist ja alles, und ein Aufrufer, der
+  wiederholt, fände nichts Neues. Nachgeholt wird ein verlorener Push
+  nicht von selbst (`npm run push:broadcast` wäre der Handweg).
+  `lineup:announce` wartet bis zu 15 Minuten auf die Antwort und meldet
+  einen Timeout als „Status unklar“, nicht als Fehlschlag.
 - Text: „Neu im Lineup: <Band>“ bzw. „N neue Bands im Lineup“, im Body
-  die Namen in der Reihenfolge der Ankündigung; passen nicht alle in die
+  die Namen in der Reihenfolge der Anfrage; passen nicht alle in die
   500 Zeichen, steht am Ende „… und 12 weitere Bands“
-  (`src/lib/lineupNews.ts`).
+  (`src/lib/lineupNews.ts`). `lineup:announce` schickt die Bands in der
+  Reihenfolge der Textdatei – dort stehen die Headliner einer Welle
+  vorn –, nicht in der alphabetischen der Importdatei.
 - **Nur vor der Running Order.** Hat das Festival schon Slots, antwortet
   der Endpunkt 409: Die Lineup-Ansicht ist dann ausgeblendet, eine Band
   ohne Slot wäre unsichtbar. Sie gehört in den Timetable (Import oder
