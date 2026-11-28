@@ -1,30 +1,37 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { cache } from 'react';
 import { DefektLogo } from '@/components/DefektLogo';
 import { FireFrame } from '@/components/FireFrame';
 import { LandingLogin } from '@/components/LandingLogin';
+import { getTimetable } from '@/lib/db';
 import lineupJson from '../../../data/psoa2027.json';
 
 /** Festival-ID in der App – Vorauswahl für Login und Gruppengründung */
 const FESTIVAL_ID = 'psoa2027';
 
 /**
- * Angekündigte Bands aus der gebundelten Importdatei: Die Lineup-Watch
- * committet jede neue Welle, die Zahl auf der Seite zieht also mit dem
- * nächsten Deploy von selbst nach.
+ * Die Bandliste kommt bei jedem Aufruf aus der App-Datenbank, nicht aus
+ * dem Build: Die Lineup-Watch pflegt neue Wellen sofort in die App ein,
+ * die Importdatei im Repo zieht erst mit einem Merge nach.
  */
-const ANNOUNCED = new Set(
-  (lineupJson as { bands: { name: string }[] }).bands.map((b) => b.name),
+export const dynamic = 'force-dynamic';
+
+/** Rückfall, falls die Datenbank nicht (rechtzeitig) antwortet */
+const BUNDLED_BANDS = (lineupJson as { bands: { name: string }[] }).bands.map(
+  (b) => b.name,
 );
-const BAND_COUNT = ANNOUNCED.size;
+
+/** Länger wartet die Landingpage nicht auf die Datenbank */
+const LINEUP_TIMEOUT_MS = 1500;
 
 /**
  * Teaser in der Reihenfolge des offiziellen "Billing 2027"
  * (party-san.de), Schreibweisen wie in der App. Gezeigt wird nur, was
- * noch in der Importdatei steht – eine umbenannte oder gestrichene Band
- * fällt hier von selbst raus statt weiter beworben zu werden.
+ * noch im Lineup steht – eine umbenannte oder gestrichene Band fällt
+ * von selbst raus statt weiter beworben zu werden.
  */
-const TEASER_TOP = ['Vader', 'Mgla', 'Nile'].filter((n) => ANNOUNCED.has(n));
+const TEASER_TOP = ['Vader', 'Mgla', 'Nile'];
 const TEASER_MORE = [
   'A Tribute To Quorthon And Bathory',
   'Taake',
@@ -34,15 +41,47 @@ const TEASER_MORE = [
   'Bölzer',
   'Benighted',
   'Septicflesh',
-].filter((n) => ANNOUNCED.has(n));
-const TEASER_REST = BAND_COUNT - TEASER_TOP.length - TEASER_MORE.length;
+];
+
+/**
+ * Stand des Lineups für Seite und Metadaten – pro Request einmal
+ * geladen (cache), dahinter liegt der 15-s-Cache von getTimetable.
+ */
+const loadLineup = cache(async () => {
+  let names = BUNDLED_BANDS;
+  try {
+    const live = await Promise.race([
+      getTimetable(FESTIVAL_ID),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), LINEUP_TIMEOUT_MS)),
+    ]);
+    if (live && live.bands.length > 0) names = live.bands.map((b) => b.name);
+  } catch {
+    // Datenbank nicht erreichbar: Die Seite bleibt mit dem Build-Stand online
+  }
+  const announced = new Set(names);
+  const top = TEASER_TOP.filter((n) => announced.has(n));
+  const more = TEASER_MORE.filter((n) => announced.has(n));
+  return {
+    count: announced.size,
+    top,
+    more,
+    rest: announced.size - top.length - more.length,
+  };
+});
 
 const TITLE = 'Festival Buddy fürs Party.San Metal Open Air 2027';
-const DESCRIPTION =
-  'Der Timetable-Planer für deine Party.San-Crew: Wer geht zu welcher Band? ' +
-  `Die ersten ${BAND_COUNT} Bands für 2027 sind schon drin – von Vader bis ` +
-  'Nile. Gruppe gründen, durchhören, Bands merken; die Running Order kommt ' +
-  'in die App, sobald sie steht.';
+
+/** Meta-Beschreibung mit denselben Namen wie der Teaser */
+function describe(lineup: Awaited<ReturnType<typeof loadLineup>>): string {
+  const { count, top } = lineup;
+  return (
+    'Der Timetable-Planer für deine Party.San-Crew: Wer geht zu welcher Band? ' +
+    `Die ersten ${count} Bands für 2027 sind schon drin` +
+    (top.length > 1 ? ` – von ${top[0]} bis ${top[top.length - 1]}. ` : '. ') +
+    'Gruppe gründen, durchhören, Bands merken; die Running Order kommt ' +
+    'in die App, sobald sie steht.'
+  );
+}
 
 /** Deep-Link in die App: merkt das Party.San als Festival-Vorauswahl vor */
 const APP_LINK = `/app?festival=${FESTIVAL_ID}`;
@@ -63,47 +102,50 @@ const GOLD_TEXT = {
 
 const GOLD_GLOW = { textShadow: '0 0 30px rgba(224,176,56,.2)' };
 
-export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
-  keywords: [
-    'Party.San',
-    'Party.San Metal Open Air',
-    'Party.San 2027',
-    'PSOA',
-    'Festival Buddy',
-    'Festival Timetable',
-    'Running Order',
-    'Timetable Planer',
-    'Festival Planer',
-    'Obermehler',
-    'Schlotheim',
-  ],
-  alternates: { canonical: '/partysan' },
-  robots: { index: true, follow: true },
-  openGraph: {
-    type: 'website',
-    url: '/partysan',
-    siteName: 'DEFƎKT Festival Buddy',
-    locale: 'de_DE',
+export async function generateMetadata(): Promise<Metadata> {
+  const description = describe(await loadLineup());
+  return {
     title: TITLE,
-    description: DESCRIPTION,
-    images: [
-      {
-        url: '/partysan/og.png',
-        width: 1200,
-        height: 630,
-        alt: 'Party.San Metal Open Air – Festival Buddy, der Timetable-Planer für deine Crew.',
-      },
+    description,
+    keywords: [
+      'Party.San',
+      'Party.San Metal Open Air',
+      'Party.San 2027',
+      'PSOA',
+      'Festival Buddy',
+      'Festival Timetable',
+      'Running Order',
+      'Timetable Planer',
+      'Festival Planer',
+      'Obermehler',
+      'Schlotheim',
     ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: TITLE,
-    description: DESCRIPTION,
-    images: ['/partysan/og.png'],
-  },
-};
+    alternates: { canonical: '/partysan' },
+    robots: { index: true, follow: true },
+    openGraph: {
+      type: 'website',
+      url: '/partysan',
+      siteName: 'DEFƎKT Festival Buddy',
+      locale: 'de_DE',
+      title: TITLE,
+      description,
+      images: [
+        {
+          url: '/partysan/og.png',
+          width: 1200,
+          height: 630,
+          alt: 'Party.San Metal Open Air – Festival Buddy, der Timetable-Planer für deine Crew.',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: TITLE,
+      description,
+      images: ['/partysan/og.png'],
+    },
+  };
+}
 
 /* ------------------------------------------------------------------ */
 /* Party.San-Landingpage (/partysan): eigene Startseite für PSOA-Crews.*/
@@ -127,7 +169,7 @@ const FEATURES: { icon: string; title: string; body: string; hot?: boolean }[] =
   {
     icon: '🔥',
     title: 'Hot Slots',
-    body: 'Wenn genug aus der Crew fest zusagen, fängt der Slot an zu brennen. Genau wie diese Karte – die Pflichttermine erkennst du auf einen Blick.',
+    body: 'Steht die Running Order und sagen genug aus der Crew fest zu, fängt der Slot an zu brennen. Genau wie diese Karte – die Pflichttermine erkennst du auf einen Blick.',
     hot: true,
   },
   {
@@ -165,7 +207,8 @@ const STEPS: { n: string; title: string; body: string }[] = [
   },
 ];
 
-export default function PartySanLandingPage() {
+export default async function PartySanLandingPage() {
+  const lineup = await loadLineup();
   return (
     <main className="defekt-grid min-h-dvh">
       {/* Topbar mit prominentem Login (merkt das Party.San als Vorauswahl) */}
@@ -240,7 +283,7 @@ export default function PartySanLandingPage() {
           </div>
           <p className="mt-4 text-xs text-ash/70">
             Beim Gruppengründen ist das Party.San 2027 schon ausgewählt – kein
-            Festival-Gesuche. {BAND_COUNT} angekündigte Bands sind schon drin.
+            Festival-Gesuche. {lineup.count} angekündigte Bands sind schon drin.
           </p>
         </div>
       </section>
@@ -249,17 +292,19 @@ export default function PartySanLandingPage() {
       <section className="border-t border-rivet/40">
         <div className="mx-auto max-w-5xl px-6 py-14 text-center">
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#f0d860]/80">
-            <span className="opacity-50">//</span> Lineup 2027 – {BAND_COUNT}{' '}
+            <span className="opacity-50">//</span> Lineup 2027 – {lineup.count}{' '}
             Bands angekündigt
           </p>
           <p className="mt-6 font-metal text-3xl uppercase leading-snug text-bone sm:text-4xl">
-            {TEASER_TOP.join(' · ')}
+            {lineup.top.join(' · ')}
           </p>
           <p className="mt-3 font-metal text-lg uppercase leading-relaxed text-ash sm:text-xl">
-            {TEASER_MORE.join(' · ')}
+            {lineup.more.join(' · ')}
           </p>
           <p className="mt-4 text-xs text-ash/70">
-            {TEASER_REST > 0 ? `… und ${TEASER_REST} weitere Bands – alle` : 'Alle'}{' '}
+            {lineup.rest > 0
+              ? `… und ${lineup.rest} weitere ${lineup.rest === 1 ? 'Band' : 'Bands'} – alle`
+              : 'Alle'}{' '}
             schon in der App zum Durchhören und Merken. Die Running Order
             folgt, sobald das Party.San sie veröffentlicht.
           </p>
