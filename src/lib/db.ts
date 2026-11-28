@@ -2451,7 +2451,9 @@ export async function addLineupBands(
       const existing = pool.get(slug);
       const current = existing ? undefined : pool.get(aliases.get(slug) ?? '');
       if (current) {
-        if (!renamed.some((r) => r.now.slug === current.slug)) renamed.push({ name, now: current });
+        // Jeden früheren Namen einmal melden – auch wenn mehrere auf dieselbe
+        // Band zeigen (A→B→C: "A" und "B" stehen beide noch in der Datei).
+        if (!renamed.some((r) => bandSlug(r.name) === slug)) renamed.push({ name, now: current });
         continue;
       }
       if (!existing) {
