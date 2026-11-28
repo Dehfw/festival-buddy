@@ -3,16 +3,49 @@ import Link from 'next/link';
 import { DefektLogo } from '@/components/DefektLogo';
 import { FireFrame } from '@/components/FireFrame';
 import { LandingLogin } from '@/components/LandingLogin';
+import lineupJson from '../../../data/psoa2027.json';
 
-const TITLE = 'Festival Buddy fürs Party.San Metal Open Air 2026';
+/** Festival-ID in der App – Vorauswahl für Login und Gruppengründung */
+const FESTIVAL_ID = 'psoa2027';
+
+/**
+ * Angekündigte Bands aus der gebundelten Importdatei: Die Lineup-Watch
+ * committet jede neue Welle, die Zahl auf der Seite zieht also mit dem
+ * nächsten Deploy von selbst nach.
+ */
+const ANNOUNCED = new Set(
+  (lineupJson as { bands: { name: string }[] }).bands.map((b) => b.name),
+);
+const BAND_COUNT = ANNOUNCED.size;
+
+/**
+ * Teaser in der Reihenfolge des offiziellen "Billing 2027"
+ * (party-san.de), Schreibweisen wie in der App. Gezeigt wird nur, was
+ * noch in der Importdatei steht – eine umbenannte oder gestrichene Band
+ * fällt hier von selbst raus statt weiter beworben zu werden.
+ */
+const TEASER_TOP = ['Vader', 'Mgla', 'Nile'].filter((n) => ANNOUNCED.has(n));
+const TEASER_MORE = [
+  'A Tribute To Quorthon And Bathory',
+  'Taake',
+  'Deserted Fear',
+  'Winterfylleth',
+  'Primordial',
+  'Bölzer',
+  'Benighted',
+  'Septicflesh',
+].filter((n) => ANNOUNCED.has(n));
+const TEASER_REST = BAND_COUNT - TEASER_TOP.length - TEASER_MORE.length;
+
+const TITLE = 'Festival Buddy fürs Party.San Metal Open Air 2027';
 const DESCRIPTION =
   'Der Timetable-Planer für deine Party.San-Crew: Wer geht zu welcher Band? ' +
-  'Die komplette Running Order 2026 ist schon drin – von Testament bis ' +
-  'Hypocrisy. Gruppe gründen, Bands markieren, läuft auch offline auf dem ' +
-  'Flugplatz.';
+  `Die ersten ${BAND_COUNT} Bands für 2027 sind schon drin – von Vader bis ` +
+  'Nile. Gruppe gründen, durchhören, Bands merken; die Running Order kommt ' +
+  'in die App, sobald sie steht.';
 
 /** Deep-Link in die App: merkt das Party.San als Festival-Vorauswahl vor */
-const APP_LINK = '/app?festival=psoa2026';
+const APP_LINK = `/app?festival=${FESTIVAL_ID}`;
 
 /**
  * Akzente in Party.San-Gold, gesampelt vom offiziellen 2026er Plakat
@@ -36,7 +69,7 @@ export const metadata: Metadata = {
   keywords: [
     'Party.San',
     'Party.San Metal Open Air',
-    'Party.San 2026',
+    'Party.San 2027',
     'PSOA',
     'Festival Buddy',
     'Festival Timetable',
@@ -74,16 +107,17 @@ export const metadata: Metadata = {
 
 /* ------------------------------------------------------------------ */
 /* Party.San-Landingpage (/partysan): eigene Startseite für PSOA-Crews.*/
-/* Alle CTAs zeigen auf /app?festival=psoa2026 – die GroupGate         */
+/* Alle CTAs zeigen auf /app?festival=psoa2027 – die GroupGate         */
 /* überspringt damit die Festival-Auswahl und gründet die Gruppe       */
-/* direkt fürs Party.San 2026.                                         */
+/* direkt fürs Party.San 2027. Stand der Texte: Bands angekündigt,     */
+/* noch keine Running Order – steht sie, Teaser und Hinweise anpassen. */
 /* ------------------------------------------------------------------ */
 
 const FEATURES: { icon: string; title: string; body: string; hot?: boolean }[] = [
   {
     icon: '🗓️',
-    title: 'Running Order im Griff',
-    body: 'Die komplette Running Order in einer sauberen Bühnen-Ansicht. Tippen, markieren, fertig – kein Zettelchaos zwischen Zelt und Infield.',
+    title: 'Lineup jetzt, Running Order später',
+    body: 'Alle angekündigten Bands durchhören und merken. Steht die Running Order, kommt sie als saubere Bühnen-Ansicht dazu – deine gemerkten Bands bleiben.',
   },
   {
     icon: '🤘',
@@ -122,12 +156,12 @@ const STEPS: { n: string; title: string; body: string }[] = [
   {
     n: '02',
     title: 'Crew gründen',
-    body: 'Das Party.San 2026 ist schon vorausgewählt – nur noch Gruppenname eintippen und den Einladungslink an deine Leute schicken.',
+    body: 'Das Party.San 2027 ist schon vorausgewählt – nur noch Gruppenname eintippen und den Einladungslink an deine Leute schicken.',
   },
   {
     n: '03',
-    title: 'Bands markieren',
-    body: 'Deine Bands antippen. Alle sehen live, wer wohin geht – und wo sich die ganze Crew vor der Bühne trifft.',
+    title: 'Bands merken',
+    body: 'Deine Bands antippen. Alle sehen, wer auf wen Bock hat – und mit der Running Order dann, wer wohin geht und wo sich die Crew vor der Bühne trifft.',
   },
 ];
 
@@ -151,7 +185,7 @@ export default function PartySanLandingPage() {
             >
               App öffnen
             </Link>
-            <LandingLogin preselectFestivalId="psoa2026" />
+            <LandingLogin preselectFestivalId={FESTIVAL_ID} />
           </div>
         </div>
       </header>
@@ -166,8 +200,8 @@ export default function PartySanLandingPage() {
 
         <div className="relative">
           <div className="mb-8 inline-flex items-center gap-2 border border-[#e0b038]/30 bg-[#e0b038]/10 px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-[#f0d860]">
-            <span className="opacity-50">//</span> 30th Edition ·
-            06.–08.08.2026 · Flugplatz Obermehler-Schlotheim
+            <span className="opacity-50">//</span> 05.–07.08.2027 · Flugplatz
+            Obermehler-Schlotheim
           </div>
 
           <img
@@ -183,8 +217,8 @@ export default function PartySanLandingPage() {
 
           <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-ash sm:text-lg">
             Festival Buddy ist der Timetable-Planer für deine Party.San-Crew.
-            Bands markieren, Hot Slots sehen, keinen Auftritt verpassen – und
-            endlich wissen, wo sich alle treffen. 🤘
+            Jetzt schon das Lineup durchhören und Bands merken – und im August
+            keinen Auftritt verpassen und wissen, wo sich alle treffen. 🤘
           </p>
 
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -205,29 +239,29 @@ export default function PartySanLandingPage() {
             </a>
           </div>
           <p className="mt-4 text-xs text-ash/70">
-            Beim Gruppengründen ist das Party.San 2026 schon ausgewählt – kein
-            Festival-Gesuche. Und die komplette Running Order ist schon drin.
+            Beim Gruppengründen ist das Party.San 2027 schon ausgewählt – kein
+            Festival-Gesuche. {BAND_COUNT} angekündigte Bands sind schon drin.
           </p>
         </div>
       </section>
 
-      {/* Lineup-Teaser: Headliner vom offiziellen Plakat */}
+      {/* Lineup-Teaser: Auswahl aus dem offiziellen Billing 2027 */}
       <section className="border-t border-rivet/40">
         <div className="mx-auto max-w-5xl px-6 py-14 text-center">
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#f0d860]/80">
-            <span className="opacity-50">//</span> Running Order 2026 – komplett
-            in der App
+            <span className="opacity-50">//</span> Lineup 2027 – {BAND_COUNT}{' '}
+            Bands angekündigt
           </p>
           <p className="mt-6 font-metal text-3xl uppercase leading-snug text-bone sm:text-4xl">
-            Testament · Amorphis · Hypocrisy
+            {TEASER_TOP.join(' · ')}
           </p>
           <p className="mt-3 font-metal text-lg uppercase leading-relaxed text-ash sm:text-xl">
-            Moonspell · Dark Funeral · Marduk · Alcest · Sacred Reich · Wolves
-            in the Throne Room
+            {TEASER_MORE.join(' · ')}
           </p>
           <p className="mt-4 text-xs text-ash/70">
-            … und über 40 weitere Bands auf Mainstage und Tentstage – alle 57
-            Sets mit Zeiten in der App.
+            {TEASER_REST > 0 ? `… und ${TEASER_REST} weitere Bands – alle` : 'Alle'}{' '}
+            schon in der App zum Durchhören und Merken. Die Running Order
+            folgt, sobald das Party.San sie veröffentlicht.
           </p>
         </div>
       </section>

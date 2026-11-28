@@ -11,7 +11,7 @@ geseedet aus `data/partysan2026.json` (Update ohne Redeploy:
 `npm run import:db -- --festival psoa2026 data/partysan2026.json`).
 
 Festival-Landingpages: Unter `/partysan` gibt es eine eigene Startseite
-fürs Party.San. Ihre CTAs zeigen auf `/app?festival=psoa2026` – die
+fürs Party.San. Ihre CTAs zeigen auf `/app?festival=psoa2027` – die
 Vorauswahl überlebt den Passkey-Login (sessionStorage) und die
 Gruppengründung überspringt dann die Festival-Auswahl; das Festival ist
 fest vorausgewählt („Anderes Festival wählen“ holt die Liste zurück).

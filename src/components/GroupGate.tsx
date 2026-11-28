@@ -25,7 +25,7 @@ const MISSING_FESTIVAL_MAILTO =
  * Festival-Logo statt der DEFƎKT-Wortmarke.
  */
 const FESTIVAL_LOGOS: Record<string, { src: string; alt: string }> = {
-  psoa2026: { src: '/partysan/psoa-logo.png', alt: 'Party.San Metal Open Air' },
+  psoa2027: { src: '/partysan/psoa-logo.png', alt: 'Party.San Metal Open Air' },
 };
 
 /**
