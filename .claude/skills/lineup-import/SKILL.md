@@ -171,6 +171,24 @@ sag Bescheid, statt zu raten. Alles bis Schritt 3 lässt sich ohne
 Datenbank erledigen; du kannst die Datei also fertig und geprüft
 übergeben, damit jemand mit Zugang sie einspielt.
 
+**Erstimport ohne Datenbank-Zugang.** Für ein Festival, das es in der
+App noch nicht gibt, braucht es die `DATABASE_URL` nicht:
+
+```bash
+npm run festival:create -- --festival <festivalId> --dry-run
+npm run festival:create -- --festival <festivalId>
+```
+
+Das schickt dieselbe Importdatei per HTTPS an die Betreiber-API der App
+(Secret wie bei `lineup:announce`) – der Weg für Cloud-Sessions. Er legt
+ausschließlich neu an: Existiert die ID schon, antwortet die App mit 409
+und ändert nichts. Ein **Update** eines bestehenden Festivals bleibt
+deshalb beim Import oben, mit dem Vergleich aus Schritt 3 davor – genau
+dort können Eintragungen verloren gehen, und genau dort soll ein Mensch
+hinschauen. Die App prüft die Datei beim Anlegen noch einmal selbst und
+ist dabei strenger als der Validator: Warnungen gibt es nicht, nur
+angenommen oder abgelehnt.
+
 Danach: `lineups/<festivalId>.txt` und `data/<festivalId>.json`
 committen, damit der nächste Import auf demselben Stand aufsetzt.
 

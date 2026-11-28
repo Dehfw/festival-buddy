@@ -85,6 +85,28 @@ denselben Bands gibt.
 `bandCount` (wie viele Bands stehen im Pool?). Bei der Gruppengründung
 steht damit „· 30 Bands announced" statt „· Lineup folgt".
 
+## Schreibwege im Überblick
+
+Vier Wege ändern die Festival-Zeile, mit sehr unterschiedlicher
+Reichweite:
+
+| Weg | Was er darf | Zugang |
+| --- | --- | --- |
+| `scripts/import-festival.mjs` (`npm run import:db`) | Festival anlegen **oder komplett ersetzen** – der einzige Weg, bei dem Slot-IDs verschwinden können | `DATABASE_URL` |
+| Veranstalter-Editor | Einzelne Tage, Bühnen, Slots ändern; IDs bleiben stabil | Veranstalter-Konto |
+| `POST /api/operator/festival` (`npm run festival:create`) | Ein Festival **neu anlegen** – existiert die ID, 409 und keine Änderung | `LINEUP_API_SECRET` |
+| `POST /api/operator/lineup` (`npm run lineup:announce`) | Bands **hinzufügen**, nur ohne Running Order; mit Mitteilung und Push | `LINEUP_API_SECRET` |
+
+Die beiden Betreiber-Endpunkte sind für Claude-Sessions ohne
+Datenbank-Zugang gedacht und bewusst so geschnitten, dass sie nichts
+zerstören können: Der eine legt nur an, was es nicht gibt (ein neues
+Festival hat keine Gruppen, also keine Eintragungen), der andere fügt
+nur hinzu. `createFestival` nutzt dafür `INSERT … ON CONFLICT DO
+NOTHING`; die Anlage wird vorher von `parseNewFestival`
+(`src/lib/festivalCreate.ts`) geprüft und bereinigt – dieselben Regeln
+wie `validate-timetable.mjs`, nur ohne Warnstufe, und die Band-Slugs
+berechnet der Server selbst.
+
 ## Woher kommen die Daten?
 
 - **Wacken:** offizieller W:O:A-Datenexport (`wackenlineup.json`),
