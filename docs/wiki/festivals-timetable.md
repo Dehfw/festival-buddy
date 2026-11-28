@@ -95,6 +95,11 @@ steht damit „· 30 Bands announced" statt „· Lineup folgt".
 - **Nur angekündigte Bands:** ein `[announced]`-Abschnitt in der
   Running-Order-Textdatei, eine Band pro Zeile. `npm run lineup` sucht
   auch für diese Zeilen die Spotify-IDs und schreibt sie in `bands`.
+- **Neue Ankündigungswellen:** die Lineup-Watch – ein geplanter Lauf, der
+  die offiziellen Quellen aus `lineups/watch.json` prüft, neue Bands an
+  `[announced]` anhängt und sie über `POST /api/operator/lineup` additiv
+  in den Live-Pool bringt, samt Mitteilung an die Crews (siehe
+  [Push & Mitteilungen](push-mitteilungen.md#neue-bands-im-lineup-lineup-watch)).
 - **Andere Festivals:** jede Datei im App-Timetable-Format über
   `scripts/import-festival.mjs`. Ohne Export wird die Running Order als
   Textdatei unter `lineups/` gepflegt und mit

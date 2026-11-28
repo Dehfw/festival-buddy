@@ -25,6 +25,7 @@
  * Unklare landet im Bericht am Ende und will von Hand entschieden werden.
  */
 import './env.mjs';
+import './proxy.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -151,17 +152,38 @@ function cleanBandName(band) {
 /* Spotify-API                                                         */
 /* ------------------------------------------------------------------ */
 
+/**
+ * In Cloud-Sessions stehen in den Variablen nur Platzhalter; die echten
+ * Zugangsdaten setzt der Netzwerk-Proxy für accounts.spotify.com ein.
+ * Fehlt dort das Secret, ist der Host gesperrt oder der Login scheitert –
+ * das soll als ein lesbarer Satz enden, nicht als Stacktrace.
+ */
+const CLOUD_HINT =
+  '  In einer Cloud-Session: Für accounts.spotify.com muss in der Umgebung ein\n' +
+  '  Netzwerk-Secret hinterlegt sein (Basic: Client-ID als Benutzername, Client-Secret\n' +
+  '  als Passwort) und api.spotify.com freigegeben sein.';
+
 async function getToken() {
-  const res = await fetch('https://accounts.spotify.com/api/token', {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: 'grant_type=client_credentials',
-  });
+  let res;
+  try {
+    res = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'grant_type=client_credentials',
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch (err) {
+    fail(
+      `Spotify nicht erreichbar (accounts.spotify.com): ${err?.cause?.message ?? err?.message ?? err}\n${CLOUD_HINT}`
+    );
+  }
   if (!res.ok) {
-    fail(`Spotify-Login fehlgeschlagen (HTTP ${res.status}): ${await res.text()}`);
+    fail(
+      `Spotify-Login fehlgeschlagen (HTTP ${res.status}): ${(await res.text()).slice(0, 200)}\n${CLOUD_HINT}`
+    );
   }
   return (await res.json()).access_token;
 }
@@ -171,7 +193,17 @@ const token = await getToken();
 async function searchArtists(query) {
   const url = `https://api.spotify.com/v1/search?type=artist&limit=10&q=${encodeURIComponent(query)}`;
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    let res;
+    try {
+      res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(30_000),
+      });
+    } catch (err) {
+      fail(
+        `Spotify-Suche nicht erreichbar (api.spotify.com): ${err?.cause?.message ?? err?.message ?? err}\n${CLOUD_HINT}`
+      );
+    }
     if (res.status === 429 && attempt < 5) {
       const wait = (Number(res.headers.get('retry-after')) || 2) * 1000;
       console.log(`  … Rate-Limit, warte ${wait / 1000}s`);

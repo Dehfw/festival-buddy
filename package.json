@@ -18,6 +18,8 @@
     "lineup:build": "node scripts/build-timetable.mjs",
     "lineup:check": "node scripts/validate-timetable.mjs",
     "lineup:spotify": "node scripts/spotify-ids.mjs",
+    "lineup:add": "node scripts/lineup-add.mjs",
+    "lineup:announce": "node scripts/lineup-announce.mjs",
     "organizer": "node scripts/organizer-code.mjs",
     "push:broadcast": "node scripts/push-broadcast.mjs"
   },

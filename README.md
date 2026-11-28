@@ -276,6 +276,35 @@ Variablen haben weiterhin Vorrang.
 Der Ablauf samt Textformat ist als Skill hinterlegt:
 `.claude/skills/lineup-import/`.
 
+### Lineup-Watch: neue Bands automatisch
+
+Für Festivals in `lineups/watch.json` prüft ein geplanter Claude-Lauf
+(Skill `.claude/skills/lineup-watch/`) die offizielle Quelle auf neu
+angekündigte Bands, pflegt sie in die laufende App ein und informiert alle
+Gruppenmitglieder des Festivals per Mitteilung und Push. Von Hand geht
+derselbe Weg so:
+
+```bash
+npm run lineup:add -- lineups/sb2027.txt "Neue Band" "Noch eine"   # nur wirklich Neues wird angehängt
+npm run lineup -- lineups/sb2027.txt --festival sb2027             # Spotify, bauen, prüfen
+npm run lineup:announce -- --festival sb2027 --dry-run             # was wäre live neu?
+npm run lineup:announce -- --festival sb2027                       # einpflegen + Mitteilung + Push
+```
+
+`lineup:announce` spricht per HTTPS mit der App (`LINEUP_API_URL`,
+Default `https://festivalbuddy.app`) und braucht nur das
+`LINEUP_API_SECRET` – keine `DATABASE_URL`, keine VAPID-Keys. Der Weg ist
+rein additiv und nur für Festivals ohne Running Order; Details in
+[docs/wiki/push-mitteilungen.md](docs/wiki/push-mitteilungen.md#neue-bands-im-lineup-lineup-watch).
+
+In der Cloud-Umgebung der Watch liegen keine Zugangsdaten in Variablen:
+Das `LINEUP_API_SECRET` (Host der App) und die Spotify-Zugangsdaten
+(`accounts.spotify.com`, Basic: Client-ID/Client-Secret) sind dort als
+Netzwerk-Secrets hinterlegt, die der Proxy in die Anfragen einsetzt;
+`SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET` tragen nur den Platzhalter
+`proxy-injected`. `scripts/proxy.mjs` sorgt dafür, dass die Scripts ihren
+Verkehr überhaupt über diesen Proxy schicken.
+
 Der eingecheckte Wacken-Stand ist aus dem **offiziellen W:O:A-Datenexport**
 (`wackenlineup.json`) generiert: 233 Slots auf 9 Bühnen und 7 Tagen
 (Warm-up ab So 26.07.), inklusive Spotify-Artist-IDs für den
@@ -363,6 +392,7 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | `POST /api/selection`                | Band-Teilnahme setzen/entfernen (Session, `{ group, slotId, status }`) |
 | `POST /api/interest`                 | Band aus dem Lineup merken/vergessen (Session, `{ group, slug, interested }`) |
 | `POST /api/position`                 | ✕-Position setzen/löschen (Session, `{ group, slotId, x, y }`) |
+| `GET/POST /api/operator/lineup`      | Lineup-Watch: Live-Band-Pool lesen bzw. neue Bands additiv einpflegen + Mitteilung/Push an alle Gruppen des Festivals (Bearer `LINEUP_API_SECRET`) |
 | `GET  /api/organizer/me`             | Meine Veranstalter-Festivals                 |
 | `POST /api/organizer/redeem`         | Veranstalter-Code einlösen (`{ code }`, rate-limited) |
 | `GET  /api/organizer/state?festival=…` | Editor-Datenstand: Timetable, Blueprints, Auswahl-Zähler pro Slot (nur Veranstalter des Festivals) |
