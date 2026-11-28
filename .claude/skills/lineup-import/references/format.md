@@ -55,7 +55,8 @@ Optionen hinter dem Bandnamen, mit `|` getrennt:
 | Option | Wirkung |
 | --- | --- |
 | `unbestaetigt` (auch `tba`) | `confirmed: false` – Zeit steht noch nicht fest |
-| `spotify=<id>` | Spotify-Artist-ID für den „Auf Spotify anhören"-Button; nur die ID, nicht die URL. Meist nicht von Hand nötig – `npm run lineup:spotify -- lineups/<id>.txt` trägt sie nach |
+| `spotify=<id>` | Spotify-Artist-ID für den „Auf Spotify anhören"-Button; nur die ID, nicht die URL. Eindeutige Treffer trägt `npm run lineup:spotify -- lineups/<id>.txt` nach; bei mehreren gleichnamigen Künstlern nennt es nur die Kandidaten, und die ID kommt von Hand |
+| `spotify=-` | Bewusst ohne Spotify-Button: nicht auf Spotify, oder kein Künstler passt sicher. Die Suche lässt die Band dann in Ruhe; in der Importdatei steht keine ID |
 | `id=<slotId>` | Erzwingt eine bestimmte Slot-ID statt der generierten – für umbenannte Bands, siehe unten |
 
 ```

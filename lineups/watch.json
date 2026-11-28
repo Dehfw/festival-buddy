@@ -23,7 +23,7 @@
       "sources": [
         "https://www.party-san.de/bands-2027"
       ],
-      "notes": "Die Bandnamen stehen im HTML als Linktexte der Links auf /banddetail/2027-…, in Versalien – neue Bands in normaler Groß-/Kleinschreibung übernehmen. Schreibweisen der Seite beibehalten (\"Mgla\", \"PeelingFlesh\", siehe Kopf der Textdatei). Die Seite listet die neuesten Bands zuerst; die Ankündigungsreihenfolge steht im \"Billing 2027\" der Startseite. Die Spotify-Suche liefert keine Follower-Zahlen mehr und nimmt bei gleichnamigen Künstlern den ersten Treffer – bei den vielen Underground-Bands hier jede neue Zuordnung im Bericht nennen."
+      "notes": "Die Bandnamen stehen im HTML als Linktexte der Links auf /banddetail/2027-…, in Versalien – neue Bands in normaler Groß-/Kleinschreibung übernehmen. Schreibweisen der Seite beibehalten (\"Mgla\", \"PeelingFlesh\", siehe Kopf der Textdatei). Die Seite listet die neuesten Bands zuerst; die Ankündigungsreihenfolge steht im \"Billing 2027\" der Startseite. Die Spotify-Suche liefert keine Follower-Zahlen mehr: Sie übernimmt nur einen eindeutigen Treffer und nennt dazu die Alben, bei mehreren gleichnamigen Künstlern übernimmt sie nichts und listet die Kandidaten. Bei den vielen Underground-Bands hier jede neue Zuordnung anhand der Alben prüfen und im Bericht nennen, mehrdeutige Bands mit ihren Kandidaten melden."
     }
   ]
 }

@@ -94,8 +94,9 @@ npm run festival:create -- --list                      # welche Festivals gibt e
   raus. Trotzdem ist es sofort für alle sichtbar, die eine Gruppe
   gründen: Name, Termin und Bandliste vorher zeigen und ein Okay holen.
 - Spotify-Treffer gegenprüfen, bevor etwas live geht (siehe Skill
-  `lineup-import`): Die Suche nimmt bei gleichnamigen Künstlern den
-  ersten Treffer.
+  `lineup-import`): Der Bericht nennt zu jeder Zuordnung die Alben. Bei
+  mehreren gleichnamigen Künstlern übernimmt die Suche nichts und
+  listet die Kandidaten – die ID kommt dann von Hand.
 - Danach `lineups/<id>.txt` und `data/<id>.json` committen – und das
   Festival bei Bedarf auf die Watchlist setzen.
 
@@ -139,6 +140,10 @@ gesperrt – dann das sagen, statt drumherum zu arbeiten.
   Spotify) sind als Netzwerk-Secrets hinterlegt; der Proxy setzt sie
   ein. In den Variablen stehen höchstens Platzhalter – das ist richtig
   so, nicht nach den echten Werten suchen und nie im Chat danach fragen.
+- **Das Spotify-Kontingent ist knapp** – wenige hundert Abfragen, dann
+  sperrt Spotify die App für rund 24 Stunden, auch für den täglichen
+  Lineup-Watch-Lauf. `api.spotify.com` nicht in eigenen Schleifen
+  abfragen und `lineup:spotify` nicht zum Ausprobieren wiederholen.
 - Über die Betreiber-API der App (`/api/operator/*`) geht von hier
   aus: ein neues Festival anlegen (`festival:create`), neue Bands
   einpflegen (`lineup:announce`) und eine angekündigte Band umbenennen
