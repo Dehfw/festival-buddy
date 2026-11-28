@@ -89,6 +89,8 @@ const EN: Record<string, string> = {
     'Everyone picks their bands. You instantly see who is going where – and find your people instead of searching for them.',
   'Wenn genug aus der Crew fest zusagen, fängt der Slot an zu brennen. Genau wie diese Karte – die Pflichttermine erkennst du auf einen Blick.':
     'When enough of the crew commits, the slot catches fire. Just like this card – see the must-see shows at a glance.',
+  'Steht die Running Order und sagen genug aus der Crew fest zu, fängt der Slot an zu brennen. Genau wie diese Karte – die Pflichttermine erkennst du auf einen Blick.':
+    'Once the running order is out and enough of the crew commits, the slot catches fire. Just like this card – see the must-see shows at a glance.',
   'Gruppe gründen, Code oder Link teilen, fertig. Kein Login-Wirrwarr – deine Leute sind in Sekunden drin.':
     'Create a group, share the code or link, done. No login confusion – your crew joins in seconds.',
   'Installier sie als App aufs Handy. Einmal geladen, läuft alles auch ohne Netz – genau richtig fürs Feld im Funkloch.':
