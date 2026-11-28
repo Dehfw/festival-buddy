@@ -297,6 +297,14 @@ Default `https://festivalbuddy.app`) und braucht nur das
 rein additiv und nur für Festivals ohne Running Order; Details in
 [docs/wiki/push-mitteilungen.md](docs/wiki/push-mitteilungen.md#neue-bands-im-lineup-lineup-watch).
 
+In der Cloud-Umgebung der Watch liegen keine Zugangsdaten in Variablen:
+Das `LINEUP_API_SECRET` (Host der App) und die Spotify-Zugangsdaten
+(`accounts.spotify.com`, Basic: Client-ID/Client-Secret) sind dort als
+Netzwerk-Secrets hinterlegt, die der Proxy in die Anfragen einsetzt;
+`SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET` tragen nur den Platzhalter
+`proxy-injected`. `scripts/proxy.mjs` sorgt dafür, dass die Scripts ihren
+Verkehr überhaupt über diesen Proxy schicken.
+
 Der eingecheckte Wacken-Stand ist aus dem **offiziellen W:O:A-Datenexport**
 (`wackenlineup.json`) generiert: 233 Slots auf 9 Bühnen und 7 Tagen
 (Warm-up ab So 26.07.), inklusive Spotify-Artist-IDs für den

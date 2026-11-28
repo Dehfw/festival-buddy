@@ -133,10 +133,21 @@ npm run lineup -- lineups/<id>.txt --festival <id>
 ```
 
 Spotify-IDs, Importdatei, Validator – wie im Skill `lineup-import`.
-Ohne Spotify-Zugangsdaten wird der Schritt übersprungen; die Bands
-kommen dann ohne „Auf Spotify anhören"-Button, das hält den Lauf nicht
-auf (im Bericht erwähnen). Ein Validator-Fehler dagegen schon: Änderung
-zurücknehmen, berichten.
+
+Die Spotify-Suche läuft auch im geplanten Lauf: In der Cloud-Umgebung
+stehen in `SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET` nur Platzhalter,
+die echten Zugangsdaten setzt der Proxy für `accounts.spotify.com` ein.
+Übernommen wird nur, was exakt auf den Bandnamen passt. Meldet das
+Script **mehrere gleichnamige Künstler**, hat es den mit den meisten
+Followern genommen – nenn diese Bands im Bericht, damit jemand
+gegenprüfen kann; eine falsche Zuordnung lässt sich später in der
+Textdatei korrigieren, ohne dass etwas verloren geht. Bands **ohne
+Treffer** bleiben ohne Button, auch das gehört in den Bericht.
+
+Scheitert der Spotify-Schritt ganz (Secret fehlt, Host gesperrt), läuft
+die Strecke ohne ihn weiter: Die Bands kommen dann ohne „Auf Spotify
+anhören"-Button, und der Bericht sagt, warum. Ein Validator-Fehler hält
+den Lauf dagegen auf: Änderung zurücknehmen, berichten.
 
 ### 5. Probelauf, dann senden
 

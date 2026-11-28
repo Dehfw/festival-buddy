@@ -23,20 +23,9 @@
  *   LINEUP_API_SECRET  Bearer-Secret; in Cloud-Sessions setzt es der Proxy ein
  */
 import './env.mjs';
-import { spawnSync } from 'node:child_process';
+import './proxy.mjs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-
-// Node-fetch beachtet HTTPS_PROXY nur mit NODE_USE_ENV_PROXY (ab 22.21 / 24).
-// In Umgebungen mit Pflicht-Proxy (Cloud-Session) einmal mit der Variable
-// neu starten, statt mit einem unverständlichen Verbindungsfehler zu enden.
-if ((process.env.HTTPS_PROXY || process.env.https_proxy) && !process.env.NODE_USE_ENV_PROXY) {
-  const res = spawnSync(process.execPath, ['--disable-warning=UNDICI-EHPA', ...process.argv.slice(1)], {
-    stdio: 'inherit',
-    env: { ...process.env, NODE_USE_ENV_PROXY: '1' },
-  });
-  process.exit(res.status ?? 1);
-}
 
 function fail(msg) {
   console.error(`✗ ${msg}`);
