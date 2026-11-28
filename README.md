@@ -307,6 +307,11 @@ npm run lineup:announce -- --festival sb2027 --dry-run             # was wäre l
 npm run lineup:announce -- --festival sb2027                       # einpflegen + Mitteilung + Push
 ```
 
+Heißt eine angekündigte Band inzwischen anders, benennt
+`npm run lineup:rename -- lineups/<id>.txt --festival <id> "Alt" "Neu"`
+sie in App und Textdatei um; die gemerkten Bands der Nutzer ziehen dabei
+auf den neuen Namen mit.
+
 `lineup:announce` spricht per HTTPS mit der App (`LINEUP_API_URL`,
 Default `https://festivalbuddy.app`) und braucht nur das
 `LINEUP_API_SECRET` – keine `DATABASE_URL`, keine VAPID-Keys. Der Weg ist
@@ -410,6 +415,7 @@ Folgetag). Parser-Tests: `node scripts/test-scrape.mjs`.
 | `POST /api/position`                 | ✕-Position setzen/löschen (Session, `{ group, slotId, x, y }`) |
 | `GET/POST /api/operator/festival`    | Betreiber-API: alle Festivals auflisten bzw. ein neues Festival anlegen – nie ein bestehendes ersetzen (Bearer `LINEUP_API_SECRET`) |
 | `GET/POST /api/operator/lineup`      | Lineup-Watch: Live-Band-Pool lesen bzw. neue Bands additiv einpflegen + Mitteilung/Push an alle Gruppen des Festivals (Bearer `LINEUP_API_SECRET`) |
+| `PATCH /api/operator/lineup`         | Angekündigte Band umbenennen (`{ festivalId, from, to }`); gemerkte Bands der Nutzer ziehen mit, kein Push (Bearer `LINEUP_API_SECRET`) |
 | `GET  /api/organizer/me`             | Meine Veranstalter-Festivals                 |
 | `POST /api/organizer/redeem`         | Veranstalter-Code einlösen (`{ code }`, rate-limited) |
 | `GET  /api/organizer/state?festival=…` | Editor-Datenstand: Timetable, Blueprints, Auswahl-Zähler pro Slot (nur Veranstalter des Festivals) |

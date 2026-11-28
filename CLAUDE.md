@@ -15,6 +15,7 @@ genannten Skill, bevor du loslegst – dort steht, was schiefgehen kann.
 | --- | --- |
 | „Trag diese Bands nach", Festival hat noch **keine** Running Order | Lineup-Ergänzung, siehe unten |
 | „Schau, ob Festival X neue Bands announced hat" | Skill `lineup-watch` |
+| Angekündigte Band heißt jetzt anders („benenn X um in Y") | `npm run lineup:rename`, siehe unten |
 | Festival soll automatisch beobachtet werden (oder nicht mehr) | Watchlist, siehe unten |
 | Neues Festival anlegen (mit oder ohne Running Order) | Skill `lineup-import`, dann `npm run festival:create` – siehe unten |
 | Running Order für ein Festival einspielen, das es **schon gibt** | Skill `lineup-import` (Voll-Import, braucht `DATABASE_URL`) |
@@ -43,6 +44,28 @@ npm run lineup:announce -- --festival <id>                 # pflegt ein + Mittei
 - Danach `lineups/<id>.txt` und `data/<id>.json` committen.
 - Hat das Festival schon eine Running Order, lehnt die App ab (409).
   Dann ist `lineup-import` bzw. der Editor zuständig.
+
+### Angekündigte Band umbenennen
+
+Die Quelle führt eine Band unter neuem Namen – die Lineup-Watch meldet
+das als „verdächtig ähnlich" und fasst es nicht an. Entscheidet der
+Betreiber, dass umbenannt wird:
+
+```bash
+npm run lineup:rename -- lineups/<id>.txt --festival <id> "Alter Name" "Neuer Name" --dry-run
+npm run lineup:rename -- lineups/<id>.txt --festival <id> "Alter Name" "Neuer Name"
+npm run lineup -- lineups/<id>.txt --festival <id>     # Importdatei neu bauen, dann committen
+```
+
+- Nie den Namen einfach in der Textdatei ändern: Das ergäbe einen neuen
+  Slug, und wer die Band gemerkt hat, verlöre die Merkung. Das Script
+  benennt zuerst in der App um – dort ziehen die Merkungen mit – und
+  passt danach die Datei an.
+- Es geht keine Mitteilung raus. Der Probelauf nennt, wie viele
+  Merkungen betroffen sind.
+- Nur für Bands ohne Spielzeit und nur auf ausdrückliche Ansage: Ob es
+  dieselbe Band unter neuem Namen ist oder doch eine andere, entscheidet
+  ein Mensch. Zwei bestehende Einträge zusammenlegen kann der Weg nicht.
 
 ### Neues Festival anlegen
 
@@ -113,8 +136,9 @@ gesperrt – dann das sagen, statt drumherum zu arbeiten.
   ein. In den Variablen stehen höchstens Platzhalter – das ist richtig
   so, nicht nach den echten Werten suchen und nie im Chat danach fragen.
 - Über die Betreiber-API der App (`/api/operator/*`) geht von hier
-  aus: ein neues Festival anlegen (`festival:create`) und neue Bands
-  einpflegen (`lineup:announce`). Mehr nicht.
+  aus: ein neues Festival anlegen (`festival:create`), neue Bands
+  einpflegen (`lineup:announce`) und eine angekündigte Band umbenennen
+  (`lineup:rename`). Mehr nicht – insbesondere nichts löschen.
 - **Die Datenbank ist von hier aus nicht erreichbar.** Alles, was
   `DATABASE_URL` braucht (`import:db`, `organizer`, `push:broadcast`),
   läuft nur beim Betreiber – also auch jede Änderung an der Running

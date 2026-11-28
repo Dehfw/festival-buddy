@@ -2436,6 +2436,154 @@ export async function addLineupBands(
   }
 }
 
+export type RenameLineupBandResult =
+  | {
+      ok: true;
+      festival: string;
+      /** Eintrag vor der Umbenennung */
+      from: FestivalBand;
+      /** Eintrag nach der Umbenennung */
+      to: FestivalBand;
+      /** Merkungen, die am alten Slug hingen (und mitgezogen werden) */
+      interests: number;
+      /** false = nur die Schreibweise ändert sich, der Slug bleibt */
+      slugChanged: boolean;
+    }
+  | { ok: false; error: string; status: number };
+
+/**
+ * Eine Band im Lineup-Pool umbenennen – der Fall "die Website führt John 5
+ * jetzt als John 5 And The Creatures". Aus dem Namen entsteht der Slug,
+ * und am Slug hängen die gemerkten Bands der Nutzer (band_interests).
+ * Eine Umbenennung über Löschen + Neuanlegen würde sie stillschweigend
+ * verwerfen; hier ziehen sie in derselben Transaktion auf den neuen Slug
+ * um. Wer zufällig schon beide Slugs gemerkt hat, behält genau eine
+ * Merkung.
+ *
+ * Bewusst eng geschnitten:
+ * - nur ohne Running Order (409 sonst): Mit Slots steckt der Bandname auch
+ *   in den Slot-IDs, das ist Sache des Editors bzw. des Voll-Imports;
+ * - der neue Name darf im Pool noch nicht vorkommen (409): Zwei Bands zu
+ *   einer zusammenzulegen ist eine andere Entscheidung als ein neuer Name;
+ * - keine Mitteilung, kein Push – es ist keine neue Band.
+ */
+export async function renameLineupBand(
+  festivalId: string,
+  fromName: string,
+  toName: string,
+  opts: { spotifyArtistId?: string; dryRun?: boolean } = {}
+): Promise<RenameLineupBandResult> {
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const reject = async (error: string, status: number): Promise<RenameLineupBandResult> => {
+      await client.query('ROLLBACK');
+      return { ok: false, error, status };
+    };
+    const res = await client.query<{ name: string; timetable: TimetableBody }>(
+      'SELECT name, timetable FROM festivals WHERE id = $1 FOR UPDATE',
+      [festivalId]
+    );
+    const row = res.rows[0];
+    if (!row) return reject('Unbekanntes Festival', 404);
+    if ((row.timetable.slots ?? []).length > 0) {
+      return reject(
+        'Das Festival hat bereits eine Running Order – dort steckt der Bandname auch in den Slots (Veranstalter-Editor oder Import)',
+        409
+      );
+    }
+
+    const name = toName.trim().replace(/\s+/g, ' ');
+    if (name.length < 1 || name.length > 80) {
+      return reject('Der neue Bandname muss 1–80 Zeichen lang sein', 400);
+    }
+    if (
+      opts.spotifyArtistId !== undefined &&
+      !/^[A-Za-z0-9]{1,40}$/.test(opts.spotifyArtistId)
+    ) {
+      return reject('Ungültige Spotify-Artist-ID', 400);
+    }
+
+    const bands = (row.timetable.bands ?? []).filter(
+      (b) => typeof b?.slug === 'string' && typeof b?.name === 'string'
+    );
+    const fromSlug = bandSlug(fromName);
+    const toSlug = bandSlug(name);
+    const from = bands.find((b) => b.slug === fromSlug);
+    if (!from) return reject(`"${fromName.trim()}" steht nicht im Lineup`, 404);
+    const slugChanged = toSlug !== fromSlug;
+    if (slugChanged && bands.some((b) => b.slug === toSlug)) {
+      return reject(`"${name}" steht bereits im Lineup – zusammenlegen kann dieser Weg nicht`, 409);
+    }
+    const spotifyArtistId = opts.spotifyArtistId ?? from.spotifyArtistId;
+    const to: FestivalBand = {
+      slug: toSlug,
+      name,
+      ...(spotifyArtistId ? { spotifyArtistId } : {}),
+    };
+    if (!slugChanged && to.name === from.name && to.spotifyArtistId === from.spotifyArtistId) {
+      return reject('Der neue Name ist der alte – nichts zu ändern', 400);
+    }
+
+    const count = await client.query<{ n: string }>(
+      'SELECT count(*) AS n FROM band_interests WHERE festival_id = $1 AND band_slug = $2',
+      [festivalId, fromSlug]
+    );
+    const interests = slugChanged ? Number(count.rows[0].n) : 0;
+    const result: RenameLineupBandResult = {
+      ok: true,
+      festival: row.name,
+      from,
+      to,
+      interests,
+      slugChanged,
+    };
+    if (opts.dryRun) {
+      await client.query('ROLLBACK');
+      return result;
+    }
+
+    const next = bands
+      .map((b) => (b.slug === fromSlug ? to : b))
+      .sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    await client.query(
+      `UPDATE festivals
+          SET timetable = jsonb_set(timetable, '{bands}', $2::jsonb), updated_at = now()
+        WHERE id = $1`,
+      [festivalId, JSON.stringify(next)]
+    );
+    if (slugChanged) {
+      // Merkungen umhängen. Wer den neuen Slug schon gemerkt hat (verwaiste
+      // Zeile aus einem früheren Stand), würde den Primärschlüssel verletzen:
+      // dessen alte Zeile wird nicht umgehängt, sondern unten gelöscht.
+      await client.query(
+        `UPDATE band_interests bi SET band_slug = $3
+          WHERE bi.festival_id = $1 AND bi.band_slug = $2
+            AND NOT EXISTS (
+              SELECT 1 FROM band_interests other
+               WHERE other.user_id = bi.user_id
+                 AND other.festival_id = $1 AND other.band_slug = $3)`,
+        [festivalId, fromSlug, toSlug]
+      );
+      await client.query(
+        'DELETE FROM band_interests WHERE festival_id = $1 AND band_slug = $2',
+        [festivalId, fromSlug]
+      );
+    }
+    await client.query('COMMIT');
+
+    timetableCache.delete(festivalId);
+    await bumpRev();
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 /** Festival-Metadaten (Name, Edition) ändern */
 export async function updateFestivalMeta(
   festivalId: string,
