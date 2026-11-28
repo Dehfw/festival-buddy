@@ -1,0 +1,163 @@
+{
+  "festival": "Party.San Metal Open Air 2027",
+  "edition": "05.–07.08.2027 · Flugplatz Obermehler-Schlotheim",
+  "dataVersion": "2026-11-28 (27 Bands angekündigt)",
+  "days": [
+    {
+      "id": "thu",
+      "label": "Do",
+      "longLabel": "Donnerstag",
+      "date": "2027-08-05"
+    },
+    {
+      "id": "fri",
+      "label": "Fr",
+      "longLabel": "Freitag",
+      "date": "2027-08-06"
+    },
+    {
+      "id": "sat",
+      "label": "Sa",
+      "longLabel": "Samstag",
+      "date": "2027-08-07"
+    }
+  ],
+  "stages": [],
+  "slots": [],
+  "bands": [
+    {
+      "slug": "a-tribute-to-quorthon-and-bathory",
+      "name": "A Tribute To Quorthon And Bathory"
+    },
+    {
+      "slug": "benighted",
+      "name": "Benighted",
+      "spotifyArtistId": "0dUwIwaPc6UukkCZTaaf7J"
+    },
+    {
+      "slug": "boelzer",
+      "name": "Bölzer",
+      "spotifyArtistId": "6toR2I8BssfcGNJWkL2S0W"
+    },
+    {
+      "slug": "deserted-fear",
+      "name": "Deserted Fear",
+      "spotifyArtistId": "3CDoiu519MbxFWcwRFH7cH"
+    },
+    {
+      "slug": "dragged-into-sunlight",
+      "name": "Dragged Into Sunlight",
+      "spotifyArtistId": "0RZeUahZvHN2foITeBq29O"
+    },
+    {
+      "slug": "forteresse",
+      "name": "Forteresse",
+      "spotifyArtistId": "4xJYxtq0SF7gEo3pgMIwOm"
+    },
+    {
+      "slug": "gorgasm",
+      "name": "Gorgasm",
+      "spotifyArtistId": "2Pq0WuEVUvv1G7s7S4XNVs"
+    },
+    {
+      "slug": "grimming",
+      "name": "Grimming",
+      "spotifyArtistId": "6ystkiFzVP9cvVYjdaiA9B"
+    },
+    {
+      "slug": "guttural-disgorge",
+      "name": "Guttural Disgorge",
+      "spotifyArtistId": "6vlW47l7HYnEr8kLoj8aMT"
+    },
+    {
+      "slug": "hideous-divinity",
+      "name": "Hideous Divinity",
+      "spotifyArtistId": "4XOpU6j3NQ37JfIaWA4ySH"
+    },
+    {
+      "slug": "infernal-presence",
+      "name": "Infernal Presence",
+      "spotifyArtistId": "2jsKkmW63YdniWZpWlc71V"
+    },
+    {
+      "slug": "mgla",
+      "name": "Mgla",
+      "spotifyArtistId": "2hbkBlGBgvJkC3tpUn9w4C"
+    },
+    {
+      "slug": "nile",
+      "name": "Nile",
+      "spotifyArtistId": "3v3VSKylQE69ztn5TUVlFE"
+    },
+    {
+      "slug": "non-est-deus",
+      "name": "Non Est Deus",
+      "spotifyArtistId": "3CAMaX2bss4c0E7K4O0dTf"
+    },
+    {
+      "slug": "oxygen-destroyer",
+      "name": "Oxygen Destroyer",
+      "spotifyArtistId": "4IEbqKGQ2B2tZkuajmGpim"
+    },
+    {
+      "slug": "peelingflesh",
+      "name": "PeelingFlesh",
+      "spotifyArtistId": "40DbKvYvADTiks7hZIUPHG"
+    },
+    {
+      "slug": "primordial",
+      "name": "Primordial",
+      "spotifyArtistId": "0BZr6WHaejNA63uhZZZZek"
+    },
+    {
+      "slug": "septicflesh",
+      "name": "Septicflesh",
+      "spotifyArtistId": "5MlEt7qqXqNSReeX76xK6b"
+    },
+    {
+      "slug": "seth",
+      "name": "Seth",
+      "spotifyArtistId": "0mZohnzbCiVv54VIEA6Wb7"
+    },
+    {
+      "slug": "svarttjern",
+      "name": "Svarttjern",
+      "spotifyArtistId": "34HkAxbpa90Btjkv8RA0wh"
+    },
+    {
+      "slug": "taake",
+      "name": "Taake",
+      "spotifyArtistId": "2CofVEvqc6hhyKwYsLiuN9"
+    },
+    {
+      "slug": "thulcandra",
+      "name": "Thulcandra",
+      "spotifyArtistId": "3cJkyh6iM5N2AI07hNlu1j"
+    },
+    {
+      "slug": "ultima-necat",
+      "name": "Ultima Necat",
+      "spotifyArtistId": "2RwN3mkcnuXnyjUva6N57Y"
+    },
+    {
+      "slug": "vader",
+      "name": "Vader",
+      "spotifyArtistId": "2s5DSt9VBNzAn2TbtDHzFZ"
+    },
+    {
+      "slug": "victim",
+      "name": "Victim",
+      "spotifyArtistId": "3TCy4RbSyx7wcQxPHREPnr"
+    },
+    {
+      "slug": "vinterland",
+      "name": "Vinterland",
+      "spotifyArtistId": "1jkylBtoxX1k4uqdj3BsWE"
+    },
+    {
+      "slug": "winterfylleth",
+      "name": "Winterfylleth",
+      "spotifyArtistId": "0cKyWvYnOGpPV2NpulEYf5"
+    }
+  ]
+}

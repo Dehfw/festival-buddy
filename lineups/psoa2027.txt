@@ -1,0 +1,61 @@
+# Angekündigte Bands Party.San Metal Open Air 2027 – Quelle für data/psoa2027.json.
+# Übernommen von der offiziellen Bandseite https://www.party-san.de/bands-2027
+# (Stand 28.11.2026, 27 Bands), noch ohne Running Order. Bühnen und
+# Spielzeiten fehlen deshalb bewusst: Das Ergebnis ist eine reine
+# Lineup-Ansicht (durchhören, merken, Crew-Interessen). Sobald die Running
+# Order da ist, wandern die Bands in [tag/buehne]-Abschnitte – die Slugs
+# und damit die Merkungen bleiben. Bühnen-IDs dann wie 2026: main, tent.
+# Bauen:  npm run lineup -- lineups/psoa2027.txt --festival psoa2027
+
+festival: Party.San Metal Open Air 2027
+edition: 05.–07.08.2027 · Flugplatz Obermehler-Schlotheim
+dataVersion: 2026-11-28 (27 Bands angekündigt)
+
+day: thu | 2027-08-05
+day: fri | 2027-08-06
+day: sat | 2027-08-07
+
+# Reihenfolge wie im "Billing 2027" der Startseite (Ankündigungsreihenfolge,
+# älteste Welle zuerst) – neue Wellen werden unten angehängt.
+# Schreibweisen: Die Seite schreibt alles in Versalien; hier steht normale
+# Groß-/Kleinschreibung, sonst exakt wie die Seite. Aus dem Namen entsteht
+# der Slug, an dem gemerkte Bands hängen – deshalb nichts "korrigieren":
+#  - "Mgla" ohne ł, wie die Seite ("MGLA"). "Mgła" ergäbe einen anderen Slug.
+#  - "PeelingFlesh" in einem Wort, wie die Seite ("PEELINGFLESH").
+#  - "A Tribute To Quorthon And Bathory" ist ein Tribute-Projekt und steht
+#    so im Billing. Kein Spotify-Profil, deshalb ohne ID.
+# Spotify-IDs: von npm run lineup gesucht und am 28.11.2026 anhand der Alben
+# gegengeprüft. Drei sind von Hand gesetzt, bitte nicht per --force neu
+# auflösen lassen:
+#  - Victim: Die Suche trifft einen gleichnamigen anderen Künstler; richtig
+#    ist die Thrash-Band aus Weimar (Album "Nuclear Nightmare", 2025).
+#  - Mgla: heißt auf Spotify "Mgła" und wird über den Namen nicht gefunden.
+#  - Seth: die französische Black-Metal-Band ("La Morsure du Christ").
+[announced]
+Vader | spotify=2s5DSt9VBNzAn2TbtDHzFZ
+A Tribute To Quorthon And Bathory
+Mgla | spotify=2hbkBlGBgvJkC3tpUn9w4C
+Nile | spotify=3v3VSKylQE69ztn5TUVlFE
+Taake | spotify=2CofVEvqc6hhyKwYsLiuN9
+Grimming | spotify=6ystkiFzVP9cvVYjdaiA9B
+Deserted Fear | spotify=3CDoiu519MbxFWcwRFH7cH
+Non Est Deus | spotify=3CAMaX2bss4c0E7K4O0dTf
+Oxygen Destroyer | spotify=4IEbqKGQ2B2tZkuajmGpim
+Winterfylleth | spotify=0cKyWvYnOGpPV2NpulEYf5
+Guttural Disgorge | spotify=6vlW47l7HYnEr8kLoj8aMT
+Svarttjern | spotify=34HkAxbpa90Btjkv8RA0wh
+Seth | spotify=0mZohnzbCiVv54VIEA6Wb7
+Victim | spotify=3TCy4RbSyx7wcQxPHREPnr
+Infernal Presence | spotify=2jsKkmW63YdniWZpWlc71V
+Primordial | spotify=0BZr6WHaejNA63uhZZZZek
+Dragged Into Sunlight | spotify=0RZeUahZvHN2foITeBq29O
+Gorgasm | spotify=2Pq0WuEVUvv1G7s7S4XNVs
+Bölzer | spotify=6toR2I8BssfcGNJWkL2S0W
+Benighted | spotify=0dUwIwaPc6UukkCZTaaf7J
+Vinterland | spotify=1jkylBtoxX1k4uqdj3BsWE
+Thulcandra | spotify=3cJkyh6iM5N2AI07hNlu1j
+PeelingFlesh | spotify=40DbKvYvADTiks7hZIUPHG
+Septicflesh | spotify=5MlEt7qqXqNSReeX76xK6b
+Hideous Divinity | spotify=4XOpU6j3NQ37JfIaWA4ySH
+Forteresse | spotify=4xJYxtq0SF7gEo3pgMIwOm
+Ultima Necat | spotify=2RwN3mkcnuXnyjUva6N57Y
