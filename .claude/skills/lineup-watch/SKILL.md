@@ -116,7 +116,9 @@ die `dataVersion`. Lies den Bericht, bevor du weitermachst:
   einer Korrektur oder Umbenennung auf der Website („John 5" → „John 5
   And The Creatures"), nicht das einer neuen Band. Im Normalfall also
   nichts tun und im Bericht nennen – eine Umbenennung ändert den Slug
-  und ist eine Entscheidung für einen Menschen. Nur wenn du sicher bist,
+  und ist eine Entscheidung für einen Menschen. Fällt sie, gibt es
+  dafür `npm run lineup:rename` (zieht die gemerkten Bands der Nutzer
+  mit um, siehe `CLAUDE.md`); der geplante Lauf selbst benennt nie um. Nur wenn du sicher bist,
   dass es wirklich eine andere Band ist, einzeln nachtragen:
   `npm run lineup:add -- lineups/<id>.txt --force "Name"`.
 - **`−` fehlt in der Quelle** – nie selbst löschen. Eine Absage ist eine

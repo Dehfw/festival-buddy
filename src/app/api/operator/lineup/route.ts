@@ -3,6 +3,7 @@ import {
   addLineupBands,
   getFestivalAudienceUserIds,
   getTimetableFresh,
+  renameLineupBand,
   type LineupBandInput,
 } from '@/lib/db';
 import { lineupAnnouncementText } from '@/lib/lineupNews';
@@ -151,5 +152,51 @@ export async function POST(req: Request) {
     ...(result.announcement
       ? { announcement: result.announcement, audience, push, pushFailed }
       : {}),
+  });
+}
+
+/**
+ * { festivalId, from, to, spotifyArtistId?, dryRun? }
+ *
+ * Benennt eine Band im Lineup-Pool um und zieht die gemerkten Bands der
+ * Nutzer auf den neuen Namen mit (renameLineupBand). Keine Mitteilung, kein
+ * Push: Eine Umbenennung ist keine neue Band. `dryRun` zeigt, was passieren
+ * würde – inklusive der Zahl der Merkungen, die am alten Namen hängen.
+ */
+export async function PATCH(req: Request) {
+  const denied = operatorGuard(req);
+  if (denied) return denied;
+
+  const body = await req.json().catch(() => null);
+  const festivalId = typeof body?.festivalId === 'string' ? body.festivalId : '';
+  const from = typeof body?.from === 'string' ? body.from : '';
+  const to = typeof body?.to === 'string' ? body.to : '';
+  if (!festivalId) {
+    return NextResponse.json({ error: 'festivalId fehlt' }, { status: 400 });
+  }
+  if (!from.trim() || !to.trim()) {
+    return NextResponse.json({ error: 'from und to (alter und neuer Bandname) fehlen' }, { status: 400 });
+  }
+  const spotify = body?.spotifyArtistId;
+  if (spotify !== undefined && typeof spotify !== 'string') {
+    return NextResponse.json({ error: 'Ungültige Spotify-Artist-ID' }, { status: 400 });
+  }
+  const dryRun = body?.dryRun === true;
+
+  const result = await renameLineupBand(festivalId, from, to, {
+    spotifyArtistId: spotify || undefined,
+    dryRun,
+  });
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+  return NextResponse.json({
+    ok: true,
+    dryRun,
+    festival: result.festival,
+    from: result.from,
+    to: result.to,
+    slugChanged: result.slugChanged,
+    interests: result.interests,
   });
 }

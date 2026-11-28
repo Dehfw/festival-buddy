@@ -96,16 +96,36 @@ Reichweite:
 | Veranstalter-Editor | Einzelne Tage, Bühnen, Slots ändern; IDs bleiben stabil | Veranstalter-Konto |
 | `POST /api/operator/festival` (`npm run festival:create`) | Ein Festival **neu anlegen** – existiert die ID, 409 und keine Änderung | `LINEUP_API_SECRET` |
 | `POST /api/operator/lineup` (`npm run lineup:announce`) | Bands **hinzufügen**, nur ohne Running Order; mit Mitteilung und Push | `LINEUP_API_SECRET` |
+| `PATCH /api/operator/lineup` (`npm run lineup:rename`) | Eine angekündigte Band **umbenennen**, nur ohne Running Order; Merkungen ziehen mit, kein Push | `LINEUP_API_SECRET` |
 
-Die beiden Betreiber-Endpunkte sind für Claude-Sessions ohne
+Die Betreiber-Endpunkte sind für Claude-Sessions ohne
 Datenbank-Zugang gedacht und bewusst so geschnitten, dass sie nichts
 zerstören können: Der eine legt nur an, was es nicht gibt (ein neues
-Festival hat keine Gruppen, also keine Eintragungen), der andere fügt
-nur hinzu. `createFestival` nutzt dafür `INSERT … ON CONFLICT DO
+Festival hat keine Gruppen, also keine Eintragungen), der zweite fügt
+nur hinzu, der dritte ändert einen Namen und nimmt alles mit, was daran
+hängt. `createFestival` nutzt dafür `INSERT … ON CONFLICT DO
 NOTHING`; die Anlage wird vorher von `parseNewFestival`
 (`src/lib/festivalCreate.ts`) geprüft und bereinigt – dieselben Regeln
 wie `validate-timetable.mjs`, nur ohne Warnstufe, und die Band-Slugs
 berechnet der Server selbst.
+
+### Umbenennen ohne Verlust
+
+Der Band-Slug ist die Kennung, an der `band_interests` hängt – und er
+entsteht aus dem Namen. Ein neuer Name ist deshalb normalerweise eine
+neue Band, und die Merkungen der alten wären weg. `renameLineupBand`
+(`src/lib/db.ts`) löst das für den einen Fall, in dem es wirklich
+dieselbe Band ist: Unter dem Zeilen-Lock des Festivals ersetzt es den
+Pool-Eintrag und hängt in derselben Transaktion alle Merkungen vom
+alten auf den neuen Slug um. Wer schon beide Slugs gemerkt hatte,
+behält genau eine Merkung. Ändert sich nur die Schreibweise und der
+Slug bleibt (Groß-/Kleinschreibung, Satzzeichen), ist nichts
+umzuhängen.
+
+Abgelehnt wird, was eine andere Entscheidung wäre: ein Zielname, den es
+im Pool schon gibt (das wäre Zusammenlegen), und Festivals mit Running
+Order (dort steckt der Name auch in den Slot-IDs; der Editor hält sie
+beim Umbenennen eines Slots stabil).
 
 ## Woher kommen die Daten?
 

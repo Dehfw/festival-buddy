@@ -18,18 +18,11 @@
  * entfallene Slot-IDs schaut. Ein neues Festival hat noch keine Gruppen;
  * es geht deshalb auch keine Mitteilung raus.
  *
- *   LINEUP_API_URL     Basis-URL der App (Default https://festivalbuddy.app)
- *   LINEUP_API_SECRET  Bearer-Secret; in Cloud-Sessions setzt es der Proxy ein
+ * Zugang (LINEUP_API_URL, LINEUP_API_SECRET): siehe scripts/operator-api.mjs.
  */
-import './env.mjs';
-import './proxy.mjs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-
-function fail(msg) {
-  console.error(`✗ ${msg}`);
-  process.exit(1);
-}
+import { fail, operatorCall } from './operator-api.mjs';
 
 function parseArgs(argv) {
   const args = { festival: null, file: null, dryRun: false, list: false };
@@ -44,53 +37,13 @@ function parseArgs(argv) {
 }
 
 const args = parseArgs(process.argv.slice(2));
-const base = (process.env.LINEUP_API_URL || 'https://festivalbuddy.app').replace(/\/+$/, '');
-const endpoint = `${base}/api/operator/festival`;
-// Ohne eigenes Secret trotzdem einen Authorization-Header schicken: In
-// Cloud-Sessions ersetzt der Proxy ihn durch das hinterlegte Secret.
-const authorization = `Bearer ${process.env.LINEUP_API_SECRET || 'proxy-injected'}`;
-
-async function call(method, body) {
-  let res;
-  try {
-    res = await fetch(endpoint, {
-      method,
-      headers: {
-        Authorization: authorization,
-        ...(body ? { 'Content-Type': 'application/json' } : {}),
-      },
-      body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(120_000),
-    });
-  } catch (err) {
-    fail(
-      `${base} nicht erreichbar: ${err?.cause?.message ?? err?.message ?? err}\n` +
-        '  In einer Cloud-Session muss der Host in der Umgebung freigegeben sein.'
-    );
-  }
-  const text = await res.text();
-  let json = null;
-  try {
-    json = JSON.parse(text);
-  } catch {
-    // keine JSON-Antwort (Proxy-Fehlerseite, 404-HTML vor dem Deploy)
-  }
-  if (!res.ok) {
-    const hints = {
-      401: 'Secret stimmt nicht – LINEUP_API_SECRET hier und in der App vergleichen.',
-      404: 'Den Endpunkt gibt es dort (noch) nicht – ist der Stand schon deployt?',
-      409:
-        'Nichts geändert. Neue Bands gehen per `npm run lineup:announce`, eine neue\n' +
-        '  Running Order per `npm run import:db` (braucht DATABASE_URL) oder im Veranstalter-Editor.',
-      503: 'In der App ist LINEUP_API_SECRET nicht gesetzt.',
-    };
-    fail(
-      `${method} ${endpoint} → ${res.status}: ${json?.error ?? text.slice(0, 200)}` +
-        (hints[res.status] ? `\n  ${hints[res.status]}` : '')
-    );
-  }
-  return json;
-}
+/** 409 heißt hier immer: Die ID ist schon vergeben. */
+const HINTS = {
+  409:
+    'Nichts geändert. Neue Bands gehen per `npm run lineup:announce`, eine neue\n' +
+    '  Running Order per `npm run import:db` (braucht DATABASE_URL) oder im Veranstalter-Editor.',
+};
+const call = (method, body) => operatorCall(method, '/festival', body, HINTS);
 
 if (args.list) {
   const { festivals } = await call('GET');
